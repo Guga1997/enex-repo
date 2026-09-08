@@ -15,3 +15,4 @@ public/uploads/*
 
 # გენერირებული — scripts/to-postgres.mjs აწყობს
 /prisma/schema.postgres.prisma
+tsconfig.tsbuildinfo
