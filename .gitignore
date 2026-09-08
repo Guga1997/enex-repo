@@ -12,3 +12,6 @@ public/uploads/*
 /prisma/*.db-journal
 .DS_Store
 *.log
+
+# გენერირებული — scripts/to-postgres.mjs აწყობს
+/prisma/schema.postgres.prisma

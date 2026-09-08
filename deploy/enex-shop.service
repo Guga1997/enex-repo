@@ -1,0 +1,36 @@
+# /etc/systemd/system/enex-shop.service
+#
+#   sudo systemctl enable --now enex-shop
+#   sudo systemctl status enex-shop
+#   journalctl -u enex-shop -f
+
+[Unit]
+Description=Enex ონლაინ მაღაზია (Next.js)
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=enex
+WorkingDirectory=/var/www/enex
+Environment=NODE_ENV=production
+Environment=PORT=3000
+EnvironmentFile=/var/www/enex/.env
+ExecStart=/usr/bin/node node_modules/next/dist/bin/next start -p 3000
+
+Restart=always
+RestartSec=5
+
+# გამორთვისას მიმდინარე მოთხოვნებს დასრულების დრო მიეცეს
+KillSignal=SIGINT
+TimeoutStopSec=30
+
+# მინიმალური იზოლაცია — აპლიკაციას სისტემაში წერა არ სჭირდება
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/www/enex/.next /var/www/enex/public/uploads
+
+[Install]
+WantedBy=multi-user.target
