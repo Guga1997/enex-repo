@@ -1,0 +1,34 @@
+/**
+ * Enex-ის ლოგო ვექტორად, ორიგინალი PDF-იდან გადმოყვანილი.
+ * fill="currentColor" — ფერს მშობლისგან იღებს, ამიტომ მუქ ფონზეც მუშაობს.
+ */
+export default function Logo({ className = "h-8 w-auto" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="498.36 101.39 923.49 518.17"
+      className={className}
+      fill="currentColor"
+      role="img"
+      aria-label="Enex"
+    >
+      <rect x="498.36" y="101.39" width="15.90" height="518.17" />
+      <rect x="498.36" y="603.66" width="441.21" height="15.90" />
+      <rect x="498.36" y="101.39" width="441.21" height="15.90" />
+      <rect x="839.02" y="263.00" width="15.90" height="193.42" />
+      <rect x="662.53" y="263.00" width="192.39" height="15.90" />
+      <rect x="662.53" y="440.51" width="192.39" height="15.90" />
+      <rect x="923.67" y="101.39" width="15.90" height="124.16" />
+      <rect x="923.67" y="495.41" width="15.90" height="124.16" />
+      <rect x="1087.45" y="440.51" width="137.09" height="15.90" />
+      <rect x="927.99" y="263.00" width="15.90" height="193.42" />
+      <rect x="1048.09" y="304.48" width="15.90" height="151.93" />
+      <rect x="1208.63" y="294.04" width="15.90" height="70.67" />
+      <rect x="1087.45" y="294.04" width="15.90" height="162.38" />
+      <rect x="1088.53" y="294.04" width="136.00" height="15.90" />
+      <rect x="1088.53" y="348.81" width="136.00" height="15.90" />
+      <polygon points="1399.35,456.26 1421.85,456.27 1259.59,294.01 1237.16,294.07" />
+      <polygon points="943.90,286.86 943.90,270.95 1063.99,293.07 1063.99,304.48 1048.09,304.48" />
+      <polygon points="1259.66,456.26 1237.16,456.27 1399.42,294.01 1421.85,294.07" />
+    </svg>
+  );
+}

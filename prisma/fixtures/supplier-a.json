@@ -1,0 +1,53 @@
+{
+  "status": "ok",
+  "payload": {
+    "goods": [
+      {
+        "article": "SUP-1001",
+        "title": "უწყვეტი კვების წყარო 3KVA On-Line",
+        "manufacturer": "EAST",
+        "part_no": "EA903S-RT",
+        "group": "ენერგო უზრუნველყოფა > უწყვეტი კვების წყაროები UPS > On-Line UPS",
+        "wholesale": 1240.5,
+        "balance": 7,
+        "weight": 28.4,
+        "volume": 0.09,
+        "warranty": 24,
+        "photos": ["https://example.com/ups-3kva.jpg"]
+      },
+      {
+        "article": "SUP-1002",
+        "title": "ლითიუმის აკუმულატორი 51.2V 100Ah",
+        "manufacturer": "Pylontech",
+        "part_no": "US5000",
+        "group": "ენერგო უზრუნველყოფა > აკუმულატორები > ლითიუმის აკუმულატორები",
+        "wholesale": 2100,
+        "balance": 0,
+        "eta": "2026-10-15",
+        "weight": 42,
+        "warranty": 60,
+        "photos": []
+      },
+      {
+        "article": "SUP-1003",
+        "title": "IP კამერა 4მპ Bullet",
+        "manufacturer": "Uniview",
+        "part_no": "IPC2124LE-ADF28KM",
+        "group": "უსაფრთხოების სისტემები > ვიდეო-მეთვალყურეობა > IP კამერები",
+        "wholesale": 138.9,
+        "balance": 25,
+        "weight": 0.5,
+        "warranty": 36,
+        "photos": []
+      },
+      {
+        "article": "SUP-1004",
+        "title": "უცნობი კატეგორიის ნივთი",
+        "manufacturer": "NoName",
+        "group": "რაღაც სხვა ჯგუფი",
+        "wholesale": 10,
+        "balance": 3
+      }
+    ]
+  }
+}

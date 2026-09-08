@@ -1,0 +1,7 @@
+{ "items": [
+  { "code": "B-77", "name": "UPS 3KVA On-Line (მეორე მომწოდებელი)", "vendor": "EAST",
+    "sku_manuf": "EA903S-RT", "cat": "ენერგო უზრუნველყოფა > უწყვეტი კვების წყაროები UPS > On-Line UPS",
+    "netto": 1190.0, "stock": 4 },
+  { "code": "B-78", "name": "SFP მოდული 1G LC 20კმ", "vendor": "OEM",
+    "cat": "ოპტიკური ქსელი > SFP მოდულები", "netto": 24.5, "stock": 60 }
+] }

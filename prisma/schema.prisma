@@ -1,0 +1,392 @@
+// შეცვალე provider = "postgresql" პროდაქშენზე გადასვლისას (მხოლოდ ეს ხაზი + DATABASE_URL).
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/// ადმინ პანელის მომხმარებელი
+model Admin {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         String   @default("ADMIN") // ADMIN | MANAGER
+  createdAt    DateTime @default(now())
+}
+
+/// კატეგორია — თვითრეფერენციული ხე (მთავარი კატეგორია → ქვეკატეგორია)
+model Category {
+  id        String  @id @default(cuid())
+  slug      String  @unique
+  nameKa    String
+  nameEn    String?
+  image     String?
+  sortOrder Int     @default(0)
+  isActive  Boolean @default(true)
+
+  parentId String?
+  parent   Category?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children Category[] @relation("CategoryTree")
+
+  products Product[]
+
+  @@index([parentId])
+}
+
+model Brand {
+  id       String    @id @default(cuid())
+  slug     String    @unique
+  name     String
+  logo     String?
+  products Product[]
+}
+
+/// ნაშთის სტატუსი — StockStatus კონსტანტები src/lib/constants.ts-ში
+/// IN_STOCK | OUT_OF_STOCK | IN_TRANSIT | PREORDER
+model Product {
+  id            String  @id @default(cuid())
+  sku           String  @unique // #03904 — შიდა კოდი
+  slug          String  @unique
+  nameKa        String
+  nameEn        String?
+  model         String? // მწარმოებლის მოდელი: IPC3634SE-ADF28KMC-WP-I1
+  descriptionKa String?
+  descriptionEn String?
+
+  price       Float // საცალო ფასი ₾ — რასაც სტუმარი ხედავს
+  dealerPrice Float? // სადილერო ფასი; ხედავს მხოლოდ DEALER დონის მომხმარებელი
+  oldPrice    Float? // ფასდაკლებამდე ფასი; თუ არსებობს — პროდუქტი "ფასდაკლებაშია"
+  cost        Float? // თვითღირებულება (მხოლოდ ადმინისთვის)
+
+  stockQty     Int       @default(0)
+  stockStatus  String    @default("IN_STOCK")
+  incomingDate DateTime? // "გზაშია, სავარაუდო ჩამოსვლა: 11.09.2026"
+  lowStockAt   Int       @default(5) // ამ ზღვარს ქვემოთ ვწერთ "დარჩენილია N ცალი"
+
+  /// ტრანსპორტირების ანგარიშისთვის — კალათა წონასა და მოცულობას აჯამებს
+  weightKg       Float?
+  volumeM3       Float?
+  warrantyMonths Int?
+
+  isNew     Boolean @default(false)
+  isActive  Boolean @default(true)
+  featured  Boolean @default(false)
+  sortOrder Int     @default(0)
+
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+  brandId    String?
+  brand      Brand?   @relation(fields: [brandId], references: [id], onDelete: SetNull)
+
+  images     ProductImage[]
+  attributes ProductAttribute[]
+  documents  ProductDocument[]
+  orderItems OrderItem[]
+  supplies   ProductSupply[]
+  favorites  Favorite[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([categoryId])
+  @@index([brandId])
+  @@index([price])
+  @@index([isActive, stockStatus])
+}
+
+model ProductImage {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url       String
+  alt       String?
+  sortOrder Int     @default(0)
+
+  @@index([productId])
+}
+
+/// მახასიათებელი — ერთდროულად სპეციფიკაციის ცხრილი და დამატებითი ფილტრი
+model ProductAttribute {
+  id         String  @id @default(cuid())
+  productId  String
+  product    Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name       String // "რეზოლუცია"
+  value      String // "4მპ"
+  filterable Boolean @default(true)
+  sortOrder  Int     @default(0)
+
+  @@index([productId])
+  @@index([name, value])
+}
+
+/// პროდუქტის დოკუმენტი — datasheet, სერტიფიკატი, ინსტრუქცია
+model ProductDocument {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  title     String // "ტექნიკური დოკუმენტაცია (datasheet)"
+  url       String
+  kind      String  @default("DATASHEET") // DATASHEET | CERTIFICATE | MANUAL
+  sizeBytes Int?
+  sortOrder Int     @default(0)
+
+  @@index([productId])
+}
+
+/// მაღაზიის მომხმარებელი — ფიზიკური ან იურიდიული პირი
+/// type:      INDIVIDUAL (პირადი ნომერი) | COMPANY (საიდენტიფიკაციო კოდი)
+/// priceTier: RETAIL | DEALER — განსაზღვრავს, რომელ ფასს ხედავს
+model User {
+  id           String @id @default(cuid())
+  email        String @unique
+  phone        String @unique
+  passwordHash String
+
+  type    String // INDIVIDUAL | COMPANY
+  name    String // სახელი გვარი ან კომპანიის დასახელება
+  taxId   String // პირადი ნომერი ან საიდენტიფიკაციო კოდი
+  address String // ფიზიკური მისამართი
+
+  /// ორივე უნდა შეივსოს, სანამ ანგარიში ამოქმედდება
+  emailVerifiedAt DateTime?
+  phoneVerifiedAt DateTime?
+
+  priceTier       String @default("RETAIL")
+  discountPercent Float  @default(0) // ინდივიდუალური ფასდაკლება %
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// სიახლეების გამოწერა — კაბინეტიდან ირთვება
+  newsletter Boolean @default(false)
+
+  orders            Order[]
+  verificationCodes VerificationCode[]
+  organizations     Organization[]
+  favorites         Favorite[]
+}
+
+/// ერთჯერადი კოდი რეგისტრაციის დადასტურებისთვის.
+/// კოდი მხოლოდ ჰეშირებულად ინახება — ბაზის წაკითხვით ვერავინ დაადასტურებს სხვის ანგარიშს.
+model VerificationCode {
+  id       String @id @default(cuid())
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channel  String // EMAIL | SMS
+  codeHash String
+
+  expiresAt  DateTime
+  consumedAt DateTime?
+  attempts   Int       @default(0)
+  createdAt  DateTime  @default(now())
+
+  @@index([userId, channel])
+  @@index([expiresAt])
+}
+
+/// შეკვეთა
+/// status:        PENDING | PAID | PROCESSING | SHIPPED | DELIVERED | CANCELLED | RETURNED
+/// paymentStatus: UNPAID | PAID | FAILED | REFUNDED
+model Order {
+  id     String @id @default(cuid())
+  number String @unique // ORD-2026-0001
+
+  /// სტუმრის შეკვეთაზე null — ანგარიშის გარეშეც ფორმდება
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  customerName  String
+  customerPhone String
+  customerEmail String
+  customerId    String? // პირადი ნომერი / საიდენტიფიკაციო
+  companyName   String?
+
+  deliveryMethod  String  @default("COURIER") // COURIER | PICKUP
+  deliveryCity    String?
+  deliveryAddress String?
+  comment         String?
+
+  subtotal    Float
+  deliveryFee Float @default(0)
+  total       Float
+
+  status        String @default("PENDING")
+  paymentStatus String @default("UNPAID")
+  paymentMethod String @default("BOG") // BOG | TBC | BANK_TRANSFER | INSTALLMENT | POS
+
+  /// რომელი ორგანიზაციის სახელზე ფორმდება (იურიდიულ პირს რამდენიმე შეიძლება ჰქონდეს)
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  paymentId      String? // ბანკის მხარეს ტრანზაქციის id
+  paymentRaw     String? // callback-ის სრული JSON აუდიტისთვის
+
+  /// საბანკო გადარიცხვის ინვოისი — იგზავნება რეგისტრაციის ელფოსტაზე
+  invoiceNumber String?   @unique
+  invoiceSentAt DateTime?
+
+  /// დაბრუნება — კაბინეტში ცალკე სექციაა
+  returnedAt   DateTime?
+  returnReason String?
+
+  items OrderItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([userId])
+}
+
+model OrderItem {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  sku   String // ისტორიული ასლი — პროდუქტის წაშლის შემდეგაც რჩება
+  name  String
+  price Float
+  qty   Int
+
+  /// მიწოდებისას ივსება — კაბინეტში "სერიული ნომრები" და "გარანტია" აქედან იკითხება
+  serialNumbers  String? // თითო ხაზზე ერთი
+  warrantyMonths Int?
+  warrantyUntil  DateTime?
+
+  @@index([orderId])
+}
+
+/// გარე სისტემის (ORIS/1C/...) წვდომის გასაღები სტოკის API-სთვის
+model ApiKey {
+  id         String    @id @default(cuid())
+  name       String
+  keyHash    String    @unique
+  prefix     String // ჩვენება ადმინში: sk_live_a1b2...
+  scopes     String    @default("stock:read,stock:write")
+  isActive   Boolean   @default(true)
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
+}
+
+/// სტოკის სინქრონიზაციის ლოგი — ვინ, როდის, რა შეცვალა
+model StockSyncLog {
+  id        String   @id @default(cuid())
+  source    String // API key name ან "admin"
+  sku       String
+  oldQty    Int
+  newQty    Int
+  oldStatus String
+  newStatus String
+  createdAt DateTime @default(now())
+
+  @@index([sku])
+  @@index([createdAt])
+}
+
+/// მიმწოდებელი კომპანია, რომლის API-დანაც კატალოგი და ნაშთი შემოდის.
+/// adapter: GENERIC_REST — ველების შესაბამისობა fieldMap-ით, კოდის წერის გარეშე;
+///          სხვა მნიშვნელობა src/lib/suppliers/<slug>.ts-ს ეძებს.
+model Supplier {
+  id       String  @id @default(cuid())
+  slug     String  @unique
+  name     String
+  isActive Boolean @default(true)
+
+  adapter    String  @default("GENERIC_REST")
+  baseUrl    String?
+  authType   String  @default("BEARER") // BEARER | HEADER_KEY | BASIC | NONE
+  /// გასაღები/პაროლი — ადმინში მხოლოდ პრეფიქსი ჩანს
+  secret     String?
+  authHeader String? // HEADER_KEY-სთვის, მაგ. X-API-Key
+
+  /// JSON: სად ძევს სია და რომელი ველი რას ნიშნავს ამ კომპანიის პასუხში
+  fieldMap String?
+
+  /// ფასდადება თვითღირებულებაზე — %-ში
+  markupRetail Float @default(30)
+  markupDealer Float @default(15)
+
+  lastSyncAt     DateTime?
+  lastSyncStatus String? // OK | ERROR
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  supplies ProductSupply[]
+  syncLogs SupplierSyncLog[]
+}
+
+/// ერთი მიმწოდებლის შემოთავაზება ერთ პროდუქტზე.
+/// ნაშთის სიმართლე აქ დევს; Product.stockQty ამათი ჯამია და სინქზე გადაითვლება.
+model ProductSupply {
+  id         String   @id @default(cuid())
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  supplierId String
+  supplier   Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  supplierSku  String // კოდი მიმწოდებლის სისტემაში
+  cost         Float? // თვითღირებულება მისგან
+  qty          Int       @default(0)
+  status       String    @default("IN_STOCK")
+  incomingDate DateTime?
+  leadTimeDays Int?
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([supplierId, supplierSku])
+  @@index([productId])
+}
+
+/// სინქრონიზაციის ისტორია — რა მოვიდა, რა ჩავარდა
+model SupplierSyncLog {
+  id         String   @id @default(cuid())
+  supplierId String
+  supplier   Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
+  ok         Boolean   @default(false)
+  created    Int       @default(0)
+  updated    Int       @default(0)
+  failed     Int       @default(0)
+  message    String?
+
+  @@index([supplierId, startedAt])
+}
+
+/// მომხმარებლის ორგანიზაცია — ერთ ანგარიშზე რამდენიმე იურიდიული პირი
+model Organization {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name      String
+  taxId     String
+  address   String
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  orders Order[]
+
+  @@index([userId])
+}
+
+/// ფავორიტები
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, productId])
+  @@index([userId])
+}

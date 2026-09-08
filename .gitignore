@@ -1,0 +1,14 @@
+node_modules
+.next
+out
+*.db
+*.db-journal
+.env
+public/uploads/*
+!public/uploads/.gitkeep
+
+# სამუშაო და დროებითი
+/prisma/*.db
+/prisma/*.db-journal
+.DS_Store
+*.log

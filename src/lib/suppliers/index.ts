@@ -1,0 +1,277 @@
+import { db } from "../db";
+import { slugify } from "../format";
+import { genericRest } from "./generic-rest";
+import { intellcom } from "./intellcom";
+import type { SupplierAdapter, SupplierConfig, SupplierItem } from "./types";
+
+export type { SupplierItem, SupplierConfig, SupplierAdapter } from "./types";
+
+/** სპეციფიკური ადაპტერები აქ ირიცხება; დანარჩენს GENERIC_REST ემსახურება */
+const ADAPTERS: Record<string, SupplierAdapter> = {
+  GENERIC_REST: genericRest,
+  INTELLCOM: intellcom,
+};
+
+export function resolveAdapter(name: string): SupplierAdapter {
+  const adapter = ADAPTERS[name];
+  if (!adapter) throw new Error(`ადაპტერი "${name}" არ არსებობს`);
+  return adapter;
+}
+
+export const adapterNames = () => Object.keys(ADAPTERS);
+
+/** კატეგორიის გზა სახელებით; ვერ ამოცნობილი ჯდება საიმპორტო კალათაში */
+async function resolveCategoryId(path: string[] | undefined): Promise<string> {
+  if (path?.length) {
+    // SQLite-ს რეგისტრის უგულებელყოფა არ შეუძლია — შედარებას მეხსიერებაში ვაკეთებთ
+    const all = await db.category.findMany({ select: { id: true, nameKa: true } });
+    const byName = new Map(all.map((c) => [c.nameKa.trim().toLowerCase(), c.id]));
+    for (const name of [...path].reverse()) {
+      const hit = byName.get(name.trim().toLowerCase());
+      if (hit) return hit;
+    }
+  }
+  const FALLBACK = "დაუკატეგორიებელი (იმპორტი)";
+  const existing = await db.category.findFirst({ where: { nameKa: FALLBACK } });
+  if (existing) return existing.id;
+  const created = await db.category.create({
+    data: { slug: "importi-daukategoriebeli", nameKa: FALLBACK, isActive: false, sortOrder: 999 },
+  });
+  return created.id;
+}
+
+async function resolveBrandId(name: string | null | undefined): Promise<string | null> {
+  if (!name?.trim()) return null;
+  const clean = name.trim();
+  const found = await db.brand.findFirst({ where: { name: clean } });
+  if (found) return found.id;
+  let slug = slugify(clean) || "brand";
+  if (await db.brand.findUnique({ where: { slug } })) slug = `${slug}-${Date.now().toString(36)}`;
+  return (await db.brand.create({ data: { name: clean, slug } })).id;
+}
+
+async function uniqueProductSlug(name: string, sku: string): Promise<string> {
+  const base = slugify(name) || `p-${sku}`;
+  if (!(await db.product.findUnique({ where: { slug: base } }))) return base;
+  return `${base}-${slugify(sku) || Math.random().toString(36).slice(2, 7)}`;
+}
+
+/**
+ * პროდუქტის მიბმა მიმწოდებლის პოზიციაზე — სამი მცდელობა, სანამ ახალს შევქმნით:
+ * ამავე მიმწოდებლის ძველი ჩანაწერი → ჩვენი SKU → მოდელი+ბრენდი.
+ */
+async function matchProductId(supplierId: string, item: SupplierItem): Promise<string | null> {
+  const supply = await db.productSupply.findUnique({
+    where: { supplierId_supplierSku: { supplierId, supplierSku: item.supplierSku } },
+    select: { productId: true },
+  });
+  if (supply) return supply.productId;
+
+  const bySku = await db.product.findUnique({
+    where: { sku: item.supplierSku },
+    select: { id: true },
+  });
+  if (bySku) return bySku.id;
+
+  if (item.model?.trim()) {
+    const byModel = await db.product.findFirst({
+      where: {
+        model: item.model.trim(),
+        ...(item.brand ? { brand: { name: item.brand.trim() } } : {}),
+      },
+      select: { id: true },
+    });
+    if (byModel) return byModel.id;
+  }
+  return null;
+}
+
+/** ნაშთი პროდუქტზე = მისი ყველა მიმწოდებლის ჯამი */
+export async function rollupStock(productId: string) {
+  const supplies = await db.productSupply.findMany({ where: { productId } });
+  const qty = supplies.reduce((sum, s) => sum + s.qty, 0);
+
+  const etas = supplies
+    .filter((s) => s.incomingDate && s.qty <= 0)
+    .map((s) => s.incomingDate!.getTime());
+
+  /* ნაშთი ნულია, მაგრამ ეს ჯერ არ ნიშნავს „არ გვაქვს“:
+     მიმწოდებელს შეიძლება გზაში ჰქონდეს ან წინასწარი შეკვეთით იღებდეს. */
+  const status =
+    qty > 0
+      ? "IN_STOCK"
+      : etas.length
+        ? "IN_TRANSIT"
+        : supplies.some((s) => s.status === "PREORDER")
+          ? "PREORDER"
+          : "OUT_OF_STOCK";
+
+  await db.product.update({
+    where: { id: productId },
+    data: {
+      stockQty: qty,
+      stockStatus: status,
+      incomingDate: etas.length ? new Date(Math.min(...etas)) : null,
+    },
+  });
+}
+
+export type SyncResult = {
+  ok: boolean;
+  created: number;
+  updated: number;
+  failed: number;
+  message?: string;
+};
+
+/**
+ * ერთი მიმწოდებლის სინქი.
+ * ფასს მხოლოდ ახალ პროდუქტს ვუწერთ — ხელით დაყენებული ფასი სინქმა არ უნდა წაშალოს.
+ * ახალი პროდუქტი მოდის გამორთული, რომ ადმინმა ჯერ დაათვალიეროს.
+ */
+export async function syncSupplier(supplierId: string): Promise<SyncResult> {
+  const supplier = await db.supplier.findUnique({ where: { id: supplierId } });
+  if (!supplier) {
+    return { ok: false, created: 0, updated: 0, failed: 0, message: "მიმწოდებელი ვერ მოიძებნა" };
+  }
+
+  const log = await db.supplierSyncLog.create({ data: { supplierId } });
+  let created = 0;
+  let updated = 0;
+  let failed = 0;
+  const touched = new Set<string>();
+
+  try {
+    const cfg: SupplierConfig = {
+      slug: supplier.slug,
+      name: supplier.name,
+      baseUrl: supplier.baseUrl,
+      authType: supplier.authType,
+      secret: supplier.secret,
+      authHeader: supplier.authHeader,
+      fieldMap: supplier.fieldMap,
+    };
+    const items = await resolveAdapter(supplier.adapter).fetchItems(cfg);
+
+    for (const item of items) {
+      try {
+        let productId = await matchProductId(supplier.id, item);
+
+        if (!productId) {
+          const cost = item.cost ?? 0;
+          const product = await db.product.create({
+            data: {
+              sku: item.supplierSku,
+              slug: await uniqueProductSlug(item.name, item.supplierSku),
+              nameKa: item.name,
+              model: item.model ?? null,
+              descriptionKa: item.description ?? null,
+              price: Math.round(cost * (1 + supplier.markupRetail / 100) * 100) / 100,
+              dealerPrice: cost
+                ? Math.round(cost * (1 + supplier.markupDealer / 100) * 100) / 100
+                : null,
+              cost: item.cost ?? null,
+              weightKg: item.weightKg ?? null,
+              volumeM3: item.volumeM3 ?? null,
+              warrantyMonths: item.warrantyMonths ?? null,
+              categoryId: await resolveCategoryId(item.categoryPath),
+              brandId: await resolveBrandId(item.brand),
+              isActive: false,
+            },
+          });
+          productId = product.id;
+          created++;
+
+          if (item.images?.length) {
+            await db.productImage.createMany({
+              data: item.images.map((url, i) => ({ productId: product.id, url, sortOrder: i })),
+            });
+          }
+          if (item.attributes?.length) {
+            await db.productAttribute.createMany({
+              data: item.attributes.map((a, i) => ({
+                productId: product.id,
+                name: a.name,
+                value: a.value,
+                sortOrder: i,
+              })),
+            });
+          }
+          if (item.documents?.length) {
+            await db.productDocument.createMany({
+              data: item.documents.map((d, i) => ({
+                productId: product.id,
+                title: d.title,
+                url: d.url,
+                sortOrder: i,
+              })),
+            });
+          }
+        } else {
+          await db.product.update({
+            where: { id: productId },
+            data: {
+              cost: item.cost ?? undefined,
+              weightKg: item.weightKg ?? undefined,
+              volumeM3: item.volumeM3 ?? undefined,
+              warrantyMonths: item.warrantyMonths ?? undefined,
+            },
+          });
+          updated++;
+        }
+
+        const supplyData = {
+          productId,
+          cost: item.cost ?? null,
+          qty: item.qty,
+          status: item.status ?? (item.qty > 0 ? "IN_STOCK" : "OUT_OF_STOCK"),
+          incomingDate: item.incomingDate ?? null,
+          leadTimeDays: item.leadTimeDays ?? null,
+        };
+
+        await db.productSupply.upsert({
+          where: {
+            supplierId_supplierSku: {
+              supplierId: supplier.id,
+              supplierSku: item.supplierSku,
+            },
+          },
+          create: { supplierId: supplier.id, supplierSku: item.supplierSku, ...supplyData },
+          update: supplyData,
+        });
+
+        touched.add(productId);
+      } catch {
+        failed++;
+      }
+    }
+
+    for (const id of touched) await rollupStock(id);
+
+    await db.$transaction([
+      db.supplierSyncLog.update({
+        where: { id: log.id },
+        data: { finishedAt: new Date(), ok: true, created, updated, failed },
+      }),
+      db.supplier.update({
+        where: { id: supplier.id },
+        data: { lastSyncAt: new Date(), lastSyncStatus: "OK" },
+      }),
+    ]);
+
+    return { ok: true, created, updated, failed };
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    await db.$transaction([
+      db.supplierSyncLog.update({
+        where: { id: log.id },
+        data: { finishedAt: new Date(), ok: false, created, updated, failed, message },
+      }),
+      db.supplier.update({
+        where: { id: supplier.id },
+        data: { lastSyncAt: new Date(), lastSyncStatus: "ERROR" },
+      }),
+    ]);
+    return { ok: false, created, updated, failed, message };
+  }
+}

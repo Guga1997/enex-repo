@@ -1,0 +1,126 @@
+@import "tailwindcss";
+
+@theme {
+  /* ფონტი layout.tsx-იდან მოდის (next/font) — აქ მხოლოდ ცვლადს ვამაგრებთ */
+  --font-sans: var(--font-georgian), ui-sans-serif, system-ui, sans-serif;
+
+  /* ─── ფირმის ფერი: Enex ───
+     #009CD1 აღებულია ლოგოს PDF-იდან (0 0.612 0.82 rg), არა თვალით.
+     ერთადერთი „ხმამაღალი" ფერი — ფასი, ღილაკი, აქცენტი. */
+  --color-brand-50: #e8f7fd;
+  --color-brand-100: #cceefa;
+  --color-brand-200: #99ddf4;
+  --color-brand-300: #59c6ec;
+  --color-brand-500: #009cd1;
+  --color-brand-600: #0083b0;
+  --color-brand-700: #006a8f;
+  --color-brand-900: #00364a;
+
+  /* ნავიგაციის მუქი ზოლი */
+  --color-nav: #1b2027;
+  --color-nav-soft: #2a313a;
+
+  /* ნეიტრალები — ოდნავ თბილი ნაცრისფერი, ცისფერის ნაცვლად */
+  --color-ink: #14181d;
+  --color-muted: #6b7480;
+  --color-line: #e5e7eb;
+  --color-surface: #ffffff;
+  --color-canvas: #f6f7f9;
+
+  /* მდგომარეობები */
+  --color-ok: #0f7b4f;
+  --color-warn: #b45309;
+  --color-info: #0369a1;
+}
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.003em;
+}
+
+/* ქართული სათაური ოდნავ მჭიდროდ უკეთესად იკითხება */
+h1,
+h2,
+h3 {
+  letter-spacing: -0.015em;
+}
+
+/* ფასები და კოდები — თანაბარსიგანიანი ციფრები, რომ სვეტში არ ცეკვავდეს */
+.tabular,
+table td,
+table th {
+  font-variant-numeric: tabular-nums;
+}
+
+/* რიცხვების input-ებზე spinner-ის მოცილება */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* კლავიატურით ნავიგაციისას ფოკუსი ყოველთვის ჩანდეს */
+:focus-visible {
+  outline: 2px solid var(--color-brand-500);
+  outline-offset: 2px;
+}
+
+@utility container-x {
+  margin-inline: auto;
+  max-width: 82rem;
+  padding-inline: 1rem;
+}
+
+@utility card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: 0.625rem;
+  box-shadow: 0 1px 2px rgb(20 24 29 / 0.04);
+}
+
+@utility btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.625rem 1.125rem;
+  transition:
+    background-color 0.15s,
+    border-color 0.15s,
+    color 0.15s;
+  cursor: pointer;
+}
+
+@utility btn-primary {
+  background: var(--color-brand-500);
+  color: white;
+  box-shadow: 0 1px 2px rgb(0 156 209 / 0.28);
+}
+
+@utility btn-outline {
+  border: 1px solid var(--color-line);
+  background: var(--color-surface);
+  color: var(--color-ink);
+}
+
+/* ფასის ბლოკი — ერთი სტილი ბარათზეც და პროდუქტის გვერდზეც */
+@utility price {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
