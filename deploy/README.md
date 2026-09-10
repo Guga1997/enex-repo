@@ -2,7 +2,7 @@
 
 მიზანი: `https://enex.ge`, PostgreSQL-ით, ავტომატური სერტიფიკატით.
 
-წინაპირობა: Ubuntu 24.04 LTS, 2 ბირთვი / 4 GB / 60 GB, სტატიკური IP.
+წინაპირობა: Ubuntu 26.04 LTS, Hetzner CX33 (4 ბირთვი / 8 GB / 80 GB), ჰელსინკი.
 
 ---
 
@@ -28,8 +28,20 @@ usermod -aG sudo enex
 apt update && apt upgrade -y
 apt install -y curl git nginx postgresql certbot python3-certbot-nginx ufw
 
-curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
-apt install -y nodejs
+# --- Node.js 22+ ---
+# NodeSource ახალ LTS-ს ხანდახან აგვიანებს. ჯერ ის ვცადოთ:
+curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && apt install -y nodejs
+
+# თუ ზემოთა ჩავარდა (26.04-ის რეპოზიტორია ჯერ არ არის), fnm-ით:
+#   curl -fsSL https://fnm.vercel.app/install | bash
+#   source ~/.bashrc && fnm install 22 && fnm default 22
+#   ln -sf "$(fnm exec --using=22 which node)" /usr/bin/node
+#
+# ან უბრალოდ სისტემური პაკეტი, თუ საკმარისად ახალია:
+#   apt install -y nodejs npm
+
+node --version   # უნდა იყოს v22 ან უფრო ახალი
+npm --version
 
 ufw allow OpenSSH && ufw allow 'Nginx Full' && ufw --force enable
 ```
