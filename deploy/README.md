@@ -70,7 +70,7 @@ sudo -u enex cp deploy/env.production.example .env
 sudo -u enex nano .env          # შეავსე ყველა ველი
 sudo chmod 600 .env
 
-sudo -u enex npm ci --omit=dev
+sudo -u enex npm ci   # devDependencies საჭიროა ბილდისთვის
 sudo -u enex npm run db:pg      # PostgreSQL-ის სქემა და მიგრაცია
 sudo -u enex npm run db:deploy  # ცხრილების შექმნა
 sudo -u enex npm run build:prod
