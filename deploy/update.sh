@@ -8,9 +8,9 @@ echo "→ კოდის წამოღება"
 git pull --ff-only
 
 echo "→ დამოკიდებულებები"
-# --omit=dev არ გამოდგება: next build-ს typescript და tailwind სჭირდება,
-# ისინი კი devDependencies-შია.
-npm ci
+# next build-ს typescript და tailwind სჭირდება — ისინი devDependencies-შია.
+# --include=dev ცალსახად, რადგან NODE_ENV=production-ზე npm მათ თავისით ტოვებს.
+npm ci --include=dev
 
 echo "→ ბაზის მიგრაცია"
 npm run db:deploy
