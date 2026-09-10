@@ -32,6 +32,12 @@ const EXAMPLE_MAP = `{
   "images": "photos"
 }`;
 
+/** intellcom-ს ველების შესაბამისობა არ სჭირდება — ადაპტერი მას იცნობს.
+ *  ერთადერთი, რაც აქ იწერება, საიდენტიფიკაციო კოდია სწორი ფასისთვის. */
+const INTELLCOM_MAP = `{
+  "identificationCode": "შენი ს/კ"
+}`;
+
 export default function SupplierForm({
   action,
   adapters,
@@ -42,7 +48,9 @@ export default function SupplierForm({
   supplier: SupplierDraft | null;
 }) {
   const [authType, setAuthType] = useState(supplier?.authType ?? "BEARER");
+  const [adapter, setAdapter] = useState(supplier?.adapter ?? "GENERIC_REST");
   const [showHelp, setShowHelp] = useState(false);
+  const isIntellcom = adapter === "INTELLCOM";
 
   return (
     <form action={action} className="card space-y-4 p-5">
@@ -67,7 +75,12 @@ export default function SupplierForm({
 
         <label className="block">
           <span className="mb-1.5 block text-sm font-medium">ადაპტერი</span>
-          <select name="adapter" defaultValue={supplier?.adapter ?? "GENERIC_REST"} className={field}>
+          <select
+            name="adapter"
+            value={adapter}
+            onChange={(e) => setAdapter(e.target.value)}
+            className={field}
+          >
             {adapters.map((a) => (
               <option key={a} value={a}>
                 {a === "GENERIC_REST" ? "GENERIC_REST — კონფიგურაციით, კოდის გარეშე" : a}
@@ -115,17 +128,21 @@ export default function SupplierForm({
           </label>
         )}
 
-        {authType !== "NONE" && (
-          <label className="block">
-            <span className="mb-1.5 block text-sm font-medium">გასაღები</span>
-            <input
-              name="secret"
-              type="password"
-              placeholder={supplier?.hasSecret ? "შენახულია — შესაცვლელად ჩაწერე ახალი" : ""}
-              className={field}
-            />
-          </label>
-        )}
+        <label className="block">
+          <span className="mb-1.5 block text-sm font-medium">გასაღები</span>
+          <input
+            name="secret"
+            type="password"
+            autoComplete="off"
+            placeholder={supplier?.hasSecret ? "შენახულია — შესაცვლელად ჩაწერე ახალი" : ""}
+            className={field}
+          />
+          <span className="mt-1 block text-xs text-muted">
+            {authType === "NONE"
+              ? "ზოგი კომპანია გასაღებს მისამართში ატარებს — ველი მაშინაც საჭიროა"
+              : "ავტორიზაციის ჰედერში გაიგზავნება"}
+          </span>
+        </label>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -154,24 +171,41 @@ export default function SupplierForm({
       <label className="block">
         <span className="mb-1.5 flex items-baseline justify-between gap-3">
           <span className="text-sm font-medium">ველების შესაბამისობა (fieldMap)</span>
-          <button
-            type="button"
-            onClick={() => setShowHelp((v) => !v)}
-            className="text-xs text-brand-600 hover:underline"
-          >
-            {showHelp ? "დამალვა" : "მაგალითის ჩვენება"}
-          </button>
+          {!isIntellcom && (
+            <button
+              type="button"
+              onClick={() => setShowHelp((v) => !v)}
+              className="text-xs text-brand-600 hover:underline"
+            >
+              {showHelp ? "დამალვა" : "მაგალითის ჩვენება"}
+            </button>
+          )}
         </span>
         <textarea
           name="fieldMap"
-          rows={showHelp ? 12 : 5}
+          rows={isIntellcom ? 4 : showHelp ? 12 : 5}
           defaultValue={supplier?.fieldMap ?? ""}
-          placeholder={showHelp ? EXAMPLE_MAP : "JSON — რომელი ველი რას ნიშნავს ამ კომპანიის პასუხში"}
+          placeholder={
+            isIntellcom
+              ? INTELLCOM_MAP
+              : showHelp
+                ? EXAMPLE_MAP
+                : "JSON — რომელი ველი რას ნიშნავს ამ კომპანიის პასუხში"
+          }
           className={`${field} font-mono text-xs`}
         />
         <span className="mt-1 block text-xs text-muted">
-          <code>listPath</code> — სად ძევს სია პასუხში. დანარჩენი ველები მიმწოდებლის
-          სახელებს ჩვენსას უკავშირებს. ცარიელი დატოვე, თუ სახელები ისედაც ემთხვევა.
+          {isIntellcom ? (
+            <>
+              ველების შესაბამისობა ამ ადაპტერს არ სჭირდება. ჩაწერე მხოლოდ{" "}
+              <code>identificationCode</code> — მის გარეშე სადილერო ფასი ნულით მოვა.
+            </>
+          ) : (
+            <>
+              <code>listPath</code> — სად ძევს სია პასუხში. დანარჩენი ველები მიმწოდებლის
+              სახელებს ჩვენსას უკავშირებს. ცარიელი დატოვე, თუ სახელები ისედაც ემთხვევა.
+            </>
+          )}
         </span>
       </label>
 
