@@ -123,13 +123,19 @@ export const intellcom: SupplierAdapter = {
     if (!cfg.secret) throw new Error("ვებ-სერვისის გასაღები მითითებული არ არის");
 
     let identCode = "";
-    if (cfg.fieldMap) {
+    if (cfg.fieldMap?.trim()) {
+      let raw = "";
       try {
-        identCode = String(
+        raw = String(
           (JSON.parse(cfg.fieldMap) as { identificationCode?: string }).identificationCode ?? ""
         );
       } catch {
         throw new Error('fieldMap არავალიდური JSON-ია — მოსალოდნელია {"identificationCode": "..."}');
+      }
+      // „ს/კ 202441189" და „202-441-189" ერთსა და იმავეს ნიშნავს — ციფრებს ვტოვებთ
+      identCode = raw.replace(/\D/g, "");
+      if (raw.trim() && !identCode) {
+        throw new Error(`საიდენტიფიკაციო კოდში ციფრი არ არის: "${raw}"`);
       }
     }
 
