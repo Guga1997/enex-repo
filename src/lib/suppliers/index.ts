@@ -1,5 +1,6 @@
 import { db } from "../db";
 import { slugify } from "../format";
+import { localizeMedia } from "../media";
 import { genericRest } from "./generic-rest";
 import { intellcom } from "./intellcom";
 import type { SupplierAdapter, SupplierConfig, SupplierItem } from "./types";
@@ -140,6 +141,7 @@ export async function syncSupplier(supplierId: string): Promise<SyncResult> {
   let updated = 0;
   let failed = 0;
   const touched = new Set<string>();
+  const created_ids: string[] = [];
 
   try {
     const cfg: SupplierConfig = {
@@ -181,6 +183,7 @@ export async function syncSupplier(supplierId: string): Promise<SyncResult> {
           });
           productId = product.id;
           created++;
+          created_ids.push(product.id);
 
           if (item.images?.length) {
             await db.productImage.createMany({
@@ -247,6 +250,16 @@ export async function syncSupplier(supplierId: string): Promise<SyncResult> {
     }
 
     for (const id of touched) await rollupStock(id);
+
+    // ახალი პროდუქტების სურათები და დოკუმენტები მაშინვე ჩვენს დისკზე —
+    // მიმწოდებელი hotlink-ს არ უშვებს. ჩავარდნა სინქს არ აჩერებს.
+    if (created_ids.length) {
+      try {
+        await localizeMedia({ productIds: created_ids });
+      } catch (e) {
+        console.error("მედიის ჩამოტვირთვა ჩავარდა", e);
+      }
+    }
 
     await db.$transaction([
       db.supplierSyncLog.update({
