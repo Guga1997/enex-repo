@@ -271,6 +271,15 @@ async function main() {
     }
   }
 
+  // დემო-პროდუქტები მხოლოდ ლოკალურად. სერვერზე კატალოგი მიმწოდებლის API-დან მოდის —
+  // ხელით შექმნილი ნიმუშები იქ ნამდვილ კოდებს ეჯახება და ფასებს ამახინჯებს.
+  if (process.env.SEED_DEMO !== "1") {
+    console.log("→ დემო-პროდუქტები გამოტოვებულია (SEED_DEMO=1 ჩართავს)");
+    console.log(`
+✓ მზადაა — ადმინი: ${ADMIN_EMAIL}`);
+    return;
+  }
+
   console.log("→ ბრენდები და პროდუქტები");
   for (const p of PRODUCTS) {
     const brandSlug = p.brand.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");

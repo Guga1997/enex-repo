@@ -83,7 +83,7 @@ sudo -u enex npm run build:prod
 ## 5. საწყისი მონაცემები
 
 ```bash
-sudo -u enex npx tsx prisma/seed.ts            # ადმინი და დემო-კატალოგი
+sudo -u enex npx tsx prisma/seed.ts            # მხოლოდ ადმინი და ხე — დემო-პროდუქტები სერვერზე არ იქმნება
 sudo -u enex npx tsx prisma/seed-taxonomy.ts   # სეგმენტების სამდონიანი ხე
 ```
 

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
+import { productFilter } from "@/lib/admin-filters";
 import { getSession } from "@/lib/auth";
 import { slugify } from "@/lib/format";
 import { generateApiKey } from "@/lib/api-auth";
@@ -377,4 +378,37 @@ export async function setItemSerials(formData: FormData) {
     },
   });
   revalidatePath(`/admin/orders/${orderId}`);
+}
+
+/* ------------------------ პროდუქტების მასობრივი მართვა ------------------------ */
+
+/** მონიშნული პროდუქტების გამოქვეყნება ან დამალვა */
+export async function bulkSetActive(formData: FormData) {
+  await requireAdmin();
+  const ids = formData.getAll("ids").map(String).filter(Boolean);
+  const active = formData.get("active") === "1";
+  if (ids.length === 0) return;
+  await db.product.updateMany({ where: { id: { in: ids } }, data: { isActive: active } });
+  revalidatePath("/admin/products");
+  revalidatePath("/catalog");
+  revalidatePath("/", "layout");
+}
+
+/**
+ * მთელი გაფილტრული სიის გამოქვეყნება/დამალვა — არა მხოლოდ ერთი გვერდის.
+ * ფილტრი იმავე პარამეტრებით მოდის, რითაც სია ჩანს, რომ „რასაც ხედავ, იმას ცვლი“.
+ */
+export async function bulkSetActiveByFilter(formData: FormData) {
+  await requireAdmin();
+  const active = formData.get("active") === "1";
+  const where = productFilter({
+    q: String(formData.get("q") ?? ""),
+    category: String(formData.get("category") ?? ""),
+    supplier: String(formData.get("supplier") ?? ""),
+    status: String(formData.get("status") ?? ""),
+  });
+  await db.product.updateMany({ where, data: { isActive: active } });
+  revalidatePath("/admin/products");
+  revalidatePath("/catalog");
+  revalidatePath("/", "layout");
 }
