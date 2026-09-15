@@ -123,13 +123,17 @@ async function pool<T>(items: T[], size: number, fn: (t: T) => Promise<void>) {
  */
 export async function localizeMedia(opts: {
   productIds?: string[];
+  /** დოკუმენტებიც ჩამოვიდეს? ნაგულისხმევად არა — გიგაბაიტებია და ბმულია, არა ჩაშენებული */
+  docs?: boolean;
   concurrency?: number;
   onProgress?: (done: number, total: number) => void;
 } = {}): Promise<LocalizeStats> {
   const where = opts.productIds ? { productId: { in: opts.productIds } } : {};
   const [images, docs] = await Promise.all([
     db.productImage.findMany({ where: { ...where, url: { startsWith: "http" } } }),
-    db.productDocument.findMany({ where: { ...where, url: { startsWith: "http" } } }),
+    opts.docs
+      ? db.productDocument.findMany({ where: { ...where, url: { startsWith: "http" } } })
+      : Promise.resolve([]),
   ]);
 
   const stats: LocalizeStats = {

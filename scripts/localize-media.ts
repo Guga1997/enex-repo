@@ -1,7 +1,8 @@
 /**
  * მიმწოდებლების სურათებისა და დოკუმენტების ჩვენს დისკზე გადმოტანა.
  *
- *   npx tsx scripts/localize-media.ts          # მთელი კატალოგი
+ *   npx tsx scripts/localize-media.ts          # სურათები
+ *   npx tsx scripts/localize-media.ts --docs   # სურათები + დოკუმენტები
  *   npx tsx scripts/localize-media.ts --dry    # მხოლოდ დათვლა
  *
  * გამეორება უსაფრთხოა — უკვე ჩამოტვირთული ფაილი მეორედ არ მოდის.
@@ -11,18 +12,20 @@ import { localizeMedia } from "../src/lib/media";
 
 const db = new PrismaClient();
 const dry = process.argv.includes("--dry");
+const withDocs = process.argv.includes("--docs");
 
 async function main() {
   const [images, docs] = await Promise.all([
     db.productImage.count({ where: { url: { startsWith: "http" } } }),
     db.productDocument.count({ where: { url: { startsWith: "http" } } }),
   ]);
-  console.log(`უცხო მისამართი: ${images} სურათი, ${docs} დოკუმენტი`);
-  if (dry || images + docs === 0) return;
+  console.log(`უცხო მისამართი: ${images} სურათი, ${docs} დოკუმენტი` + (withDocs ? "" : " (დოკუმენტები არ ჩამოვა)"));
+  if (dry || images + (withDocs ? docs : 0) === 0) return;
 
   const started = Date.now();
   let last = 0;
   const stats = await localizeMedia({
+    docs: withDocs,
     onProgress: (done, total) => {
       if (done - last >= 50 || done === total) {
         last = done;
