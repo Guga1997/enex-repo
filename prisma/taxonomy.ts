@@ -51,10 +51,6 @@ export const TAXONOMY: Node[] = [
           { name: "გაჯონვის რელეები" },
         ],
       },
-      { name: "DC-AC ინვერტორები" },
-      { name: "PoE კვება" },
-      { name: "ადაპტერები" },
-      { name: "ინდუსტრიული კვების ბლოკები" },
     ],
   },
   {
@@ -241,7 +237,6 @@ export const TAXONOMY: Node[] = [
       { name: "ინტერაქტიული ეკრანები" },
       { name: "მონიტორები" },
       { name: "დომოფონები (AV)" },
-      { name: "Android TV Box" },
     ],
   },
   {
