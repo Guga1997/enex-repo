@@ -9,7 +9,7 @@ const field =
 
 type Kind = "INDIVIDUAL" | "COMPANY";
 
-export default function RegisterForm() {
+export default function RegisterForm({ next }: { next?: string }) {
   const [type, setType] = useState<Kind>("INDIVIDUAL");
   const [state, action, pending] = useActionState<FormState, FormData>(registerAction, null);
 
@@ -43,6 +43,7 @@ export default function RegisterForm() {
         ))}
       </div>
       <input type="hidden" name="type" value={type} />
+      {next && <input type="hidden" name="next" value={next} />}
 
       <label className="block">
         <span className="mb-1.5 block text-sm font-medium">
@@ -146,7 +147,7 @@ export default function RegisterForm() {
 
       <p className="text-center text-sm text-muted">
         უკვე გაქვს ანგარიში?{" "}
-        <Link href="/login" className="font-medium text-brand-600 hover:underline">
+        <Link href={next ? `/login?next=${encodeURIComponent(next)}` : "/login"} className="font-medium text-brand-600 hover:underline">
           შესვლა
         </Link>
       </p>

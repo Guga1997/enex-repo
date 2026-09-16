@@ -28,6 +28,9 @@ export default async function OrderPage({
   if (!order) notFound();
 
   const paid = order.paymentStatus === "PAID";
+  // წარუმატებლობა ბაზაშია ჩაწერილი — გვერდზე დაბრუნებისასაც სწორად ჩანს
+  const failed = !paid && (order.paymentStatus === "FAILED" || Boolean(flags.failed));
+  const expired = order.status === "EXPIRED" || order.status === "CANCELLED";
 
   return (
     <>
@@ -38,17 +41,33 @@ export default async function OrderPage({
       <main className="container-x max-w-3xl py-8">
         <div
           className={`card p-6 text-center ${
-            paid ? "border-emerald-200 bg-emerald-50" : ""
+            paid ? "border-emerald-200 bg-emerald-50" : failed || expired ? "border-rose-200 bg-rose-50" : ""
           }`}
         >
-          <div className="text-3xl">{paid ? "✓" : flags.failed ? "✕" : "⏳"}</div>
+          <div className="text-3xl">{paid ? "✓" : failed || expired ? "✕" : "⏳"}</div>
           <h1 className="mt-2 text-xl font-bold">
             {paid
               ? "შეკვეთა წარმატებით გაფორმდა"
-              : flags.failed
-                ? "გადახდა ვერ შესრულდა"
-                : "შეკვეთა მიღებულია"}
+              : expired
+                ? order.status === "EXPIRED"
+                  ? "შეკვეთის ვადა გავიდა"
+                  : "შეკვეთა გაუქმებულია"
+                : failed
+                  ? "გადახდა ვერ შესრულდა"
+                  : "შეკვეთა მიღებულია"}
           </h1>
+          {!paid && !expired && order.reservedUntil && (
+            <p className="mt-2 text-sm text-muted">
+              ნაშთი შენთვისაა დაკავებული <b>{formatDate(order.reservedUntil)}</b>{" "}
+              {order.reservedUntil.toLocaleTimeString("ka-GE", { timeZone: "Asia/Tbilisi", hour: "2-digit", minute: "2-digit" })}-მდე — ამის შემდეგ შეკვეთა
+              ავტომატურად გაუქმდება.
+            </p>
+          )}
+          {order.status === "EXPIRED" && (
+            <p className="mt-2 text-sm text-muted">
+              გადახდა დროულად არ დადასტურდა და ნაშთი გათავისუფლდა. კალათა შენახულია — თავიდან გააფორმე.
+            </p>
+          )}
           <p className="mt-1 text-sm text-muted">
             შეკვეთის ნომერი: <b className="text-ink">{order.number}</b>
           </p>

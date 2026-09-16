@@ -12,8 +12,8 @@ export default async function LoginPage({
 }: {
   searchParams: Promise<{ next?: string }>;
 }) {
-  if (await getCurrentUser()) redirect("/account");
   const { next } = await searchParams;
+  if (await getCurrentUser()) redirect(next?.startsWith("/") ? next : "/account");
 
   return (
     <>
@@ -23,7 +23,7 @@ export default async function LoginPage({
           <LoginForm next={next} />
           <p className="text-center text-sm text-muted">
             ანგარიში არ გაქვს?{" "}
-            <Link href="/register" className="font-medium text-brand-600 hover:underline">
+            <Link href={next ? `/register?next=${encodeURIComponent(next)}` : "/register"} className="font-medium text-brand-600 hover:underline">
               რეგისტრაცია
             </Link>
           </p>

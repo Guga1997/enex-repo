@@ -14,6 +14,7 @@ export type CardProduct = {
   dealerPrice?: number | null;
   oldPrice: number | null;
   stockQty: number;
+  reservedQty?: number;
   stockStatus: string;
   incomingDate: Date | null;
   lowStockAt: number;

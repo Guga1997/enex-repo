@@ -20,6 +20,7 @@ export const ORDER_STATUS_LABELS: Record<string, string> = {
   SHIPPED: "გაგზავნილი",
   DELIVERED: "მიწოდებული",
   CANCELLED: "გაუქმებული",
+  EXPIRED: "ვადა გაუვიდა",
   RETURNED: "დაბრუნებული",
 };
 
@@ -50,13 +51,26 @@ export const SORT_OPTIONS = [
 export const ORDER_BUCKETS = {
   current: { label: "მიმდინარე შეკვეთები", statuses: ["PENDING", "PAID", "PROCESSING", "SHIPPED"] },
   done: { label: "დასრულებული შეკვეთები", statuses: ["DELIVERED"] },
-  returned: { label: "უკან დაბრუნებული", statuses: ["RETURNED", "CANCELLED"] },
+  returned: { label: "უკან დაბრუნებული", statuses: ["RETURNED", "CANCELLED", "EXPIRED"] },
 } as const;
 export type OrderBucket = keyof typeof ORDER_BUCKETS;
 
 export const DELIVERY_METHOD_LABELS: Record<string, string> = {
   COURIER: "ადგილზე მიტანა",
   PICKUP: "საწყობიდან გატანა",
+};
+
+/**
+ * რამდენ წუთს რჩება ნაშთი დაკავებული გაუფორმებელ შეკვეთაზე.
+ * ონლაინ გადახდა წუთებში სრულდება; გადარიცხვას ბანკის ერთი-ორი დღე სჭირდება.
+ */
+export const RESERVATION_MINUTES: Record<string, number> = {
+  BOG: 15,
+  TBC: 15,
+  BANK_TRANSFER: 48 * 60,
+  POS: 48 * 60,
+  INSTALLMENT: 48 * 60,
+  DEFAULT: 15,
 };
 
 export const PAGE_SIZE = 24;

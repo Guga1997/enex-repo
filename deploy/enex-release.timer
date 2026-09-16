@@ -1,0 +1,13 @@
+# /etc/systemd/system/enex-release.timer
+#   sudo systemctl enable --now enex-release.timer
+#   systemctl list-timers enex-release.timer
+[Unit]
+Description=Enex — რეზერვაციების შემოწმება წუთში ერთხელ
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=1min
+AccuracySec=15s
+
+[Install]
+WantedBy=timers.target

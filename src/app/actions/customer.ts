@@ -18,7 +18,14 @@ import {
 } from "@/lib/customer-auth";
 
 const PENDING = "pending_user";
+const AFTER_LOGIN = "after_login";
 const PENDING_TTL = 60 * 30;
+
+/** მხოლოდ საიტის შიდა გზა — გარე მისამართზე გადამისამართება არ უნდა მოხდეს */
+const safeNext = (v: unknown) => {
+  const s = String(v ?? "");
+  return s.startsWith("/") && !s.startsWith("//") ? s : "";
+};
 
 export type FormState = { error?: string; field?: string; ok?: string } | null;
 
@@ -75,6 +82,13 @@ export async function registerAction(_prev: FormState, formData: FormData): Prom
   }
 
   await setPending(res.userId);
+  const next = safeNext(formData.get("next"));
+  if (next) {
+    (await cookies()).set(AFTER_LOGIN, next, {
+      httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production",
+      path: "/", maxAge: PENDING_TTL,
+    });
+  }
   redirect("/verify");
 }
 
@@ -100,7 +114,11 @@ export async function verifyAction(_prev: FormState, formData: FormData): Promis
       name: user.name,
       priceTier: user.priceTier,
     });
-    redirect("/account");
+    // რეგისტრაცია კალათიდან დაიწყო? — უკან checkout-ზე, არა კაბინეტში
+    const jar = await cookies();
+    const after = safeNext(jar.get(AFTER_LOGIN)?.value);
+    jar.delete(AFTER_LOGIN);
+    redirect(after || "/account");
   }
 
   return { ok: channel === "EMAIL" ? "ელფოსტა დადასტურდა" : "ნომერი დადასტურდა" };

@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { isPurchasable } from "@/lib/stock";
+import { isPurchasable, availableQty } from "@/lib/stock";
+import { reservationDeadline } from "@/lib/orders";
 import { createPayment } from "@/lib/payments/bog";
 import { FREE_DELIVERY_FROM } from "@/lib/constants";
 import { getCurrentUser } from "@/lib/customer-auth";
@@ -52,6 +53,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "მიუთითეთ მიწოდების მისამართი" }, { status: 400 });
   }
 
+  // შეკვეთა მხოლოდ დარეგისტრირებულს — კალათა ბრაუზერში რჩება, კლიენტი შესვლაზე გადადის
+  const viewer = await getCurrentUser();
+  if (!viewer) {
+    return NextResponse.json(
+      { error: "შეკვეთის გასაფორმებლად გაიარე რეგისტრაცია ან შედი ანგარიშში", requireLogin: true },
+      { status: 401 }
+    );
+  }
+
   // ფასებს და ნაშთს ყოველთვის სერვერიდან ვიღებთ — კლიენტის მონაცემებს არ ვენდობით
   const products = await db.product.findMany({
     where: { id: { in: input.items.map((i) => i.productId) }, isActive: true },
@@ -70,9 +80,9 @@ export async function POST(req: Request) {
     if (!isPurchasable(p)) {
       return NextResponse.json({ error: `"${p.nameKa}" არ არის მარაგში` }, { status: 409 });
     }
-    if (p.stockStatus === "IN_STOCK" && item.qty > p.stockQty) {
+    if (p.stockStatus === "IN_STOCK" && item.qty > availableQty(p)) {
       return NextResponse.json(
-        { error: `"${p.nameKa}" — მარაგშია მხოლოდ ${p.stockQty} ცალი` },
+        { error: `"${p.nameKa}" — ხელმისაწვდომია მხოლოდ ${availableQty(p)} ცალი` },
         { status: 409 }
       );
     }
@@ -80,7 +90,6 @@ export async function POST(req: Request) {
   }
 
   // ფასს მომხმარებლის დონის მიხედვით სერვერზე ვთვლით — კლიენტიდან მოსული ფასი იგნორირდება
-  const viewer = await getCurrentUser();
   const priced = lines.map((l) => ({
     ...l,
     unitPrice: effectivePrice(l.product, viewer).value,
@@ -106,11 +115,29 @@ export async function POST(req: Request) {
     input.deliveryMethod === "PICKUP" || subtotal >= FREE_DELIVERY_FROM ? 0 : 15;
   const total = Number((subtotal + deliveryFee).toFixed(2));
 
-  const order = await db.order.create({
+  const order = await db.$transaction(async (tx) => {
+    for (const l of priced) {
+      if (l.product.stockStatus !== "IN_STOCK") continue;
+      // ტრანზაქციაში ხელახლა ვამოწმებთ — წამის წინ სხვამ შეიძლება დაიკავა
+      const fresh = await tx.product.findUnique({
+        where: { id: l.product.id },
+        select: { stockQty: true, reservedQty: true, nameKa: true },
+      });
+      if (!fresh || availableQty(fresh) < l.qty) {
+        throw new Error(`"${fresh?.nameKa ?? l.product.nameKa}" ამ წუთას სხვამ დაიკავა — შეამცირე რაოდენობა`);
+      }
+      await tx.product.update({
+        where: { id: l.product.id },
+        data: { reservedQty: { increment: l.qty } },
+      });
+    }
+
+    return tx.order.create({
     data: {
       number: await nextOrderNumber(),
-      userId: viewer?.id ?? null,
+      userId: viewer.id,
       organizationId,
+      reservedUntil: reservationDeadline(input.paymentMethod),
       customerName: input.customerName,
       customerPhone: input.customerPhone,
       customerEmail: input.customerEmail,
@@ -135,7 +162,15 @@ export async function POST(req: Request) {
         })),
       },
     },
+    });
+  }).catch((e: unknown) => {
+    const msg = e instanceof Error ? e.message : "შეკვეთის შექმნა ვერ მოხერხდა";
+    return { error: msg } as const;
   });
+
+  if ("error" in order) {
+    return NextResponse.json({ error: order.error }, { status: 409 });
+  }
 
   // საბანკო გადარიცხვაზე ინვოისი მაშინვე გამოიწერება და ელფოსტაზე მიდის
   if (input.paymentMethod === "BANK_TRANSFER") {

@@ -94,9 +94,10 @@ sudo -u enex npx tsx prisma/seed-taxonomy.ts   # სეგმენტები�
 ## 6. სერვისი და Nginx
 
 ```bash
-sudo cp deploy/enex-shop.service /etc/systemd/system/
+sudo cp deploy/enex-shop.service deploy/enex-release.service deploy/enex-release.timer /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now enex-shop
+sudo systemctl enable --now enex-release.timer   # ვადაგასული რეზერვაციები, წუთში ერთხელ
 sudo systemctl status enex-shop
 
 sudo cp deploy/nginx-enex.conf /etc/nginx/sites-available/enex

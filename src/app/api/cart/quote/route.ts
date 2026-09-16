@@ -3,7 +3,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/customer-auth";
 import { effectivePrice } from "@/lib/pricing";
-import { isPurchasable } from "@/lib/stock";
+import { isPurchasable, availableQty } from "@/lib/stock";
 import { FREE_DELIVERY_FROM } from "@/lib/constants";
 
 /**
@@ -60,7 +60,7 @@ export async function POST(req: Request) {
       volumeM3: p.volumeM3 ? Math.round(p.volumeM3 * item.qty * 1000) / 1000 : null,
       /* ეტალონ საიტის წითელი შენიშვნა — მოთხოვნილი რაოდენობა საწყობში არ არის */
       overStock:
-        p.stockStatus === "IN_STOCK" && item.qty > p.stockQty ? p.stockQty : null,
+        p.stockStatus === "IN_STOCK" && item.qty > availableQty(p) ? availableQty(p) : null,
       purchasable: isPurchasable(p),
     }];
   });

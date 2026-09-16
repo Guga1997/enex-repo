@@ -1,0 +1,11 @@
+# /etc/systemd/system/enex-release.service — ვადაგასული რეზერვაციების გათავისუფლება
+[Unit]
+Description=Enex — ვადაგასული რეზერვაციები
+After=postgresql.service
+
+[Service]
+Type=oneshot
+User=enex
+WorkingDirectory=/var/www/enex
+EnvironmentFile=/var/www/enex/.env
+ExecStart=/usr/bin/npx tsx scripts/release-expired.ts

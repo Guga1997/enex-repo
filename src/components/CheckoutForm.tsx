@@ -121,6 +121,10 @@ export default function CheckoutForm({
       const data = await res.json();
 
       if (!res.ok) {
+        if (res.status === 401 && data.requireLogin) {
+          router.push("/login?next=/checkout");
+          return;
+        }
         setError(data.error ?? "შეკვეთის გაფორმება ვერ მოხერხდა");
         setBusy(false);
         return;

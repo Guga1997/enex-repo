@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { productFilter } from "@/lib/admin-filters";
+import { cancelOrder, markOrderPaid } from "@/lib/orders";
 import { getSession, destroySession } from "@/lib/auth";
 import { slugify } from "@/lib/format";
 import { generateApiKey } from "@/lib/api-auth";
@@ -186,6 +187,13 @@ export async function updateOrderStatus(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   const status = String(formData.get("status") ?? "");
   const paymentStatus = String(formData.get("paymentStatus") ?? "");
+
+  // გაუქმება რეზერვაციასაც ხსნის; გადახდილად მონიშვნა ნაშთს ჩამოწერს — ორივე ერთი გზით
+  if (status === "CANCELLED") {
+    await cancelOrder(id, "CANCELLED");
+  } else if (paymentStatus === "PAID") {
+    await markOrderPaid(id);
+  }
 
   await db.order.update({
     where: { id },

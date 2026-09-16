@@ -6,7 +6,7 @@
  *
  *   node scripts/to-postgres.mjs
  */
-import { readFileSync, writeFileSync, mkdirSync } from "fs";
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
 import { execFileSync } from "child_process";
 
 const SRC = "prisma/schema.prisma";
@@ -27,6 +27,12 @@ writeFileSync(
 );
 console.log("✓ " + OUT);
 
+// 0_init მხოლოდ ერთხელ იქმნება — გამოყენებული მიგრაციის შეცვლა prisma-ს checksum-ს ტეხავს.
+// შემდგომი ცვლილებები ცალკე საქაღალდეებში იწერება: prisma/migrations/N_სახელი/migration.sql
+if (existsSync(`${MIGRATION_DIR}/migration.sql`)) {
+  console.log("• " + MIGRATION_DIR + " უკვე არსებობს — უცვლელი რჩება");
+  process.exit(0);
+}
 mkdirSync(MIGRATION_DIR, { recursive: true });
 // prisma-ს CLI-ს პირდაპირ node-ით ვიძახებთ — .cmd-ის გარშემო shell არ გვჭირდება
 const sql = execFileSync(

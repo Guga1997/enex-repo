@@ -3,18 +3,26 @@ import { formatDate } from "./format";
 
 type StockLike = {
   stockQty: number;
+  /** გაუფორმებელ შეკვეთებში დაკავებული — მყიდველისთვის ეს უკვე არ არსებობს */
+  reservedQty?: number;
   stockStatus: string;
   incomingDate?: Date | string | null;
   lowStockAt?: number;
 };
 
+/** რაც მართლა იყიდება: ნაშთს გამოკლებული სხვისი რეზერვაცია */
+export function availableQty(p: { stockQty: number; reservedQty?: number }): number {
+  return Math.max(0, p.stockQty - (p.reservedQty ?? 0));
+}
+
 /** intellcom-ის სტილის ნაშთის წარწერა — "მარაგშია" / "დარჩენილია 5 ცალი" / ... */
 export function stockLabel(p: StockLike): { text: string; tone: "ok" | "low" | "transit" | "none" } {
   const low = p.lowStockAt ?? 5;
+  const qty = availableQty(p);
 
-  if (p.stockStatus === StockStatus.IN_STOCK && p.stockQty > 0) {
-    if (p.stockQty <= 2) return { text: "დარჩენილია ბოლო ერთეულები", tone: "low" };
-    if (p.stockQty <= low) return { text: `დარჩენილია ${p.stockQty} ცალი`, tone: "low" };
+  if (p.stockStatus === StockStatus.IN_STOCK && qty > 0) {
+    if (qty <= 2) return { text: "დარჩენილია ბოლო ერთეულები", tone: "low" };
+    if (qty <= low) return { text: `დარჩენილია ${qty} ცალი`, tone: "low" };
     return { text: "მარაგშია", tone: "ok" };
   }
   if (p.stockStatus === StockStatus.IN_TRANSIT) {
@@ -30,7 +38,7 @@ export function stockLabel(p: StockLike): { text: string; tone: "ok" | "low" | "
 /** შეიძლება თუ არა კალათაში დამატება */
 export function isPurchasable(p: StockLike): boolean {
   return (
-    (p.stockStatus === StockStatus.IN_STOCK && p.stockQty > 0) ||
+    (p.stockStatus === StockStatus.IN_STOCK && availableQty(p) > 0) ||
     p.stockStatus === StockStatus.IN_TRANSIT ||
     p.stockStatus === StockStatus.PREORDER
   );

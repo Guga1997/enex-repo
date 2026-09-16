@@ -217,6 +217,7 @@ export const productCardSelect = {
   dealerPrice: true,
   oldPrice: true,
   stockQty: true,
+  reservedQty: true,
   stockStatus: true,
   incomingDate: true,
   lowStockAt: true,

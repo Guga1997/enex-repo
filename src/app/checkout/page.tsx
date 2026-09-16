@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { redirect } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import CheckoutForm from "@/components/CheckoutForm";
@@ -10,6 +11,8 @@ export const metadata = { title: "შეკვეთის გაფორმე
 
 export default async function CheckoutPage() {
   const user = await getCurrentUser();
+  // შეკვეთა მხოლოდ ანგარიშით. კალათა localStorage-შია — შესვლის შემდეგ აქვე დაბრუნდება.
+  if (!user) redirect("/login?next=/checkout");
 
   // შესულ მომხმარებელს ველები წინასწარ ევსება და ორგანიზაციას ირჩევს
   const organizations = user

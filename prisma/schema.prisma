@@ -63,6 +63,9 @@ model Product {
   cost        Float? // თვითღირებულება (მხოლოდ ადმინისთვის)
 
   stockQty     Int       @default(0)
+  /// გაუფორმებელ შეკვეთებში დაკავებული რაოდენობა. ცალკე ველია, რომ სინქმა
+  /// (რომელიც stockQty-ს გადააწერს) რეზერვაცია არ წაშალოს. ხელმისაწვდომი = stockQty − reservedQty.
+  reservedQty  Int       @default(0)
   stockStatus  String    @default("IN_STOCK")
   incomingDate DateTime? // "გზაშია, სავარაუდო ჩამოსვლა: 11.09.2026"
   lowStockAt   Int       @default(5) // ამ ზღვარს ქვემოთ ვწერთ "დარჩენილია N ცალი"
@@ -215,9 +218,11 @@ model Order {
   deliveryFee Float @default(0)
   total       Float
 
-  status        String @default("PENDING")
-  paymentStatus String @default("UNPAID")
-  paymentMethod String @default("BOG") // BOG | TBC | BANK_TRANSFER | INSTALLMENT | POS
+  status        String    @default("PENDING")
+  paymentStatus String    @default("UNPAID")
+  /// სანამ ნაშთი ამ შეკვეთისთვისაა დაკავებული. გასვლისას რეზერვაცია იხსნება.
+  reservedUntil DateTime?
+  paymentMethod String    @default("BOG") // BOG | TBC | BANK_TRANSFER | INSTALLMENT | POS
 
   /// რომელი ორგანიზაციის სახელზე ფორმდება (იურიდიულ პირს რამდენიმე შეიძლება ჰქონდეს)
   organizationId String?
