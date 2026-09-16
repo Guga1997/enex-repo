@@ -7,6 +7,13 @@
  *
  * Brevo-ს SMS-ის გასაღები SMTP-ის გასაღები არ არის — ცალკე „API key“ იქმნება.
  */
+import { setDefaultResultOrder } from "dns";
+
+// SMS-პროვაიდერები IP-ის თეთრ სიას IPv4-ით ინახავენ. Node კი Cloudflare-ს
+// უკან მდგარ სერვისს ხშირად IPv6-ით უკავშირდება — და 403-ს იღებს, თითქოს
+// გასაღები არასწორი იყოს. IPv4 ჯერ.
+setDefaultResultOrder("ipv4first");
+
 export const smsIsMocked = () => !process.env.SMS_API_KEY;
 
 export type SmsProviderName = "brevo" | "ubill" | "smsoffice" | "mock";
