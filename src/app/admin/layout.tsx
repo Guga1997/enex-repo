@@ -63,7 +63,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             ))}
           </nav>
           <div className="ml-auto flex items-center gap-3 text-sm">
-            <span className="text-muted">{session.name}</span>
+            <Link href="/admin/account" className="text-muted hover:text-ink hover:underline">{session.name}</Link>
             <form action={logout}>
               <button className="rounded-lg border border-line px-3 py-1.5 text-xs font-medium hover:bg-canvas">
                 გასვლა

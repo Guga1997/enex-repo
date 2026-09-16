@@ -2,9 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { productFilter } from "@/lib/admin-filters";
-import { getSession } from "@/lib/auth";
+import { getSession, destroySession } from "@/lib/auth";
 import { slugify } from "@/lib/format";
 import { generateApiKey } from "@/lib/api-auth";
 import { StockStatus } from "@/lib/constants";
@@ -411,4 +412,47 @@ export async function bulkSetActiveByFilter(formData: FormData) {
   revalidatePath("/admin/products");
   revalidatePath("/catalog");
   revalidatePath("/", "layout");
+}
+
+/* ------------------------------ ადმინის ანგარიში ------------------------------ */
+
+export async function changeAdminPassword(formData: FormData) {
+  const session = await requireAdmin();
+  const current = String(formData.get("current") ?? "");
+  const next = String(formData.get("next") ?? "");
+  const next2 = String(formData.get("next2") ?? "");
+
+  if (next.length < 10) redirect("/admin/account?error=short");
+  if (next !== next2) redirect("/admin/account?error=mismatch");
+
+  const admin = await db.admin.findUnique({ where: { id: session.id } });
+  if (!admin || !(await bcrypt.compare(current, admin.passwordHash))) {
+    redirect("/admin/account?error=current");
+  }
+
+  await db.admin.update({
+    where: { id: admin.id },
+    data: { passwordHash: await bcrypt.hash(next, 10) },
+  });
+  redirect("/admin/account?ok=1");
+}
+
+export async function changeAdminEmail(formData: FormData) {
+  const session = await requireAdmin();
+  const email = String(formData.get("email") ?? "").toLowerCase().trim();
+  const password = String(formData.get("password") ?? "");
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) redirect("/admin/account?error=email");
+
+  const admin = await db.admin.findUnique({ where: { id: session.id } });
+  if (!admin || !(await bcrypt.compare(password, admin.passwordHash))) {
+    redirect("/admin/account?error=current");
+  }
+  if (await db.admin.findFirst({ where: { email, id: { not: admin.id } } })) {
+    redirect("/admin/account?error=taken");
+  }
+
+  await db.admin.update({ where: { id: admin.id }, data: { email } });
+  // სესიაში ძველი ელფოსტა წერია — ხელახლა შესვლა სუფთა გზაა
+  await destroySession();
+  redirect("/admin/login?changed=1");
 }

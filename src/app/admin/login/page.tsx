@@ -6,9 +6,9 @@ export const metadata = { title: "შესვლა" };
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string; error?: string }>;
+  searchParams: Promise<{ next?: string; error?: string; changed?: string }>;
 }) {
-  const { next, error } = await searchParams;
+  const { next, error, changed } = await searchParams;
 
   async function login(formData: FormData) {
     "use server";
@@ -51,6 +51,12 @@ export default async function LoginPage({
             className="w-full rounded-lg border border-line px-3 py-2.5 text-sm outline-none focus:border-brand-500"
           />
         </label>
+
+        {changed && (
+          <p className="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-700">
+            ელფოსტა შეიცვალა — შედი ახლით.
+          </p>
+        )}
 
         {error && (
           <p className="rounded-lg bg-rose-50 p-3 text-sm text-rose-700">
