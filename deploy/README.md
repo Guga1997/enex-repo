@@ -124,9 +124,13 @@ certbot განახლებას თვითონ გეგმავს.
 ⚠️ `BOG_PUBLIC_KEY`-ის გარეშე callback უარყოფილი იქნება და შეკვეთა გადახდილად **არ** მოინიშნება.
 ეს განზრახაა: ხელმოწერის შემოწმების გარეშე ნებისმიერს შეუძლია ყალბი „გადახდილია" გამოგზავნოს.
 
-**ელფოსტა (Brevo SMTP)** — `SMTP_USER` და `SMTP_PASS` .env-ში. გამომგზავნი (`MAIL_FROM`) Brevo-ში
-დადასტურებული უნდა იყოს. დომენიდან გასაგზავნად: Brevo → Senders & IP → Domains → enex.ge →
-DKIM ჩანაწერები Hetzner DNS-ში. შემოწმება: `npx tsx scripts/test-email.ts შენი@ელფოსტა`
+**ელფოსტა** — Hetzner Webhosting S (`konsoleh.hetzner.com`), ყუთი `noreply@enex.ge`, SMTP
+`mail.your-server.de:587`. MX/SPF/DKIM Hetzner Cloud DNS-შია. ლიმიტი 500/საათი; ნიუსლეთერი
+აქედან აკრძალულია. შემოწმება სერვერზე (sudo-ს გარეშე — ის გარემოს ყრის):
+`set -a && . /var/www/enex/.env && set +a && npx tsx scripts/test-email.ts შენი@ელფოსტა`
+
+**SMS** — uBill (`my.ubill.ge`): Brand `Enex` → `SMS_BRAND_ID`, API გასაღები → `SMS_API_KEY`,
+`SMS_PROVIDER=ubill`. შემოწმება: `npx tsx scripts/test-sms.ts 5XXXXXXXX`
 
 ---
 
