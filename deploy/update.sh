@@ -12,6 +12,11 @@ echo "→ დამოკიდებულებები"
 # --include=dev ცალსახად, რადგან NODE_ENV=production-ზე npm მათ თავისით ტოვებს.
 npm ci --include=dev
 
+# schema.postgres.prisma გენერირებულია და git-ში არ არის — ყოველ ჯერზე თავიდან,
+# თორემ კლიენტი ძველი სქემიდან აიწყობა და ახალი ველები არ ეცოდინება.
+echo "→ PostgreSQL სქემა"
+npm run db:pg
+
 echo "→ ბაზის მიგრაცია"
 npm run db:deploy
 
