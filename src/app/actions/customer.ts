@@ -16,6 +16,7 @@ import {
   verifyCustomerLogin,
   type RegisterInput,
 } from "@/lib/customer-auth";
+import { rateLimit, clientIp, retryText, LIMITS } from "@/lib/rate-limit";
 
 const PENDING = "pending_user";
 const AFTER_LOGIN = "after_login";
@@ -51,6 +52,10 @@ async function clearPending() {
 /* ─────────────────────── რეგისტრაცია ─────────────────────── */
 
 export async function registerAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  const ip = await clientIp();
+  const rl = rateLimit(`register:${ip}`, LIMITS.registerPerIp.limit, LIMITS.registerPerIp.windowMs);
+  if (!rl.ok) return { error: `ძალიან ბევრი რეგისტრაცია — ${retryText(rl.retryAfterSec)}` };
+
   const type = String(formData.get("type") ?? "INDIVIDUAL");
   const input: RegisterInput = {
     type: type === "COMPANY" ? "COMPANY" : "INDIVIDUAL",
@@ -128,6 +133,12 @@ export async function resendAction(_prev: FormState, formData: FormData): Promis
   const userId = await getPendingUserId();
   if (!userId) return { error: "სესიას ვადა გაუვიდა — გაიარე რეგისტრაცია თავიდან" };
 
+  // ყოველი კოდი ფასიანი SMS-ია — წუთში ერთი, საათში ხუთი
+  const quick = rateLimit(`resend:${userId}`, LIMITS.resendPerUser.limit, LIMITS.resendPerUser.windowMs);
+  if (!quick.ok) return { error: `კოდი ახლახან გაიგზავნა — ${retryText(quick.retryAfterSec)}` };
+  const hourly = rateLimit(`resend-h:${userId}`, LIMITS.resendPerUserHour.limit, LIMITS.resendPerUserHour.windowMs);
+  if (!hourly.ok) return { error: `ლიმიტი ამოიწურა — ${retryText(hourly.retryAfterSec)}` };
+
   const channel = String(formData.get("channel") ?? "EMAIL") === "SMS" ? "SMS" : "EMAIL";
   const res = await issueCode(userId, channel);
   if (!res.ok) return { error: res.error };
@@ -141,12 +152,26 @@ export async function loginAction(_prev: FormState, formData: FormData): Promise
   const password = String(formData.get("password") ?? "");
   const next = String(formData.get("next") ?? "/account");
 
+  // პაროლის გამოცნობის წინააღმდეგ — IP-ზეც და ანგარიშზეც
+  const ip = await clientIp();
+  const byIp = rateLimit(`login-ip:${ip}`, LIMITS.loginPerIp.limit, LIMITS.loginPerIp.windowMs);
+  const byAcc = rateLimit(`login-acc:${login.toLowerCase().trim()}`, LIMITS.loginPerAccount.limit, LIMITS.loginPerAccount.windowMs);
+  if (!byIp.ok || !byAcc.ok) {
+    const sec = Math.max(byIp.ok ? 0 : byIp.retryAfterSec, byAcc.ok ? 0 : byAcc.retryAfterSec);
+    return { error: `ძალიან ბევრი მცდელობა — ${retryText(sec)}` };
+  }
+
   const res = await verifyCustomerLogin(login, password);
   if (!res.ok) {
     // დაუდასტურებელს ვერიფიკაციაზე ვაბრუნებთ, ახალი კოდებით
     if (res.userId) {
       await setPending(res.userId);
-      await Promise.all([issueCode(res.userId, "EMAIL"), issueCode(res.userId, "SMS")]);
+      // დაუდასტურებელი ანგარიშით შესვლა კოდებს თავიდან აგზავნის — იმავე ლიმიტით,
+      // რაც „ხელახლა გაგზავნას“, თორემ ეს SMS-ის ბალანსის გამოცლის გზაა
+      const quick = rateLimit(`resend:${res.userId}`, LIMITS.resendPerUser.limit, LIMITS.resendPerUser.windowMs);
+      if (quick.ok) {
+        await Promise.all([issueCode(res.userId, "EMAIL"), issueCode(res.userId, "SMS")]);
+      }
       redirect("/verify");
     }
     return { error: res.error };

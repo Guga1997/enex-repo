@@ -167,6 +167,5 @@ find "$D" -mtime +30 -delete
 
 ## რა რჩება გასაკეთებელი
 
-- სურათებისა და datasheet-ების ჩამოტვირთვა მიმწოდებლიდან — intellcom hotlink-ს არ უშვებს
-- `/api/orders`-ზე rate limiting — ბოტს შეუძლია შეკვეთების დაგენერირება
+- datasheet-ების ლოკალურად ჩამოტვირთვა (სურათები უკვე ლოკალურია): `npx tsx scripts/localize-media.ts --docs`
 - ავტომატური ტესტები

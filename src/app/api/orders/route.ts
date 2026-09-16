@@ -8,6 +8,7 @@ import { FREE_DELIVERY_FROM } from "@/lib/constants";
 import { getCurrentUser } from "@/lib/customer-auth";
 import { effectivePrice } from "@/lib/pricing";
 import { issueAndSendInvoice } from "@/lib/invoice";
+import { rateLimit, clientIp, retryText, LIMITS } from "@/lib/rate-limit";
 
 const schema = z.object({
   customerName: z.string().min(2, "მიუთითეთ სახელი და გვარი"),
@@ -59,6 +60,18 @@ export async function POST(req: Request) {
     return NextResponse.json(
       { error: "შეკვეთის გასაფორმებლად გაიარე რეგისტრაცია ან შედი ანგარიშში", requireLogin: true },
       { status: 401 }
+    );
+  }
+
+  // შეკვეთა ნაშთს იკავებს — ბოტმა ამით კატალოგი არ უნდა დაბლოკოს
+  const ip = await clientIp();
+  const perUser = rateLimit(`order-u:${viewer.id}`, LIMITS.orderPerUser.limit, LIMITS.orderPerUser.windowMs);
+  const perIp = rateLimit(`order-ip:${ip}`, LIMITS.orderPerIp.limit, LIMITS.orderPerIp.windowMs);
+  if (!perUser.ok || !perIp.ok) {
+    const sec = Math.max(perUser.ok ? 0 : perUser.retryAfterSec, perIp.ok ? 0 : perIp.retryAfterSec);
+    return NextResponse.json(
+      { error: `ძალიან ბევრი შეკვეთა ერთბაშად — ${retryText(sec)}` },
+      { status: 429, headers: { "Retry-After": String(sec) } }
     );
   }
 
