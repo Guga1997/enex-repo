@@ -4,6 +4,7 @@ import { adapterNames } from "@/lib/suppliers";
 import {
   deleteSupplier,
   runSupplierSync,
+  repriceSupplierAction,
   saveSupplier,
   testSupplier,
 } from "../actions";
@@ -78,9 +79,10 @@ export default async function SuppliersPage({
                   <td className="p-3 text-xs">{s.adapter}</td>
                   <td className="p-3">{s._count.supplies}</td>
                   <td className="p-3 text-xs">
-                    საცალო +{s.markupRetail}%
+                    საცალო {s.markupRetail >= 0 ? "+" : ""}{s.markupRetail}%{" "}
+                    {s.retailBase === "LIST" ? "მის საცალოზე" : "თვითღ."}
                     <br />
-                    სადილერო +{s.markupDealer}%
+                    სადილერო +{s.markupDealer}% თვითღ.
                     <br />
                     <span className="text-muted">
                       {s.syncEveryMin > 0 ? `სინქი ყოველ ${s.syncEveryMin} წთ` : "სინქი ხელით"}
@@ -126,6 +128,15 @@ export default async function SuppliersPage({
                           სინქი
                         </button>
                       </form>
+                      <form action={repriceSupplierAction}>
+                        <input type="hidden" name="id" value={s.id} />
+                        <button
+                          className="rounded-lg border border-line px-2.5 py-1.5 text-xs font-medium hover:bg-canvas"
+                          title="არსებულ პროდუქტებზე ფასები თავიდან — მიმდინარე პროცენტებით; ჩაკეტილი რჩება"
+                        >
+                          ფასების გადათვლა
+                        </button>
+                      </form>
                       <a
                         href={`/admin/suppliers?edit=${s.id}`}
                         className="rounded-lg border border-line px-2.5 py-1.5 text-xs font-medium hover:bg-canvas"
@@ -160,6 +171,7 @@ export default async function SuppliersPage({
                 authType: editing.authType,
                 authHeader: editing.authHeader,
                 fieldMap: editing.fieldMap,
+                retailBase: editing.retailBase,
                 markupRetail: editing.markupRetail,
                 markupDealer: editing.markupDealer,
                 syncEveryMin: editing.syncEveryMin,

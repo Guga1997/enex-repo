@@ -75,9 +75,15 @@ export async function saveProduct(formData: FormData) {
     sortOrder: Number(str(formData, "sortOrder") || 0),
   };
 
+  // ხელით შეცვლილი ფასი იკეტება — სინქმა და გადათვლამ აღარ გადააწეროს
+  const before = id ? await db.product.findUnique({ where: { id }, select: { price: true, dealerPrice: true } }) : null;
+  const dealerPrice = numOrNull(formData, "dealerPrice");
+  const priceLocked = formData.get("priceLocked") === "on" ||
+    (before ? before.price !== data.price || before.dealerPrice !== dealerPrice : false);
+
   const product = id
-    ? await db.product.update({ where: { id }, data })
-    : await db.product.create({ data: { ...data, sku, slug: `${slugify(nameKa)}-${sku}` } });
+    ? await db.product.update({ where: { id }, data: { ...data, dealerPrice, priceLocked } })
+    : await db.product.create({ data: { ...data, dealerPrice, priceLocked, sku, slug: `${slugify(nameKa)}-${sku}` } });
 
   // სურათები — მძიმით/ახალი ხაზით გამოყოფილი URL-ების სია
   const imageList = str(formData, "images")
@@ -251,6 +257,7 @@ export async function saveSupplier(formData: FormData) {
     authType: String(formData.get("authType") ?? "BEARER"),
     authHeader: String(formData.get("authHeader") ?? "").trim() || null,
     fieldMap: String(formData.get("fieldMap") ?? "").trim() || null,
+    retailBase: formData.get("retailBase") === "LIST" ? "LIST" : "COST",
     markupRetail: Number(formData.get("markupRetail") ?? 30),
     markupDealer: Number(formData.get("markupDealer") ?? 15),
     // 0 = მხოლოდ ხელით; უარყოფითი და არარიცხვი ნულად
@@ -270,6 +277,15 @@ export async function saveSupplier(formData: FormData) {
     await db.supplier.create({ data: { ...data, slug } });
   }
   revalidatePath("/admin/suppliers");
+}
+
+/** ფასების გადათვლა მიმწოდებლის მიმდინარე წესით — ჩაკეტილი ფასები რჩება */
+export async function repriceSupplierAction(formData: FormData) {
+  await requireAdmin();
+  const { repriceSupplier } = await import("@/lib/suppliers/pricing");
+  await repriceSupplier(String(formData.get("id") ?? ""));
+  revalidatePath("/admin/suppliers");
+  revalidatePath("/admin/products");
 }
 
 export async function deleteSupplier(formData: FormData) {

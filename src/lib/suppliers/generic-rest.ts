@@ -13,7 +13,8 @@ import { authHeaders, requestUrl } from "./types";
  *   "imageBase": "https://partner.ge",              — ფარდობითი სურათის მისამართის წინ
  *   "categoryPath": ["category", "sub", "child"],   — რამდენიმე ველიდან აწყობილი გზა
  *   "attributes": "variations",                     — {სახელი: მნიშვნელობა | [მნიშვნელობა]} ან [{name, value}]
- *   "available": "is_available"                     — false → ნაშთი ნულად, რაც უნდა ეწეროს qty-ში
+ *   "available": "is_available",                    — false → ნაშთი ნულად, რაც უნდა ეწეროს qty-ში
+ *   "listPrice": "retail_price"                     — მიმწოდებლის საცალო ფასი, თუ ცალკე იძლევა
  * }
  */
 type FieldMap = Record<string, unknown> & {
@@ -131,6 +132,7 @@ export const genericRest: SupplierAdapter = {
         description: str(pick(raw, s(map, "description", "description"))),
         categoryPath: categoryPath(raw, map),
         cost: numOrNull(pick(raw, s(map, "cost", "price"))),
+        listPrice: numOrNull(pick(raw, s(map, "listPrice", "listPrice"))),
         qty,
         status: str(pick(raw, s(map, "status", "status"))),
         incomingDate: eta && !Number.isNaN(Date.parse(eta)) ? new Date(eta) : null,

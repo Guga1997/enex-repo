@@ -3,6 +3,7 @@ import { slugify } from "../format";
 import { localizeMedia } from "../media";
 import { genericRest } from "./generic-rest";
 import { intellcom } from "./intellcom";
+import { computePrices } from "./pricing";
 import type { SupplierAdapter, SupplierConfig, SupplierItem } from "./types";
 
 export type { SupplierItem, SupplierConfig, SupplierAdapter } from "./types";
@@ -127,7 +128,8 @@ export type SyncResult = {
 
 /**
  * ერთი მიმწოდებლის სინქი.
- * ფასს მხოლოდ ახალ პროდუქტს ვუწერთ — ხელით დაყენებული ფასი სინქმა არ უნდა წაშალოს.
+ * ფასს მხოლოდ ახალ პროდუქტს ვუწერთ; არსებულზე „ფასების გადათვლა“ ღილაკია,
+ * რომელიც ხელით ჩაკეტილს (priceLocked) გვერდს უვლის.
  * ახალი პროდუქტი მოდის გამორთული, რომ ადმინმა ჯერ დაათვალიეროს.
  */
 export async function syncSupplier(supplierId: string): Promise<SyncResult> {
@@ -160,7 +162,7 @@ export async function syncSupplier(supplierId: string): Promise<SyncResult> {
         let productId = await matchProductId(supplier.id, item);
 
         if (!productId) {
-          const cost = item.cost ?? 0;
+          const prices = computePrices(supplier, item.cost, item.listPrice);
           const product = await db.product.create({
             data: {
               sku: item.supplierSku,
@@ -168,10 +170,8 @@ export async function syncSupplier(supplierId: string): Promise<SyncResult> {
               nameKa: item.name,
               model: item.model ?? null,
               descriptionKa: item.description ?? null,
-              price: Math.round(cost * (1 + supplier.markupRetail / 100) * 100) / 100,
-              dealerPrice: cost
-                ? Math.round(cost * (1 + supplier.markupDealer / 100) * 100) / 100
-                : null,
+              price: prices.price,
+              dealerPrice: prices.dealerPrice,
               cost: item.cost ?? null,
               weightKg: item.weightKg ?? null,
               volumeM3: item.volumeM3 ?? null,
@@ -226,6 +226,7 @@ export async function syncSupplier(supplierId: string): Promise<SyncResult> {
         const supplyData = {
           productId,
           cost: item.cost ?? null,
+          listPrice: item.listPrice ?? null,
           qty: item.qty,
           status: item.status ?? (item.qty > 0 ? "IN_STOCK" : "OUT_OF_STOCK"),
           incomingDate: item.incomingDate ?? null,

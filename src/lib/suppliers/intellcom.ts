@@ -193,6 +193,7 @@ export const intellcom: SupplierAdapter = {
         description: p.description_text?.ka?.trim() || p.description?.ka?.trim() || null,
         // ჩვენი თვითღირებულება სადილერო ფასია; მისი არარსებობისას საცალოს ვიღებთ
         cost: partner > 0 ? partner : retail,
+        listPrice: retail > 0 ? retail : null,
         qty,
         status,
         weightKg: num(p.weight),

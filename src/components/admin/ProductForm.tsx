@@ -13,6 +13,8 @@ type ProductData = {
   model: string | null;
   descriptionKa: string | null;
   price: number;
+  dealerPrice: number | null;
+  priceLocked: boolean;
   oldPrice: number | null;
   cost: number | null;
   stockQty: number;
@@ -110,6 +112,23 @@ export default function ProductForm({
           <section className="card space-y-4 p-5">
             <h2 className="font-semibold">ფასი</h2>
             <Field name="price" label="ფასი (₾)" type="number" step="0.01" required defaultValue={product?.price} />
+            <Field
+              name="dealerPrice"
+              label="სადილერო ფასი (₾)"
+              type="number"
+              step="0.01"
+              defaultValue={product?.dealerPrice ?? ""}
+              hint="ხედავს მხოლოდ DEALER დონის მომხმარებელი"
+            />
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                name="priceLocked"
+                defaultChecked={product?.priceLocked ?? false}
+                className="size-4 accent-brand-500"
+              />
+              ფასი ჩაკეტილია — მიმწოდებლის სინქმა/გადათვლამ არ შეცვალოს
+            </label>
             <Field
               name="oldPrice"
               label="ძველი ფასი (₾)"

@@ -13,6 +13,8 @@ export type SupplierItem = {
   description?: string | null;
 
   cost?: number | null;
+  /// მიმწოდებლის საცალო ფასი, თუ ცალკე იძლევა
+  listPrice?: number | null;
   qty: number;
   status?: string | null;
   incomingDate?: Date | null;

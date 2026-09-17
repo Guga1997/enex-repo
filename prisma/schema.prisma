@@ -59,6 +59,8 @@ model Product {
 
   price       Float // საცალო ფასი ₾ — რასაც სტუმარი ხედავს
   dealerPrice Float? // სადილერო ფასი; ხედავს მხოლოდ DEALER დონის მომხმარებელი
+  /// ფასი ხელით შეიცვალა — სინქმა და გადათვლამ არ უნდა გადააწეროს
+  priceLocked Boolean @default(false)
   oldPrice    Float? // ფასდაკლებამდე ფასი; თუ არსებობს — პროდუქტი "ფასდაკლებაშია"
   cost        Float? // თვითღირებულება (მხოლოდ ადმინისთვის)
 
@@ -314,8 +316,11 @@ model Supplier {
   /// JSON: სად ძევს სია და რომელი ველი რას ნიშნავს ამ კომპანიის პასუხში
   fieldMap String?
 
-  /// ფასდადება თვითღირებულებაზე — %-ში
+  /// საცალო ფასის ბაზა: COST — თვითღირებულება (+%), LIST — მიმწოდებლის საცალო ფასი (−%)
+  retailBase   String @default("COST")
+  /// პროცენტი ბაზაზე — უარყოფითიც შეიძლება
   markupRetail Float @default(30)
+  /// სადილერო ფასი ყოველთვის თვითღირებულებაზე — %-ში
   markupDealer Float @default(15)
 
   /// ავტომატური სინქის ინტერვალი წუთებში; 0 — მხოლოდ ხელით
@@ -340,6 +345,7 @@ model ProductSupply {
 
   supplierSku  String // კოდი მიმწოდებლის სისტემაში
   cost         Float? // თვითღირებულება მისგან
+  listPrice    Float? // მისი საცალო ფასი, თუ იძლევა — საცალოზე „მასზე დაბლა“ ამით ითვლება
   qty          Int       @default(0)
   status       String    @default("IN_STOCK")
   incomingDate DateTime?

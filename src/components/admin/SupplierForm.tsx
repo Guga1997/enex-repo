@@ -13,6 +13,7 @@ export type SupplierDraft = {
   authType: string;
   authHeader: string | null;
   fieldMap: string | null;
+  retailBase: string;
   markupRetail: number;
   markupDealer: number;
   syncEveryMin: number;
@@ -55,6 +56,7 @@ export default function SupplierForm({
   const [authType, setAuthType] = useState(supplier?.authType ?? "BEARER");
   const [adapter, setAdapter] = useState(supplier?.adapter ?? "GENERIC_REST");
   const [showHelp, setShowHelp] = useState(false);
+  const [retailBase, setRetailBase] = useState(supplier?.retailBase ?? "COST");
   const isIntellcom = adapter === "INTELLCOM";
 
   return (
@@ -155,19 +157,36 @@ export default function SupplierForm({
         </label>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-3">
         <label className="block">
-          <span className="mb-1.5 block text-sm font-medium">ფასდადება საცალოზე, %</span>
+          <span className="mb-1.5 block text-sm font-medium">საცალო ფასი ითვლება</span>
+          <select
+            name="retailBase"
+            value={retailBase}
+            onChange={(e) => setRetailBase(e.target.value)}
+            className={field}
+          >
+            <option value="COST">თვითღირებულებიდან (+%)</option>
+            <option value="LIST">მიმწოდებლის საცალოდან (−%)</option>
+          </select>
+        </label>
+        <label className="block">
+          <span className="mb-1.5 block text-sm font-medium">
+            {retailBase === "LIST" ? "საცალო: % მიმწოდებლის საცალოზე" : "საცალო: % თვითღირებულებაზე"}
+          </span>
           <input
             name="markupRetail"
             type="number"
             step="0.1"
-            defaultValue={supplier?.markupRetail ?? 30}
+            defaultValue={supplier?.markupRetail ?? (retailBase === "LIST" ? -5 : 30)}
             className={field}
           />
+          <span className="mt-1 block text-xs text-muted">
+            {retailBase === "LIST" ? "მინუსი = მასზე იაფად: −5 → მისი 100₾ ჩვენთან 95₾" : "30 → 100₾ თვითღირებულება, 130₾ ფასი"}
+          </span>
         </label>
         <label className="block">
-          <span className="mb-1.5 block text-sm font-medium">ფასდადება სადილეროზე, %</span>
+          <span className="mb-1.5 block text-sm font-medium">სადილერო: % თვითღირებულებაზე</span>
           <input
             name="markupDealer"
             type="number"
@@ -175,6 +194,7 @@ export default function SupplierForm({
             defaultValue={supplier?.markupDealer ?? 15}
             className={field}
           />
+          <span className="mt-1 block text-xs text-muted">15 → მისი 100₾ სადილერო ჩვენთან 115₾</span>
         </label>
       </div>
 
@@ -246,8 +266,8 @@ export default function SupplierForm({
 
       <p className="rounded-lg bg-canvas p-3 text-xs text-muted">
         ახალი პროდუქტი სინქიდან მოდის <b>გამორთული</b> — ჯერ დაათვალიერე და მერე
-        გამოაქვეყნე. ხელით დაყენებულ ფასს სინქი აღარ ცვლის, მხოლოდ ნაშთსა და
-        თვითღირებულებას ანახლებს.
+        გამოაქვეყნე. ფასი პროდუქტს შემოსვლისას ეწერება; პროცენტის შეცვლის მერე
+        არსებულებზე „ფასების გადათვლა“ დააჭირე — ხელით ჩაკეტილ ფასს ის არ ეხება.
       </p>
 
       <button className="btn btn-primary hover:bg-brand-600">
