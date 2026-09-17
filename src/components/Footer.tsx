@@ -6,7 +6,7 @@ export default function Footer() {
     <footer className="mt-16 border-t border-line bg-white">
       <div className="container-x grid gap-8 py-12 sm:grid-cols-2 lg:grid-cols-4">
         <div>
-          <Logo className="h-14 w-auto text-ink" />
+          <Logo className="h-10 w-auto text-ink" />
           <p className="mt-3 text-sm text-muted">
             პროფესიონალური აღჭურვილობის ონლაინ მაღაზია — გარანტიით და მიწოდებით
             საქართველოს მასშტაბით.
