@@ -35,8 +35,36 @@ function normCat(s: string): string {
 }
 
 /**
- * კატეგორიის გზა სახელებით — ყველაზე კონკრეტულიდან ზოგადისკენ. ჯერ ზუსტი დამთხვევა,
- * მერე ნორმალიზებული (მხოლობითი/მრავლობითი, ფრჩხილები). ვერ ამოცნობილი ჯდება საიმპორტო კალათაში.
+ * მიმწოდებლების სახელები, რომლებიც ჩვენს ხეს არ ემთხვევა — ნორმალიზებული → ჩვენი კატეგორია.
+ * ახალი მიმწოდებლის დამატებისას აქ ივსება; scripts/recategorize.ts აჩვენებს, რა დარჩა უცნობი.
+ */
+const CATEGORY_ALIASES: Record<string, string> = {
+  // romsat
+  "მისამართულისახანძროსისტემ": "მისამართიანი სახანძრო სიგნალიზაცია",
+  "არამისამართულისახანძროსისტემ": "არამისამართიანი სახანძრო სიგნალიზაცია",
+  "სიგნალიზაცი": "სახანძრო სიგნალიზაცია",
+  "ქსელურიჩამწერ": "IP ვიდეო-ჩამწერები (NVR)",
+  "აუდიოევაკუაციისსისტემ": "გახმოვანების სისტემები",
+  "en54ხმამაღლამოლაპარაკე": "ხმამაღლამოლაპარაკეები",
+  "en54გამაძლიერებელ": "ხმის გამაძლიერებლები",
+  "გამაძლიერებლ": "ხმის გამაძლიერებლები",
+  "en54როუტერ": "გახმოვანების აქსესუარები",
+  "en54მიკროფონ": "გახმოვანების აქსესუარები",
+  "ipაუდიო": "გახმოვანების სისტემები",
+  "უკაბელოსისტემ": "გახმოვანების სისტემები",
+  "ქსელისკაბელ": "LAN კაბელები",
+  "უწყვეტიკვებისწყარო": "უწყვეტი კვების წყაროები UPS",
+  "მონიტორისაქსესუარ": "მონიტორები",
+  "ინტერაქტიულიდაფ": "ინტერაქტიული ეკრანები",
+};
+
+/** ფრჩხილებში კოდი — (NVR), (DVR/XVR), (UPS) — ორივე მხარეს ერთი და იგივე თუა, ესეც დამთხვევაა */
+const parenCode = (s: string) => s.match(/\(([A-Za-z0-9/ ]{3,})\)/)?.[1].toUpperCase().trim() ?? null;
+
+/**
+ * კატეგორიის გზა სახელებით — ყველაზე კონკრეტულიდან ზოგადისკენ. თანმიმდევრობით:
+ * ზუსტი დამთხვევა → ნორმალიზებული (მხოლობითი/მრავლობითი, ფრჩხილები) → ალიასი → ფრჩხილების კოდი.
+ * ვერ ამოცნობილი ჯდება საიმპორტო კალათაში.
  */
 export async function resolveCategoryId(path: string[] | undefined): Promise<string> {
   if (path?.length) {
@@ -44,8 +72,20 @@ export async function resolveCategoryId(path: string[] | undefined): Promise<str
     const all = await db.category.findMany({ select: { id: true, nameKa: true } });
     const byName = new Map(all.map((c) => [c.nameKa.trim().toLowerCase(), c.id]));
     const byNorm = new Map(all.map((c) => [normCat(c.nameKa), c.id]));
+    const byCode = new Map<string, string>();
+    for (const c of all) {
+      const code = parenCode(c.nameKa);
+      if (code && !byCode.has(code)) byCode.set(code, c.id);
+    }
     for (const name of [...path].reverse()) {
-      const hit = byName.get(name.trim().toLowerCase()) ?? byNorm.get(normCat(name));
+      const norm = normCat(name);
+      const alias = CATEGORY_ALIASES[norm];
+      const code = parenCode(name);
+      const hit =
+        byName.get(name.trim().toLowerCase()) ??
+        byNorm.get(norm) ??
+        (alias ? byName.get(alias.toLowerCase()) : undefined) ??
+        (code ? byCode.get(code) : undefined);
       if (hit) return hit;
     }
   }
