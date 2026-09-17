@@ -22,24 +22,59 @@ export function resolveAdapter(name: string): SupplierAdapter {
 
 export const adapterNames = () => Object.keys(ADAPTERS);
 
-/** კატეგორიის გზა სახელებით; ვერ ამოცნობილი ჯდება საიმპორტო კალათაში */
+const FALLBACK = "დაუკატეგორიებელი (იმპორტი)";
+
+/** „ხმამაღლამოლაპარაკე“ ≈ „ხმამაღლამოლაპარაკეები“ ≈ „ხმამაღლამოლაპარაკეები (AV)“ */
+function normCat(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/([^)]*)/g, "")
+    .replace(/[s-–—_/,.]+/g, "")
+    .replace(/(ები|ებზე|ის)$/u, "")
+    .replace(/[აი]$/u, ""); // კამერა/კამერები → კამერ, დისკი/დისკები → დისკ
+}
+
+/**
+ * კატეგორიის გზა სახელებით — ყველაზე კონკრეტულიდან ზოგადისკენ. ჯერ ზუსტი დამთხვევა,
+ * მერე ნორმალიზებული (მხოლობითი/მრავლობითი, ფრჩხილები). ვერ ამოცნობილი ჯდება საიმპორტო კალათაში.
+ */
 async function resolveCategoryId(path: string[] | undefined): Promise<string> {
   if (path?.length) {
     // SQLite-ს რეგისტრის უგულებელყოფა არ შეუძლია — შედარებას მეხსიერებაში ვაკეთებთ
     const all = await db.category.findMany({ select: { id: true, nameKa: true } });
     const byName = new Map(all.map((c) => [c.nameKa.trim().toLowerCase(), c.id]));
+    const byNorm = new Map(all.map((c) => [normCat(c.nameKa), c.id]));
     for (const name of [...path].reverse()) {
-      const hit = byName.get(name.trim().toLowerCase());
+      const hit = byName.get(name.trim().toLowerCase()) ?? byNorm.get(normCat(name));
       if (hit) return hit;
     }
   }
-  const FALLBACK = "დაუკატეგორიებელი (იმპორტი)";
   const existing = await db.category.findFirst({ where: { nameKa: FALLBACK } });
   if (existing) return existing.id;
   const created = await db.category.create({
     data: { slug: "importi-daukategoriebeli", nameKa: FALLBACK, isActive: false, sortOrder: 999 },
   });
   return created.id;
+}
+
+/**
+ * არსებული პროდუქტი ფსკერზე ან ფესვშია? — მიმწოდებლის გზით უფრო კონკრეტულს ვეძებთ.
+ * ადმინის ხელით არჩეულ ქვეკატეგორიას არ ვეხებით.
+ */
+async function recategorizeIfVague(productId: string, path: string[] | undefined) {
+  if (!path?.length) return;
+  const p = await db.product.findUnique({
+    where: { id: productId },
+    select: { categoryId: true, category: { select: { nameKa: true, parentId: true } } },
+  });
+  if (!p) return;
+  const vague = p.category.nameKa === FALLBACK || p.category.parentId === null;
+  if (!vague) return;
+  const next = await resolveCategoryId(path);
+  if (next === p.categoryId) return;
+  const cat = await db.category.findUnique({ where: { id: next }, select: { nameKa: true, parentId: true } });
+  if (!cat || cat.nameKa === FALLBACK || cat.parentId === null) return; // უკეთესი არ არის
+  await db.product.update({ where: { id: productId }, data: { categoryId: next } });
 }
 
 async function resolveBrandId(name: string | null | undefined): Promise<string | null> {
@@ -217,6 +252,7 @@ export async function syncSupplier(supplierId: string): Promise<SyncResult> {
             });
           }
         } else {
+          await recategorizeIfVague(productId, item.categoryPath);
           await db.product.update({
             where: { id: productId },
             data: {
