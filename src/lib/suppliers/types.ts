@@ -42,6 +42,17 @@ export type SupplierAdapter = {
   fetchItems(cfg: SupplierConfig): Promise<SupplierItem[]>;
 };
 
+/**
+ * მოთხოვნის მისამართი — QUERY ავტორიზაციაზე გასაღები აქ ემატება (?api_key=…),
+ * რომ baseUrl-ში ღიად არ ეწეროს და ადმინში არ ჩანდეს.
+ */
+export function requestUrl(cfg: SupplierConfig, base = cfg.baseUrl ?? ""): string {
+  if (cfg.authType !== "QUERY" || !cfg.secret) return base;
+  const u = new URL(base);
+  u.searchParams.set(cfg.authHeader || "api_key", cfg.secret);
+  return u.toString();
+}
+
 export function authHeaders(cfg: SupplierConfig): Record<string, string> {
   if (!cfg.secret) return {};
   switch (cfg.authType) {

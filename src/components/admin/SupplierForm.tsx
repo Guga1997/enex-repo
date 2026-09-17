@@ -30,7 +30,11 @@ const EXAMPLE_MAP = `{
   "cost": "price",
   "qty": "balance",
   "incomingDate": "eta",
-  "images": "photos"
+  "images": "photos",
+  "imageBase": "https://partner.ge",
+  "categoryPath": ["category", "subcategory", "childcategory"],
+  "attributes": "variations",
+  "available": "is_available"
 }`;
 
 /** intellcom-ს ველების შესაბამისობა არ სჭირდება — ადაპტერი მას იცნობს.
@@ -114,16 +118,19 @@ export default function SupplierForm({
             <option value="BEARER">Bearer token</option>
             <option value="HEADER_KEY">გასაღები ჰედერში</option>
             <option value="BASIC">Basic</option>
+            <option value="QUERY">გასაღები მისამართში (?api_key=…)</option>
             <option value="NONE">არ სჭირდება</option>
           </select>
         </label>
 
-        {authType === "HEADER_KEY" && (
+        {(authType === "HEADER_KEY" || authType === "QUERY") && (
           <label className="block">
-            <span className="mb-1.5 block text-sm font-medium">ჰედერის სახელი</span>
+            <span className="mb-1.5 block text-sm font-medium">
+              {authType === "QUERY" ? "პარამეტრის სახელი" : "ჰედერის სახელი"}
+            </span>
             <input
               name="authHeader"
-              defaultValue={supplier?.authHeader ?? "X-API-Key"}
+              defaultValue={supplier?.authHeader ?? (authType === "QUERY" ? "api_key" : "X-API-Key")}
               className={field}
             />
           </label>
@@ -141,7 +148,9 @@ export default function SupplierForm({
           <span className="mt-1 block text-xs text-muted">
             {authType === "NONE"
               ? "ზოგი კომპანია გასაღებს მისამართში ატარებს — ველი მაშინაც საჭიროა"
-              : "ავტორიზაციის ჰედერში გაიგზავნება"}
+              : authType === "QUERY"
+                ? "მისამართს ბოლოში მიეწერება — baseUrl-ში გასაღები არ ჩაწერო"
+                : "ავტორიზაციის ჰედერში გაიგზავნება"}
           </span>
         </label>
       </div>
