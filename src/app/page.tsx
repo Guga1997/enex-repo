@@ -5,6 +5,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
 import HeroSlider from "@/components/HeroSlider";
+import { JsonLd, organizationJsonLd, websiteJsonLd } from "@/lib/seo";
 import { productCardSelect } from "@/lib/catalog";
 
 export const dynamic = "force-dynamic";
@@ -36,6 +37,8 @@ export default async function HomePage() {
 
   return (
     <>
+      <JsonLd data={organizationJsonLd()} />
+      <JsonLd data={websiteJsonLd()} />
       <Header />
       <main className="container-x py-8">
         {/* ბანერები ადმინიდან იმართება; სანამ არცერთი არ არის — ზოგადი ბლოკი */}

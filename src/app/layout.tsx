@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Noto_Sans_Georgian } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/components/CartProvider";
+import { DEFAULT_DESCRIPTION, SITE_URL } from "@/lib/seo";
 
 /**
  * ქართული ტექსტისთვის სისტემური ფონტი არ ვარგა — ასოების სისქე და
@@ -16,11 +17,21 @@ const georgian = Noto_Sans_Georgian({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "Enex — პროფესიონალური აღჭურვილობა",
     template: "%s | Enex",
   },
-  description: "ვიდეო-მეთვალყურეობა, ქსელური მოწყობილობები, ენერგო უზრუნველყოფა — ოფიციალური გარანტიით.",
+  description: DEFAULT_DESCRIPTION,
+  applicationName: "Enex",
+  openGraph: {
+    type: "website",
+    siteName: "Enex",
+    locale: "ka_GE",
+    images: [{ url: "/brand/og.png", width: 1200, height: 630, alt: "Enex" }],
+  },
+  twitter: { card: "summary_large_image" },
+  robots: { index: true, follow: true },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

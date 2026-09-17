@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { db } from "@/lib/db";
+import { JsonLd, breadcrumbJsonLd, productDescription, productJsonLd, realBrand } from "@/lib/seo";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
@@ -23,10 +24,31 @@ type Props = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const p = await db.product.findUnique({ where: { slug } });
+  const p = await db.product.findUnique({
+    where: { slug },
+    include: {
+      brand: true,
+      category: { include: { parent: true } },
+      images: { orderBy: { sortOrder: "asc" }, take: 1 },
+      attributes: { orderBy: { sortOrder: "asc" }, take: 4 },
+    },
+  });
+  if (!p || !p.isActive) return { title: "პროდუქტი ვერ მოიძებნა", robots: { index: false } };
+
+  // სათაურში ბრენდი და მოდელი — ამით ეძებენ; სახელი ისედაც აღწერითია
+  const title = [p.nameKa, realBrand(p.brand), p.model].filter(Boolean).join(" — ");
+  const description = productDescription(p);
   return {
-    title: p?.nameKa ?? "პროდუქტი",
-    description: p?.descriptionKa?.slice(0, 160) ?? undefined,
+    title,
+    description,
+    alternates: { canonical: `/product/${p.slug}` },
+    openGraph: {
+      type: "website",
+      title,
+      description,
+      url: `/product/${p.slug}`,
+      images: p.images[0] ? [{ url: p.images[0].url, alt: p.nameKa }] : undefined,
+    },
   };
 }
 
@@ -77,8 +99,17 @@ export default async function ProductPage({ params }: Props) {
   const discount =
     p.oldPrice && p.oldPrice > p.price ? Math.round((1 - p.price / p.oldPrice) * 100) : null;
 
+  const crumbs = [
+    { name: "მთავარი", path: "/" },
+    ...(p.category.parent ? [{ name: p.category.parent.nameKa, path: `/catalog/${p.category.parent.slug}` }] : []),
+    { name: p.category.nameKa, path: `/catalog/${p.category.slug}` },
+    { name: p.nameKa, path: `/product/${p.slug}` },
+  ];
+
   return (
     <>
+      <JsonLd data={productJsonLd(p)} />
+      <JsonLd data={breadcrumbJsonLd(crumbs)} />
       <Suspense>
         <Header />
       </Suspense>

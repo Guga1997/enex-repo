@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { db } from "@/lib/db";
+import { clip } from "@/lib/seo";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
@@ -25,11 +26,39 @@ type Props = {
   searchParams: Promise<SearchParams>;
 };
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const { slug } = await params;
-  if (!slug?.length) return { title: "კატალოგი" };
-  const cat = await db.category.findUnique({ where: { slug: slug[slug.length - 1] } });
-  return { title: cat?.nameKa ?? "კატალოგი" };
+  const sp = await searchParams;
+  // ფილტრიანი/დალაგებული/გვერდიანი ვარიანტები ერთი გვერდის ასლებია — კანონიკური ბაზისურია,
+  // ინდექსში მხოლოდ ის მიდის
+  const filtered = Object.keys(sp).length > 0;
+  const base = slug?.length ? `/catalog/${slug[slug.length - 1]}` : "/catalog";
+  const robots = filtered ? { index: false, follow: true } : undefined;
+
+  if (!slug?.length) {
+    return {
+      title: "კატალოგი — ვიდეო-მეთვალყურეობა, ქსელი, ენერგო უზრუნველყოფა",
+      description: "სრული კატალოგი: IP კამერები, ჩამწერები, სვიჩები, როუტერები, UPS, მზის სისტემები და სხვა — ოფიციალური გარანტიით.",
+      alternates: { canonical: base },
+      robots,
+    };
+  }
+  const cat = await db.category.findUnique({
+    where: { slug: slug[slug.length - 1] },
+    include: { parent: true, children: { where: { isActive: true }, select: { nameKa: true }, take: 8 } },
+  });
+  if (!cat) return { title: "კატალოგი" };
+  const count = await db.product.count({ where: { isActive: true, categoryId: cat.id } });
+  const subs = cat.children.map((c) => c.nameKa).join(", ");
+  const description = clip(
+    `${cat.nameKa}${cat.parent ? " — " + cat.parent.nameKa : ""}: ${subs ? subs + ". " : ""}${count ? count + " პროდუქტი" : "პროფესიონალური აღჭურვილობა"} ოფიციალური გარანტიით, მიწოდება საქართველოს მასშტაბით — Enex.`
+  );
+  return {
+    title: cat.parent ? `${cat.nameKa} — ${cat.parent.nameKa}` : cat.nameKa,
+    description,
+    alternates: { canonical: base },
+    robots,
+  };
 }
 
 export default async function CatalogPage({ params, searchParams }: Props) {
