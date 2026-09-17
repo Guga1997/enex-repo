@@ -38,6 +38,18 @@ model Category {
   @@index([parentId])
 }
 
+/// მთავარი გვერდის სარეკლამო სლაიდი — სურათი და ბმული (ბრენდი, კატეგორია, პროდუქტი…)
+model Banner {
+  id        String  @id @default(cuid())
+  title     String
+  subtitle  String?
+  image     String // /uploads/… ან სრული URL
+  href      String // /catalog?brand=bluetti, /catalog/svichebi …
+  sortOrder Int     @default(0)
+  isActive  Boolean @default(true)
+  createdAt DateTime @default(now())
+}
+
 model Brand {
   id       String    @id @default(cuid())
   slug     String    @unique

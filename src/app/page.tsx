@@ -4,12 +4,18 @@ import { db } from "@/lib/db";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
+import HeroSlider from "@/components/HeroSlider";
 import { productCardSelect } from "@/lib/catalog";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [categories, newest, discounted] = await Promise.all([
+  const [banners, categories, newest, discounted] = await Promise.all([
+    db.banner.findMany({
+      where: { isActive: true },
+      orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+      select: { id: true, title: true, subtitle: true, image: true, href: true },
+    }),
     db.category.findMany({
       where: { parentId: null, isActive: true },
       orderBy: { sortOrder: "asc" },
@@ -32,6 +38,10 @@ export default async function HomePage() {
     <>
       <Header />
       <main className="container-x py-8">
+        {/* ბანერები ადმინიდან იმართება; სანამ არცერთი არ არის — ზოგადი ბლოკი */}
+        {banners.length > 0 ? (
+          <HeroSlider slides={banners} />
+        ) : (
         <section className="mb-10 overflow-hidden rounded-2xl bg-gradient-to-br from-brand-700 to-brand-500 px-8 py-14 text-white">
           <h1 className="max-w-2xl text-3xl font-bold leading-tight sm:text-4xl">
             პროფესიონალური აღჭურვილობა — ერთ ადგილას
@@ -47,6 +57,7 @@ export default async function HomePage() {
             კატალოგის ნახვა
           </Link>
         </section>
+        )}
 
         {categories.length > 0 && (
           <section className="mb-12">

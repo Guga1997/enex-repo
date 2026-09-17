@@ -288,6 +288,39 @@ export async function repriceSupplierAction(formData: FormData) {
   revalidatePath("/admin/products");
 }
 
+/* ---------------------------------- ბანერები --------------------------------- */
+
+export async function saveBanner(formData: FormData) {
+  await requireAdmin();
+  const id = str(formData, "id");
+  const image = str(formData, "image").split(/\r?\n/)[0]?.trim();
+  const title = str(formData, "title");
+  let href = str(formData, "href");
+  if (!image || !title || !href) throw new Error("სურათი, სათაური და ბმული სავალდებულოა");
+  // მხოლოდ საიტის შიდა ბმული — სლაიდერი გარეთ არ უნდა გაჰყავდეს
+  if (!href.startsWith("/")) href = "/" + href;
+  const data = {
+    title,
+    subtitle: str(formData, "subtitle") || null,
+    image,
+    href,
+    sortOrder: Number(str(formData, "sortOrder") || 0),
+    isActive: formData.get("isActive") === "on",
+  };
+  if (id) await db.banner.update({ where: { id }, data });
+  else await db.banner.create({ data });
+  revalidatePath("/");
+  revalidatePath("/admin/banners");
+  redirect("/admin/banners");
+}
+
+export async function deleteBanner(formData: FormData) {
+  await requireAdmin();
+  await db.banner.delete({ where: { id: str(formData, "id") } });
+  revalidatePath("/");
+  revalidatePath("/admin/banners");
+}
+
 /** სეგმენტური წესი — მიმწოდებელი × კატეგორია; შენახვისთანავე ფასები გადაითვლება */
 export async function savePricingRule(formData: FormData) {
   await requireAdmin();
