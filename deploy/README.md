@@ -148,6 +148,14 @@ certbot განახლებას თვითონ გეგმავს.
 sudo -u enex bash /var/www/enex/deploy/update.sh
 ```
 
+სკრიპტს `enex`-ის სახელით ორი sudo-ბრძანება სჭირდება პაროლის გარეშე — `/etc/sudoers.d/enex-deploy`:
+
+```
+enex ALL=(root) NOPASSWD: /usr/bin/systemctl restart enex-shop, /usr/bin/systemctl stop enex-sync.timer enex-release.timer, /usr/bin/systemctl start enex-sync.timer enex-release.timer
+```
+
+ტაიმერები განახლების დროს ჩერდება — თორემ `npm ci`-ს ფანჯარაში გაშვებული სინქი ჩავარდება.
+
 სკრიპტი წამოიღებს კოდს, გაუშვებს მიგრაციას, ააწყობს და გადატვირთავს. ბოლოს ამოწმებს,
 რომ სერვისი მართლა ადგა — თუ არა, ლოგს აჩვენებს და შეცდომით სრულდება.
 

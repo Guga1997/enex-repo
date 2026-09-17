@@ -4,6 +4,13 @@ set -euo pipefail
 
 cd /var/www/enex
 
+# ტაიმერები ჩერდება: npm ci node_modules-ს შლის და prisma-ს კლიენტს sqlite-ის სქემით
+# აწყობს — ამ ფანჯარაში გაშვებული სინქი „URL must start with file:“-ით ჩავარდებოდა.
+TIMERS="enex-sync.timer enex-release.timer"
+echo "→ ტაიმერების პაუზა"
+sudo systemctl stop $TIMERS
+trap 'sudo systemctl start $TIMERS' EXIT
+
 echo "→ კოდის წამოღება"
 git pull --ff-only
 
