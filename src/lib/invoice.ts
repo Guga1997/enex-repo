@@ -88,11 +88,17 @@ export function buildInvoiceHtml(order: InvoiceOrder): string {
       ? `${esc(order.deliveryCity ? order.deliveryCity + ", " : "")}${esc(order.deliveryAddress ?? "")}`
       : "საწყობიდან გატანა";
 
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/$/, "");
+
   return `<!doctype html>
 <html lang="ka"><head><meta charset="utf-8">
 <title>ინვოისი ${esc(order.invoiceNumber ?? order.number)}</title></head>
 <body style="margin:0;padding:24px;background:#f6f7f9;font-family:'Noto Sans Georgian',system-ui,sans-serif;color:#14181d">
 <div style="max-width:720px;margin:0 auto;background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:28px">
+
+  <div style="padding-bottom:18px;margin-bottom:20px;border-bottom:2px solid #009cd1">
+    <img src="${siteUrl}/brand/enex-logo-email.png" alt="Enex" width="180" style="display:block;height:auto">
+  </div>
 
   <div style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap">
     <div>
@@ -147,7 +153,7 @@ export function buildInvoiceHtml(order: InvoiceOrder): string {
       ${deliveryRow}
       <tr>
         <td colspan="4" style="padding:12px 10px;text-align:right;font-weight:700">გადასახდელი</td>
-        <td style="padding:12px 10px;text-align:right;font-weight:700;font-size:16px;color:#c2102b">
+        <td style="padding:12px 10px;text-align:right;font-weight:700;font-size:16px;color:#009cd1">
           ${gel(order.total)}
         </td>
       </tr>

@@ -1,11 +1,12 @@
 import Link from "next/link";
+import Logo from "./Logo";
 
 export default function Footer() {
   return (
     <footer className="mt-16 border-t border-line bg-white">
       <div className="container-x grid gap-8 py-12 sm:grid-cols-2 lg:grid-cols-4">
         <div>
-          <div className="text-lg font-bold text-brand-600">ონლაინმაღაზია</div>
+          <Logo className="h-14 w-auto text-ink" />
           <p className="mt-3 text-sm text-muted">
             პროფესიონალური აღჭურვილობის ონლაინ მაღაზია — გარანტიით და მიწოდებით
             საქართველოს მასშტაბით.

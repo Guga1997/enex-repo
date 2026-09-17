@@ -24,8 +24,8 @@ export default async function Header() {
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-white">
       <div className="container-x flex h-16 items-center gap-4">
-        <Link href="/" className="shrink-0 text-brand-500" aria-label="Enex — მთავარი">
-          <Logo className="h-8 w-auto" />
+        <Link href="/" className="shrink-0 text-ink" aria-label="Enex — მთავარი">
+          <Logo className="h-9 w-auto" tagline={false} />
         </Link>
 
         <div className="hidden flex-1 md:block">

@@ -17,10 +17,10 @@ const georgian = Noto_Sans_Georgian({
 
 export const metadata: Metadata = {
   title: {
-    default: "ონლაინ მაღაზია",
-    template: "%s | ონლაინ მაღაზია",
+    default: "Enex — პროფესიონალური აღჭურვილობა",
+    template: "%s | Enex",
   },
-  description: "პროფესიონალური აღჭურვილობის ონლაინ მაღაზია",
+  description: "ვიდეო-მეთვალყურეობა, ქსელური მოწყობილობები, ენერგო უზრუნველყოფა — ოფიციალური გარანტიით.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
