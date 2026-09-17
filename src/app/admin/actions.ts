@@ -288,6 +288,40 @@ export async function repriceSupplierAction(formData: FormData) {
   revalidatePath("/admin/products");
 }
 
+/** სეგმენტური წესი — მიმწოდებელი × კატეგორია; შენახვისთანავე ფასები გადაითვლება */
+export async function savePricingRule(formData: FormData) {
+  await requireAdmin();
+  const supplierId = String(formData.get("supplierId") ?? "");
+  const categoryId = String(formData.get("categoryId") ?? "");
+  if (!supplierId || !categoryId) return;
+  const data = {
+    retailBase: formData.get("retailBase") === "LIST" ? "LIST" : "COST",
+    markupRetail: Number(formData.get("markupRetail")) || 0,
+    markupDealer: Number(formData.get("markupDealer")) || 0,
+  };
+  await db.supplierPricingRule.upsert({
+    where: { supplierId_categoryId: { supplierId, categoryId } },
+    create: { supplierId, categoryId, ...data },
+    update: data,
+  });
+  const { repriceSupplier } = await import("@/lib/suppliers/pricing");
+  await repriceSupplier(supplierId);
+  revalidatePath(`/admin/suppliers/${supplierId}/pricing`);
+  revalidatePath("/admin/products");
+}
+
+export async function deletePricingRule(formData: FormData) {
+  await requireAdmin();
+  const id = String(formData.get("id") ?? "");
+  const rule = await db.supplierPricingRule.findUnique({ where: { id } });
+  if (!rule) return;
+  await db.supplierPricingRule.delete({ where: { id } });
+  const { repriceSupplier } = await import("@/lib/suppliers/pricing");
+  await repriceSupplier(rule.supplierId);
+  revalidatePath(`/admin/suppliers/${rule.supplierId}/pricing`);
+  revalidatePath("/admin/products");
+}
+
 export async function deleteSupplier(formData: FormData) {
   await requireAdmin();
   await db.supplier.delete({ where: { id: String(formData.get("id") ?? "") } });

@@ -128,6 +128,12 @@ export default async function SuppliersPage({
                           სინქი
                         </button>
                       </form>
+                      <a
+                        href={`/admin/suppliers/${s.id}/pricing`}
+                        className="rounded-lg border border-line px-2.5 py-1.5 text-xs font-medium hover:bg-canvas"
+                      >
+                        სეგმენტების ფასები
+                      </a>
                       <form action={repriceSupplierAction}>
                         <input type="hidden" name="id" value={s.id} />
                         <button

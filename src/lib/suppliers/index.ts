@@ -3,7 +3,7 @@ import { slugify } from "../format";
 import { localizeMedia } from "../media";
 import { genericRest } from "./generic-rest";
 import { intellcom } from "./intellcom";
-import { computePrices } from "./pricing";
+import { computePrices, Pricer, repriceProduct } from "./pricing";
 import type { SupplierAdapter, SupplierConfig, SupplierItem } from "./types";
 
 export type { SupplierItem, SupplierConfig, SupplierAdapter } from "./types";
@@ -128,8 +128,8 @@ export type SyncResult = {
 
 /**
  * ერთი მიმწოდებლის სინქი.
- * ფასს მხოლოდ ახალ პროდუქტს ვუწერთ; არსებულზე „ფასების გადათვლა“ ღილაკია,
- * რომელიც ხელით ჩაკეტილს (priceLocked) გვერდს უვლის.
+ * ფასი ყოველ სინქზე თავიდან ითვლება — მიმწოდებელმა რომ გააძვიროს, ჩვენი პროცენტი
+ * მას მიჰყვება. ხელით ჩაკეტილს (priceLocked) არ ეხება.
  * ახალი პროდუქტი მოდის გამორთული, რომ ადმინმა ჯერ დაათვალიეროს.
  */
 export async function syncSupplier(supplierId: string): Promise<SyncResult> {
@@ -156,13 +156,19 @@ export async function syncSupplier(supplierId: string): Promise<SyncResult> {
       fieldMap: supplier.fieldMap,
     };
     const items = await resolveAdapter(supplier.adapter).fetchItems(cfg);
+    const pricer = await Pricer.load();
 
     for (const item of items) {
       try {
         let productId = await matchProductId(supplier.id, item);
 
         if (!productId) {
-          const prices = computePrices(supplier, item.cost, item.listPrice);
+          const categoryId = await resolveCategoryId(item.categoryPath);
+          const prices = computePrices(
+            pricer.ruleFor(supplier.id, categoryId) ?? supplier,
+            item.cost,
+            item.listPrice
+          );
           const product = await db.product.create({
             data: {
               sku: item.supplierSku,
@@ -176,7 +182,7 @@ export async function syncSupplier(supplierId: string): Promise<SyncResult> {
               weightKg: item.weightKg ?? null,
               volumeM3: item.volumeM3 ?? null,
               warrantyMonths: item.warrantyMonths ?? null,
-              categoryId: await resolveCategoryId(item.categoryPath),
+              categoryId,
               brandId: await resolveBrandId(item.brand),
               isActive: false,
             },
@@ -250,7 +256,10 @@ export async function syncSupplier(supplierId: string): Promise<SyncResult> {
       }
     }
 
-    for (const id of touched) await rollupStock(id);
+    for (const id of touched) {
+      await rollupStock(id);
+      await repriceProduct(id, pricer);
+    }
 
     // ახალი პროდუქტების სურათები და დოკუმენტები მაშინვე ჩვენს დისკზე —
     // მიმწოდებელი hotlink-ს არ უშვებს. ჩავარდნა სინქს არ აჩერებს.

@@ -32,7 +32,8 @@ model Category {
   parent   Category?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
   children Category[] @relation("CategoryTree")
 
-  products Product[]
+  products     Product[]
+  pricingRules SupplierPricingRule[]
 
   @@index([parentId])
 }
@@ -330,12 +331,29 @@ model Supplier {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
-  supplies ProductSupply[]
+  supplies     ProductSupply[]
+  pricingRules SupplierPricingRule[]
   syncLogs SupplierSyncLog[]
 }
 
 /// ერთი მიმწოდებლის შემოთავაზება ერთ პროდუქტზე.
 /// ნაშთის სიმართლე აქ დევს; Product.stockQty ამათი ჯამია და სინქზე გადაითვლება.
+/// ფასწარმოქმნის წესი კონკრეტულ სეგმენტზე ამ მიმწოდებლისგან.
+/// ქვეკატეგორიაზე წესი არ არის? — მშობლისა მოქმედებს, ბოლოს მიმწოდებლის ნაგულისხმევი.
+model SupplierPricingRule {
+  id         String   @id @default(cuid())
+  supplierId String
+  supplier   Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  retailBase   String @default("COST")
+  markupRetail Float
+  markupDealer Float
+
+  @@unique([supplierId, categoryId])
+}
+
 model ProductSupply {
   id         String   @id @default(cuid())
   productId  String
