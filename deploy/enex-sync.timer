@@ -1,0 +1,14 @@
+# /etc/systemd/system/enex-sync.timer
+#   sudo systemctl enable --now enex-sync.timer
+#   systemctl list-timers enex-sync.timer
+# წუთში ერთხელ ამოწმებს, რომელ მიმწოდებელს მოუვიდა დრო — თვითონ ინტერვალი ადმინშია.
+[Unit]
+Description=Enex — მიმწოდებლების სინქის შემოწმება წუთში ერთხელ
+
+[Timer]
+OnBootSec=3min
+OnUnitActiveSec=1min
+AccuracySec=15s
+
+[Install]
+WantedBy=timers.target

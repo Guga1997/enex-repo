@@ -1,7 +1,7 @@
 import { db } from "./db";
 import { gel, formatDate } from "./format";
 import { sendEmail } from "./notify/email";
-import { DELIVERY_METHOD_LABELS } from "./constants";
+import { DELIVERY_METHOD_LABELS, PAYMENT_METHOD_LABELS } from "./constants";
 
 /**
  * გამყიდველის რეკვიზიტები ინვოისისთვის.
@@ -39,6 +39,9 @@ type InvoiceOrder = {
   customerId: string | null;
   companyName: string | null;
   deliveryMethod: string;
+  /** არ არის ან BANK_TRANSFER — საბანკო რეკვიზიტებით; სხვა — გადახდის მეთოდი იწერება რეკვიზიტების ნაცვლად */
+  paymentMethod?: string;
+  comment?: string | null;
   deliveryCity: string | null;
   deliveryAddress: string | null;
   subtotal: number;
@@ -54,6 +57,8 @@ const esc = (s: string) =>
 export function buildInvoiceHtml(order: InvoiceOrder): string {
   const buyer = order.companyName || order.customerName;
   const dueDate = new Date(order.createdAt.getTime() + 3 * 86_400_000);
+  // გადარიცხვაზე ბანკის რეკვიზიტები სჭირდება; ტერმინალზე/ბარათზე — არა, იქ მეთოდი კმარა
+  const bankTransfer = !order.paymentMethod || order.paymentMethod === "BANK_TRANSFER";
 
   const rows = order.items
     .map(
@@ -97,8 +102,9 @@ export function buildInvoiceHtml(order: InvoiceOrder): string {
       </div>
     </div>
     <div style="text-align:right;font-size:13px;color:#6b7480">
-      გამოწერის თარიღი: ${formatDate(order.createdAt)}<br>
-      გადახდის ვადა: ${formatDate(dueDate)}
+      გამოწერის თარიღი: ${formatDate(order.createdAt)}${
+        bankTransfer ? "<br>გადახდის ვადა: " + formatDate(dueDate) : ""
+      }
     </div>
   </div>
 
@@ -149,18 +155,24 @@ export function buildInvoiceHtml(order: InvoiceOrder): string {
   </table>
 
   <div style="margin-top:24px;padding:16px;background:#f6f7f9;border-radius:8px;font-size:13px;line-height:1.8">
-    <div style="font-weight:600;margin-bottom:6px">გადახდის რეკვიზიტები</div>
+    ${
+      bankTransfer
+        ? `<div style="font-weight:600;margin-bottom:6px">გადახდის რეკვიზიტები</div>
     ${esc(SELLER.bankName)}${SELLER.bankCode ? " · " + esc(SELLER.bankCode) : ""}<br>
     ანგარიში: <b>${esc(SELLER.iban)}</b><br>
     მიმღები: ${esc(SELLER.name)}<br>
-    <span style="color:#6b7480">დანიშნულებაში მიუთითე: ${esc(order.invoiceNumber ?? order.number)}</span>
+    <span style="color:#6b7480">დანიშნულებაში მიუთითე: ${esc(order.invoiceNumber ?? order.number)}</span>`
+        : `<div style="font-weight:600;margin-bottom:6px">გადახდა</div>
+    ${esc(PAYMENT_METHOD_LABELS[order.paymentMethod!] ?? order.paymentMethod!)}`
+    }
   </div>
 
   <div style="margin-top:16px;font-size:13px;color:#6b7480;line-height:1.8">
     მიწოდება: ${esc(DELIVERY_METHOD_LABELS[order.deliveryMethod] ?? order.deliveryMethod)}${
       shipTo ? " — " + shipTo : ""
     }<br>
-    თანხის ჩარიცხვის შემდეგ შეკვეთა ავტომატურად გადავა დამუშავებაში.
+    ${order.comment ? "კომენტარი: " + esc(order.comment) + "<br>" : ""}
+    ${bankTransfer ? "თანხის ჩარიცხვის შემდეგ შეკვეთა ავტომატურად გადავა დამუშავებაში." : ""}
   </div>
 
 </div>

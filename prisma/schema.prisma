@@ -318,6 +318,8 @@ model Supplier {
   markupRetail Float @default(30)
   markupDealer Float @default(15)
 
+  /// ავტომატური სინქის ინტერვალი წუთებში; 0 — მხოლოდ ხელით
+  syncEveryMin   Int       @default(0)
   lastSyncAt     DateTime?
   lastSyncStatus String? // OK | ERROR
   createdAt      DateTime  @default(now())

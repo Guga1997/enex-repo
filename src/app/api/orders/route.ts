@@ -8,6 +8,7 @@ import { FREE_DELIVERY_FROM } from "@/lib/constants";
 import { getCurrentUser } from "@/lib/customer-auth";
 import { effectivePrice } from "@/lib/pricing";
 import { issueAndSendInvoice } from "@/lib/invoice";
+import { notifySalesNewOrder } from "@/lib/notify/sales";
 import { rateLimit, clientIp, retryText, LIMITS } from "@/lib/rate-limit";
 
 const schema = z.object({
@@ -189,10 +190,16 @@ export async function POST(req: Request) {
   if (input.paymentMethod === "BANK_TRANSFER") {
     const invoice = await issueAndSendInvoice(order.id);
     if (!invoice.ok) console.error("ინვოისი ვერ გაიგზავნა", invoice.error);
-    return NextResponse.json({ orderId: order.id, redirectUrl: `/order/${order.id}` });
   }
 
-  // განვადება / POS — ბანკზე გადამისამართება არ ხდება
+  // გაყიდვებს ყოველ შეკვეთაზე — ინვოისის ნომერი უკვე მინიჭებულია, წერილში ჩაჯდება
+  try {
+    await notifySalesNewOrder(order.id);
+  } catch (e) {
+    console.error("გაყიდვების შეტყობინება ჩავარდა", e);
+  }
+
+  // გადარიცხვა / განვადება / POS — ბანკზე გადამისამართება არ ხდება
   if (input.paymentMethod !== "BOG") {
     return NextResponse.json({ orderId: order.id, redirectUrl: `/order/${order.id}` });
   }

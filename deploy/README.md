@@ -94,10 +94,11 @@ sudo -u enex npx tsx prisma/seed-taxonomy.ts   # სეგმენტები�
 ## 6. სერვისი და Nginx
 
 ```bash
-sudo cp deploy/enex-shop.service deploy/enex-release.service deploy/enex-release.timer /etc/systemd/system/
+sudo cp deploy/enex-shop.service deploy/enex-release.* deploy/enex-sync.* /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now enex-shop
 sudo systemctl enable --now enex-release.timer   # ვადაგასული რეზერვაციები, წუთში ერთხელ
+sudo systemctl enable --now enex-sync.timer      # მიმწოდებლების სინქი — ინტერვალი ადმინშია
 sudo systemctl status enex-shop
 
 sudo cp deploy/nginx-enex.conf /etc/nginx/sites-available/enex
@@ -131,6 +132,13 @@ certbot განახლებას თვითონ გეგმავს.
 
 **SMS** — uBill (`my.ubill.ge`): Brand `Enex` → `SMS_BRAND_ID`, API გასაღები → `SMS_API_KEY`,
 `SMS_PROVIDER=ubill`. შემოწმება: `npx tsx scripts/test-sms.ts 5XXXXXXXX`
+
+**გაყიდვების შეტყობინებები** — `SALES_EMAIL` (რამდენიმე მძიმით). ყოველ ახალ შეკვეთაზე წერილი
+შეკვეთის ფურცლით (გადარიცხვაზე — ინვოისი ბანკის რეკვიზიტებით; POS/ბარათზე — გადახდის მეთოდით)
+და ცალკე წერილი გადახდის დადასტურებაზე. `SALES_PHONE` — არასავალდებულო SMS ახალ შეკვეთაზე.
+
+**ავტომატური სინქი** — `/admin/suppliers` → რედაქტირება → „ავტომატური სინქი — ყოველ რამდენ წუთში“.
+`enex-sync.timer` წუთში ერთხელ ამოწმებს, ვის მოუვიდა დრო. ლოგი: `journalctl -u enex-sync -n 50`
 
 ---
 

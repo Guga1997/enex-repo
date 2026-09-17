@@ -2,6 +2,7 @@ import type { Prisma } from "@prisma/client";
 import { db } from "./db";
 import { deriveStatus } from "./stock";
 import { RESERVATION_MINUTES } from "./constants";
+import { notifySalesPaid } from "./notify/sales";
 
 /**
  * ნაშთის სასიცოცხლო ციკლი შეკვეთაში:
@@ -38,11 +39,11 @@ async function releaseItems(tx: Tx, items: { productId: string | null; qty: numb
  * გადახდილად მონიშვნა + ნაშთის ჩამოწერა.
  * იდემპოტენტურია — გადახდის სისტემა callback-ს რამდენჯერმე აგზავნის.
  */
-export async function markOrderPaid(orderId: string, raw?: unknown) {
-  return db.$transaction(async (tx) => {
+export async function markOrderPaid(orderId: string, raw?: unknown, opts: { notify?: boolean } = {}) {
+  const result = await db.$transaction(async (tx) => {
     const order = await tx.order.findUnique({ where: { id: orderId }, include: { items: true } });
     if (!order) return null;
-    if (order.paymentStatus === "PAID") return order;
+    if (order.paymentStatus === "PAID") return { order, changed: false };
 
     for (const item of order.items) {
       if (!item.productId) continue;
@@ -60,7 +61,7 @@ export async function markOrderPaid(orderId: string, raw?: unknown) {
       });
     }
 
-    return tx.order.update({
+    const updated = await tx.order.update({
       where: { id: orderId },
       data: {
         paymentStatus: "PAID",
@@ -69,7 +70,19 @@ export async function markOrderPaid(orderId: string, raw?: unknown) {
         paymentRaw: raw ? JSON.stringify(raw) : order.paymentRaw,
       },
     });
+    return { order: updated, changed: true };
   });
+
+  // გაყიდვებს მხოლოდ რეალურ ცვლილებაზე — callback-ის გამეორება ორ წერილს არ აგზავნის.
+  // ადმინი რომ ხელით ნიშნავს, თვითონვე იცის — notify: false.
+  if (result?.changed && opts.notify !== false) {
+    try {
+      await notifySalesPaid(orderId);
+    } catch (e) {
+      console.error("გაყიდვების შეტყობინება ჩავარდა", e);
+    }
+  }
+  return result?.order ?? null;
 }
 
 /** გადახდა ჩავარდა — რეზერვაცია იხსნება, შეკვეთა რჩება ხელახლა ცდისთვის */

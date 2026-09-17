@@ -15,6 +15,7 @@ export type SupplierDraft = {
   fieldMap: string | null;
   markupRetail: number;
   markupDealer: number;
+  syncEveryMin: number;
   isActive: boolean;
   hasSecret: boolean;
 };
@@ -167,6 +168,21 @@ export default function SupplierForm({
           />
         </label>
       </div>
+
+      <label className="block">
+        <span className="mb-1.5 block text-sm font-medium">ავტომატური სინქი — ყოველ რამდენ წუთში</span>
+        <input
+          name="syncEveryMin"
+          type="number"
+          min={0}
+          step={1}
+          defaultValue={supplier?.syncEveryMin ?? 10}
+          className={field}
+        />
+        <span className="mt-1 block text-xs text-muted">
+          0 — მხოლოდ ხელით, „სინქი“ ღილაკით. სერვერი წუთში ერთხელ ამოწმებს, ვის მოუვიდა დრო.
+        </span>
+      </label>
 
       <label className="block">
         <span className="mb-1.5 flex items-baseline justify-between gap-3">

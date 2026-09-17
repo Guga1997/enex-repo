@@ -192,7 +192,7 @@ export async function updateOrderStatus(formData: FormData) {
   if (status === "CANCELLED") {
     await cancelOrder(id, "CANCELLED");
   } else if (paymentStatus === "PAID") {
-    await markOrderPaid(id);
+    await markOrderPaid(id, undefined, { notify: false });
   }
 
   await db.order.update({
@@ -253,6 +253,8 @@ export async function saveSupplier(formData: FormData) {
     fieldMap: String(formData.get("fieldMap") ?? "").trim() || null,
     markupRetail: Number(formData.get("markupRetail") ?? 30),
     markupDealer: Number(formData.get("markupDealer") ?? 15),
+    // 0 = მხოლოდ ხელით; უარყოფითი და არარიცხვი ნულად
+    syncEveryMin: Math.max(0, Math.floor(Number(formData.get("syncEveryMin")) || 0)),
     isActive: formData.get("isActive") === "on",
     // ცარიელი ველი არსებულ გასაღებს არ შლის
     ...(secret ? { secret } : {}),

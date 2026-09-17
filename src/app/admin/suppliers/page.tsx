@@ -81,6 +81,10 @@ export default async function SuppliersPage({
                     საცალო +{s.markupRetail}%
                     <br />
                     სადილერო +{s.markupDealer}%
+                    <br />
+                    <span className="text-muted">
+                      {s.syncEveryMin > 0 ? `სინქი ყოველ ${s.syncEveryMin} წთ` : "სინქი ხელით"}
+                    </span>
                   </td>
                   <td className="p-3 text-xs">
                     {s.lastSyncAt ? (
@@ -158,6 +162,7 @@ export default async function SuppliersPage({
                 fieldMap: editing.fieldMap,
                 markupRetail: editing.markupRetail,
                 markupDealer: editing.markupDealer,
+                syncEveryMin: editing.syncEveryMin,
                 isActive: editing.isActive,
                 hasSecret: Boolean(editing.secret),
               }

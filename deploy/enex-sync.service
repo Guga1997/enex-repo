@@ -1,0 +1,13 @@
+# /etc/systemd/system/enex-sync.service — მიმწოდებლების ავტომატური სინქი
+[Unit]
+Description=Enex — მიმწოდებლების სინქი გრაფიკით
+After=postgresql.service network-online.target
+
+[Service]
+Type=oneshot
+User=enex
+WorkingDirectory=/var/www/enex
+EnvironmentFile=/var/www/enex/.env
+ExecStart=/usr/bin/npx tsx scripts/sync-due.ts
+# ერთი სინქი ათასობით პროდუქტზე წუთებს იღებს — 20 წუთზე მეტს ჩამოკიდებულად ვთვლით
+TimeoutStartSec=20min
