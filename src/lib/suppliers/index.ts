@@ -22,7 +22,7 @@ export function resolveAdapter(name: string): SupplierAdapter {
 
 export const adapterNames = () => Object.keys(ADAPTERS);
 
-const FALLBACK = "დაუკატეგორიებელი (იმპორტი)";
+export const FALLBACK = "დაუკატეგორიებელი (იმპორტი)";
 
 /** „ხმამაღლამოლაპარაკე“ ≈ „ხმამაღლამოლაპარაკეები“ ≈ „ხმამაღლამოლაპარაკეები (AV)“ */
 function normCat(s: string): string {
@@ -38,7 +38,7 @@ function normCat(s: string): string {
  * კატეგორიის გზა სახელებით — ყველაზე კონკრეტულიდან ზოგადისკენ. ჯერ ზუსტი დამთხვევა,
  * მერე ნორმალიზებული (მხოლობითი/მრავლობითი, ფრჩხილები). ვერ ამოცნობილი ჯდება საიმპორტო კალათაში.
  */
-async function resolveCategoryId(path: string[] | undefined): Promise<string> {
+export async function resolveCategoryId(path: string[] | undefined): Promise<string> {
   if (path?.length) {
     // SQLite-ს რეგისტრის უგულებელყოფა არ შეუძლია — შედარებას მეხსიერებაში ვაკეთებთ
     const all = await db.category.findMany({ select: { id: true, nameKa: true } });
