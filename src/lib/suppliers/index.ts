@@ -28,8 +28,8 @@ export const FALLBACK = "დაუკატეგორიებელი (ი�
 function normCat(s: string): string {
   return s
     .toLowerCase()
-    .replace(/([^)]*)/g, "")
-    .replace(/[s-–—_/,.]+/g, "")
+    .replace(/\([^)]*\)/g, "")
+    .replace(/[\s\-–—_/,.]+/g, "")
     .replace(/(ები|ებზე|ის)$/u, "")
     .replace(/[აი]$/u, ""); // კამერა/კამერები → კამერ, დისკი/დისკები → დისკ
 }
