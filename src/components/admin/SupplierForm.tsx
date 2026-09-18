@@ -44,6 +44,32 @@ const INTELLCOM_MAP = `{
   "identificationCode": "შენი ს/კ"
 }`;
 
+/** Excel: ფურცლების აღწერა — რომელი სვეტი რას ნიშნავს (სვეტები 0-დან ითვლება) */
+const SHEET_MAP = `{
+  "skuStrip": "/GE",
+  "sheets": {
+    "BLUETTI": {
+      "brand": "Bluetti",
+      "category": ["ენერგო უზრუნველყოფა", "პორტატული ელსადგურები"],
+      "columns": { "sku": 0, "name": 1, "cost": 2, "qty": 3 },
+      "rules": [
+        { "contains": "Expansion Battery", "category": ["ენერგო უზრუნველყოფა", "პორტატული ელსადგურები", "დამატებითი აკუმულატორები"] },
+        { "contains": "Solar Panel", "category": ["ენერგო უზრუნველყოფა", "მზის ენერგია", "მზის პანელები"] },
+        { "contains": "Home Battery", "category": ["ენერგო უზრუნველყოფა", "პორტატული ელსადგურები", "სახლის სარეზერვო სისტემები"] },
+        { "contains": "Hybrid Inverter", "category": ["ენერგო უზრუნველყოფა", "პორტატული ელსადგურები", "სახლის სარეზერვო სისტემები"] },
+        { "contains": "Power Station", "category": ["ენერგო უზრუნველყოფა", "პორტატული ელსადგურები", "ელსადგურები"] }
+      ]
+    },
+    "DELTA": {
+      "brand": "Delta Electronics",
+      "category": ["ენერგო უზრუნველყოფა"],
+      "columns": { "sku": 0, "name": 1, "cost": 2 },
+      "sectionRows": true,
+      "rate": 1
+    }
+  }
+}`;
+
 export default function SupplierForm({
   action,
   adapters,
@@ -58,9 +84,10 @@ export default function SupplierForm({
   const [showHelp, setShowHelp] = useState(false);
   const [retailBase, setRetailBase] = useState(supplier?.retailBase ?? "COST");
   const isIntellcom = adapter === "INTELLCOM";
+  const isSheet = adapter === "SPREADSHEET";
 
   return (
-    <form action={action} className="card space-y-4 p-5">
+    <form action={action} encType="multipart/form-data" className="card space-y-4 p-5">
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="font-semibold">
           {supplier ? `რედაქტირება — ${supplier.name}` : "ახალი მიმწოდებელი"}
@@ -90,7 +117,7 @@ export default function SupplierForm({
           >
             {adapters.map((a) => (
               <option key={a} value={a}>
-                {a === "GENERIC_REST" ? "GENERIC_REST — კონფიგურაციით, კოდის გარეშე" : a}
+                {a === "GENERIC_REST" ? "GENERIC_REST — API კონფიგურაციით" : a === "SPREADSHEET" ? "SPREADSHEET — Excel ფასთა ნუსხა" : a}
               </option>
             ))}
           </select>
@@ -198,6 +225,17 @@ export default function SupplierForm({
         </label>
       </div>
 
+      {isSheet && (
+        <label className="block">
+          <span className="mb-1.5 block text-sm font-medium">ფასთა ნუსხა (Excel .xlsx)</span>
+          <input name="pricelist" type="file" accept=".xlsx,.xls" className={field} />
+          <span className="mt-1 block text-xs text-muted">
+            ატვირთვისთანავე სინქი გაივლის. ახალი ნუსხა ძველს ცვლის. თუ ფაილი ბმულით გაქვს
+            (Google Sheets-ის „გამოქვეყნება xlsx-ად“) — ზემოთ მისამართში ჩაწერე და აქ არაფერი ატვირთო.
+          </span>
+        </label>
+      )}
+
       <label className="block">
         <span className="mb-1.5 block text-sm font-medium">ავტომატური სინქი — ყოველ რამდენ წუთში</span>
         <input
@@ -228,14 +266,16 @@ export default function SupplierForm({
         </span>
         <textarea
           name="fieldMap"
-          rows={isIntellcom ? 4 : showHelp ? 12 : 5}
-          defaultValue={supplier?.fieldMap ?? ""}
+          rows={isIntellcom ? 4 : isSheet ? 16 : showHelp ? 12 : 5}
+          defaultValue={supplier?.fieldMap ?? (isSheet ? SHEET_MAP : "")}
           placeholder={
             isIntellcom
               ? INTELLCOM_MAP
-              : showHelp
-                ? EXAMPLE_MAP
-                : "JSON — რომელი ველი რას ნიშნავს ამ კომპანიის პასუხში"
+              : isSheet
+                ? SHEET_MAP
+                : showHelp
+                  ? EXAMPLE_MAP
+                  : "JSON — რომელი ველი რას ნიშნავს ამ კომპანიის პასუხში"
           }
           className={`${field} font-mono text-xs`}
         />
@@ -244,6 +284,12 @@ export default function SupplierForm({
             <>
               ველების შესაბამისობა ამ ადაპტერს არ სჭირდება. ჩაწერე მხოლოდ{" "}
               <code>identificationCode</code> — მის გარეშე სადილერო ფასი ნულით მოვა.
+            </>
+          ) : isSheet ? (
+            <>
+              თითო ფურცელი — სახელი ზუსტად როგორც Excel-შია; <code>columns</code> სვეტების ნომრებია
+              (A=0, B=1…). <code>sectionRows</code>: ცარიელი SKU-იანი სტრიქონი განყოფილებაა და
+              კატეგორიად ემატება. <code>rate</code>: ფასის კოეფიციენტი, მაგ. დოლარიდან ლარში.
             </>
           ) : (
             <>

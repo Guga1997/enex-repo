@@ -21,6 +21,14 @@ export const TAXONOMY: Node[] = [
         ],
       },
       {
+        name: "პორტატული ელსადგურები",
+        children: [
+          { name: "ელსადგურები" },
+          { name: "დამატებითი აკუმულატორები" },
+          { name: "სახლის სარეზერვო სისტემები" },
+        ],
+      },
+      {
         name: "უწყვეტი კვების წყაროები UPS",
         children: [
           { name: "Line Interactive UPS" },

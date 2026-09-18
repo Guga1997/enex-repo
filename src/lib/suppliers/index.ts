@@ -3,6 +3,7 @@ import { slugify } from "../format";
 import { localizeMedia } from "../media";
 import { genericRest } from "./generic-rest";
 import { intellcom } from "./intellcom";
+import { spreadsheet } from "./spreadsheet";
 import { computePrices, Pricer, repriceProduct } from "./pricing";
 import type { SupplierAdapter, SupplierConfig, SupplierItem } from "./types";
 
@@ -12,6 +13,7 @@ export type { SupplierItem, SupplierConfig, SupplierAdapter } from "./types";
 const ADAPTERS: Record<string, SupplierAdapter> = {
   GENERIC_REST: genericRest,
   INTELLCOM: intellcom,
+  SPREADSHEET: spreadsheet,
 };
 
 export function resolveAdapter(name: string): SupplierAdapter {
@@ -57,6 +59,12 @@ const CATEGORY_ALIASES: Record<string, string> = {
   "უწყვეტიკვებისწყარო": "უწყვეტი კვების წყაროები UPS",
   "მონიტორისაქსესუარ": "მონიტორები",
   "ინტერაქტიულიდაფ": "ინტერაქტიული ეკრანები",
+  // Delta / Bluetti ფასთა ნუსხა (Excel)
+  "ups": "უწყვეტი კვების წყაროები UPS",
+  "batterypack": "UPS აქსესუარები",
+  "pdusnmp": "UPS აქსესუარები",
+  "railkit": "UPS აქსესუარები",
+  "portablepowerstation": "პორტატული ელსადგურები",
 };
 
 /** ფრჩხილებში კოდი — (NVR), (DVR/XVR), (UPS) — ორივე მხარეს ერთი და იგივე თუა, ესეც დამთხვევაა */

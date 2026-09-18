@@ -161,6 +161,16 @@ export default async function ProductPage({ params }: Props) {
               )}
             </dl>
 
+            {/* Bluetti-ს კონფიგურატორი — სადგური + აკუმულატორი + დატვირთვა → მუშაობის დრო და ფასი */}
+            {p.brand?.slug === "bluetti" && (
+              <Link
+                href="/bluetti"
+                className="mt-4 inline-flex items-center gap-2 rounded-lg border border-brand-200 bg-brand-50 px-4 py-2 text-sm font-medium text-brand-700 hover:bg-brand-100"
+              >
+                ⚡ Bluetti კონფიგურატორი — რამდენ ხანს გაძლებს შენს დატვირთვაზე
+              </Link>
+            )}
+
             <div className="card mt-6 p-5">
               {price.saved > 0 ? (
                 <div className="space-y-1">

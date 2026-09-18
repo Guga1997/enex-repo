@@ -137,6 +137,13 @@ certbot განახლებას თვითონ გეგმავს.
 შეკვეთის ფურცლით (გადარიცხვაზე — ინვოისი ბანკის რეკვიზიტებით; POS/ბარათზე — გადახდის მეთოდით)
 და ცალკე წერილი გადახდის დადასტურებაზე. `SALES_PHONE` — არასავალდებულო SMS ახალ შეკვეთაზე.
 
+**Excel მიმწოდებელი (SPREADSHEET)** — API-ს გარეშე: `/admin/suppliers` → ადაპტერი SPREADSHEET → fieldMap-ში
+ფურცლების აღწერა → Excel-ის ატვირთვა (ინახება `data/pricelists/<slug>.xlsx`, public-ის გარეთ) → სინქი
+ატვირთვისთანავე. ახალი ნუსხა — იგივე ფორმა, ახალი ფაილი. `data/` სარეზერვო ასლში ჩართე.
+
+**Bluetti კონფიგურატორი** — `public/tools/bluetti.html`, მისამართი `/bluetti` (rewrite next.config-ში).
+ფასი და ნაშთი კატალოგიდან მოაქვს (`/api/catalog/prices`) — HTML-ში ჩაშენებული ციფრები მხოლოდ სათადარიგოა.
+
 **ავტომატური სინქი** — `/admin/suppliers` → რედაქტირება → „ავტომატური სინქი — ყოველ რამდენ წუთში“.
 `enex-sync.timer` წუთში ერთხელ ამოწმებს, ვის მოუვიდა დრო. ლოგი: `journalctl -u enex-sync -n 50`
 
@@ -172,7 +179,7 @@ set -e
 D=/var/backups/enex
 mkdir -p "$D"
 sudo -u postgres pg_dump enex | gzip > "$D/db-$(date +%F).sql.gz"
-tar czf "$D/uploads-$(date +%F).tar.gz" -C /var/www/enex/public uploads
+tar czf "$D/uploads-$(date +%F).tar.gz" -C /var/www/enex public/uploads data
 find "$D" -mtime +30 -delete
 ```
 

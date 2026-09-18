@@ -249,6 +249,14 @@ export async function saveSupplier(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return;
 
+  // Excel ფასთა ნუსხა — public-ის გარეთ, ფასები საჯარო არ უნდა იყოს
+  const pricelist = formData.get("pricelist");
+  let pricelistBuf: Buffer | null = null;
+  if (pricelist instanceof File && pricelist.size > 0) {
+    if (pricelist.size > 10 * 1024 * 1024) throw new Error("ფაილი 10 მბ-ზე დიდია");
+    pricelistBuf = Buffer.from(await pricelist.arrayBuffer());
+  }
+
   const secret = String(formData.get("secret") ?? "");
   const data = {
     name,
@@ -267,14 +275,28 @@ export async function saveSupplier(formData: FormData) {
     ...(secret ? { secret } : {}),
   };
 
+  let supplier;
   if (id) {
-    await db.supplier.update({ where: { id }, data });
+    supplier = await db.supplier.update({ where: { id }, data });
   } else {
     let slug = slugify(name) || "supplier";
     if (await db.supplier.findUnique({ where: { slug } })) {
       slug = `${slug}-${Date.now().toString(36)}`;
     }
-    await db.supplier.create({ data: { ...data, slug } });
+    supplier = await db.supplier.create({ data: { ...data, slug } });
+  }
+
+  if (pricelistBuf) {
+    const { PRICELIST_DIR, pricelistPath } = await import("@/lib/suppliers/spreadsheet");
+    const { mkdir, writeFile } = await import("fs/promises");
+    await mkdir(PRICELIST_DIR, { recursive: true });
+    await writeFile(pricelistPath(supplier.slug), pricelistBuf);
+    // ახალი ნუსხა — მაშინვე სინქი, რომ ფასები და ნაშთი განახლდეს
+    const { syncSupplier } = await import("@/lib/suppliers");
+    const res = await syncSupplier(supplier.id);
+    revalidatePath("/admin/suppliers");
+    revalidatePath("/admin/products");
+    redirect(`/admin/suppliers?test=${encodeURIComponent(res.ok ? `ნუსხა ატვირთულია: +${res.created} ახალი, ${res.updated} განახლდა` : `ნუსხა ატვირთულია, სინქი ჩავარდა: ${res.message}`)}`);
   }
   revalidatePath("/admin/suppliers");
 }
