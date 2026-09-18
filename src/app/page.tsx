@@ -41,6 +41,7 @@ export default async function HomePage() {
       <JsonLd data={websiteJsonLd()} />
       <Header />
       <main className="container-x py-8">
+        <h1 className="sr-only">Enex — პროფესიონალური აღჭურვილობის ონლაინ მაღაზია</h1>
         {/* ბანერები ადმინიდან იმართება; სანამ არცერთი არ არის — ზოგადი ბლოკი */}
         {banners.length > 0 ? (
           <HeroSlider slides={banners} />
@@ -95,6 +96,24 @@ export default async function HomePage() {
 
         <ProductRow title="ახალი პროდუქტები" href="/catalog?sort=newest" products={newest} />
         <ProductRow title="ფასდაკლებები" href="/catalog?discount=1" products={discounted} />
+
+        {/* რა საიტია — ადამიანისთვისაც და საძიებო სისტემისთვისაც; სახელი საკურიერო კომპანიას ჰგავს */}
+        <section className="mt-12 rounded-2xl border border-line bg-white p-6 sm:p-8">
+          <h2 className="text-lg font-bold">Enex — პროფესიონალური აღჭურვილობის ონლაინ მაღაზია</h2>
+          <div className="mt-3 grid gap-4 text-sm leading-relaxed text-muted sm:grid-cols-2">
+            <p>
+              ვყიდით ტექნიკას, რომლითაც ობიექტები, ოფისები და ქსელები იგება: ვიდეო-მეთვალყურეობის
+              IP და ანალოგური კამერები, ჩამწერები, სახანძრო სიგნალიზაცია და დაშვების კონტროლი;
+              ქსელური სვიჩები, როუტერები, WiFi და ოპტიკური აღჭურვილობა; UPS-ები, მზის ინვერტორები
+              და ენერგო უზრუნველყოფა.
+            </p>
+            <p>
+              ვმუშაობთ როგორც ინსტალატორებთან და კომპანიებთან სადილერო ფასებით, ისე საცალო
+              მყიდველთან. ყველა პროდუქტი ოფიციალური გარანტიითაა, ნაშთი მიმწოდებლებთან
+              რეალურ დროში სინქრონდება, მიწოდება — საქართველოს მასშტაბით, გატანა — თბილისში.
+            </p>
+          </div>
+        </section>
       </main>
       <Footer />
     </>

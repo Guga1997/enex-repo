@@ -98,14 +98,27 @@ export function breadcrumbJsonLd(items: { name: string; path: string }[]) {
   };
 }
 
+/**
+ * OnlineStore, არა Organization: სახელი „enex“ საკურიერო კომპანიებს ჰგავს და
+ * საძიებო AI-ები ამანათების სერვისად თვლიდნენ — ტიპი და აღწერა ცალსახად ამბობს, რას ვყიდით.
+ */
 export function organizationJsonLd() {
   return {
     "@context": "https://schema.org",
-    "@type": "Organization",
+    "@type": ["OnlineStore", "Organization"],
+    "@id": `${SITE_URL}/#store`,
     name: SITE_NAME,
+    alternateName: "ენექსი",
     legalName: process.env.SELLER_NAME || undefined,
+    description:
+      "პროფესიონალური ელექტრონული აღჭურვილობის ონლაინ მაღაზია საქართველოში: ვიდეო-მეთვალყურეობის კამერები და ჩამწერები, ქსელური სვიჩები და როუტერები, UPS და მზის ენერგოსისტემები, სახანძრო სიგნალიზაცია, დაშვების კონტროლი. B2B და საცალო გაყიდვა, ოფიციალური გარანტია.",
     url: SITE_URL,
     logo: abs("/brand/enex-logo-1200.png"),
+    image: abs("/brand/og.png"),
+    areaServed: { "@type": "Country", name: "Georgia" },
+    currenciesAccepted: "GEL",
+    paymentAccepted: "Bank card, Bank transfer, Cash on pickup",
+    knowsAbout: ["ვიდეო-მეთვალყურეობა", "IP კამერები", "ქსელური მოწყობილობები", "UPS", "მზის ინვერტორები", "სახანძრო სიგნალიზაცია", "დაშვების კონტროლი"],
     ...(CONTACT.phone ? { telephone: CONTACT.phone } : {}),
     email: CONTACT.email,
     ...(process.env.SELLER_ADDRESS
