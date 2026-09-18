@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Logo from "./Logo";
+import { CONTACT } from "@/lib/seo";
 
 export default function Footer() {
   return (
@@ -32,15 +33,17 @@ export default function Footer() {
         <div>
           <h3 className="mb-3 text-sm font-semibold">კონტაქტი</h3>
           <ul className="space-y-2 text-sm text-muted">
-            <li>+995 32 2 00 00 00</li>
-            <li>sale@example.ge</li>
-            <li>თბილისი, საქართველო</li>
-            <li className="pt-2">ორშ-პარ: 10:00–18:00</li>
+            {CONTACT.phone && (
+              <li><a href={`tel:${CONTACT.phone.replace(/s+/g, "")}`} className="hover:text-brand-600">{CONTACT.phone}</a></li>
+            )}
+            <li><a href={`mailto:${CONTACT.email}`} className="hover:text-brand-600">{CONTACT.email}</a></li>
+            <li>{CONTACT.address}</li>
+            <li className="pt-2">{CONTACT.hours}</li>
           </ul>
         </div>
       </div>
       <div className="border-t border-line py-5 text-center text-xs text-muted">
-        © {new Date().getFullYear()} ონლაინმაღაზია. ყველა უფლება დაცულია.
+        © {new Date().getFullYear()} Enex. ყველა უფლება დაცულია.
       </div>
     </footer>
   );

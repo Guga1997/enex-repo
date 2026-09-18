@@ -52,7 +52,7 @@ export default async function MockPaymentPage({
           </div>
           <div className="flex justify-between">
             <dt className="text-muted">მიმღები</dt>
-            <dd className="font-medium">ონლაინმაღაზია</dd>
+            <dd className="font-medium">Enex</dd>
           </div>
           <div className="flex justify-between border-t border-line pt-2 text-base">
             <dt className="font-semibold">თანხა</dt>

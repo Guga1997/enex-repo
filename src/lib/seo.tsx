@@ -12,6 +12,14 @@ export const DEFAULT_DESCRIPTION =
 export const realBrand = (b: { name: string } | null | undefined) =>
   b && !/^(other|სხვა|no ?brand|-)$/i.test(b.name.trim()) ? b.name.trim() : null;
 
+/** საკონტაქტო — .env-დან, რომ საიტი, ინვოისი და JSON-LD ერთსა და იმავეს წერდეს */
+export const CONTACT = {
+  phone: process.env.SELLER_PHONE || "",
+  email: process.env.CONTACT_EMAIL || "sales@enex.ge",
+  address: process.env.SELLER_ADDRESS || "თბილისი, საქართველო",
+  hours: "ორშ–პარ: 10:00–18:00",
+};
+
 export const abs = (path: string) => (path.startsWith("http") ? path : `${SITE_URL}${path}`);
 
 /** 160 სიმბოლომდე, სიტყვის საზღვარზე */
@@ -98,7 +106,8 @@ export function organizationJsonLd() {
     legalName: process.env.SELLER_NAME || undefined,
     url: SITE_URL,
     logo: abs("/brand/enex-logo-1200.png"),
-    ...(process.env.SELLER_PHONE ? { telephone: process.env.SELLER_PHONE } : {}),
+    ...(CONTACT.phone ? { telephone: CONTACT.phone } : {}),
+    email: CONTACT.email,
     ...(process.env.SELLER_ADDRESS
       ? { address: { "@type": "PostalAddress", streetAddress: process.env.SELLER_ADDRESS, addressCountry: "GE" } }
       : {}),
