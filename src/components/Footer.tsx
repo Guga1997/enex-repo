@@ -34,7 +34,7 @@ export default function Footer() {
           <h3 className="mb-3 text-sm font-semibold">კონტაქტი</h3>
           <ul className="space-y-2 text-sm text-muted">
             {CONTACT.phone && (
-              <li><a href={`tel:${CONTACT.phone.replace(/s+/g, "")}`} className="hover:text-brand-600">{CONTACT.phone}</a></li>
+              <li><a href={`tel:${CONTACT.phone.replace(/\s+/g, "")}`} className="hover:text-brand-600">{CONTACT.phone}</a></li>
             )}
             <li><a href={`mailto:${CONTACT.email}`} className="hover:text-brand-600">{CONTACT.email}</a></li>
             <li>{CONTACT.address}</li>
