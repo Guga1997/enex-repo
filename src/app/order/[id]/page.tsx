@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { db } from "@/lib/db";
+import { fetchPaymentStatus } from "@/lib/payments/bog";
+import { markOrderFailed, markOrderPaid } from "@/lib/orders";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { gel, formatDate } from "@/lib/format";
@@ -24,8 +26,16 @@ export default async function OrderPage({
   const { id } = await params;
   const flags = await searchParams;
 
-  const order = await db.order.findUnique({ where: { id }, include: { items: true } });
+  let order = await db.order.findUnique({ where: { id }, include: { items: true } });
   if (!order) notFound();
+
+  // ბანკიდან დაბრუნდა, callback კი ჯერ არ მოსულა — სტატუსს პირდაპირ ბანკს ვკითხავთ
+  if ((flags.paid || flags.failed) && order.paymentStatus === "UNPAID" && order.paymentId && order.paymentMethod === "BOG") {
+    const status = await fetchPaymentStatus(order.paymentId).catch(() => null);
+    if (status?.key === "completed") await markOrderPaid(order.id, status.raw);
+    else if (status?.key === "rejected") await markOrderFailed(order.id, status.raw);
+    if (status) order = (await db.order.findUnique({ where: { id }, include: { items: true } })) ?? order;
+  }
 
   const paid = order.paymentStatus === "PAID";
   // წარუმატებლობა ბაზაშია ჩაწერილი — გვერდზე დაბრუნებისასაც სწორად ჩანს

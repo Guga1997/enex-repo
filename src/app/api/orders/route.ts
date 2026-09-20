@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { isPurchasable, availableQty } from "@/lib/stock";
 import { reservationDeadline } from "@/lib/orders";
 import { createPayment } from "@/lib/payments/bog";
-import { FREE_DELIVERY_FROM } from "@/lib/constants";
+import { FREE_DELIVERY_FROM, RESERVATION_MINUTES } from "@/lib/constants";
 import { getCurrentUser } from "@/lib/customer-auth";
 import { effectivePrice } from "@/lib/pricing";
 import { issueAndSendInvoice } from "@/lib/invoice";
@@ -211,6 +211,9 @@ export async function POST(req: Request) {
       orderId: order.id,
       orderNumber: order.number,
       amount: total,
+      deliveryFee,
+      ttlMinutes: RESERVATION_MINUTES.BOG,
+      buyer: { name: input.customerName, email: input.customerEmail, phone: input.customerPhone },
       siteUrl,
       items: priced.map((l) => ({
         productId: l.product.id,

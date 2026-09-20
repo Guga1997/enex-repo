@@ -119,11 +119,11 @@ certbot განახლებას თვითონ გეგმავს.
 **intellcom** — კაბინეტში „დაშვებული IP მისამართები"-ში **სერვერის IP** ჩაწერე, არა სახლის.
 შემდეგ `/admin/suppliers` → Intellcom → „შემოწმება".
 
-**BOG** — ბანკს მიაწოდე callback:
-`https://enex.ge/api/payments/bog/callback`
-
-⚠️ `BOG_PUBLIC_KEY`-ის გარეშე callback უარყოფილი იქნება და შეკვეთა გადახდილად **არ** მოინიშნება.
-ეს განზრახაა: ხელმოწერის შემოწმების გარეშე ნებისმიერს შეუძლია ყალბი „გადახდილია" გამოგზავნოს.
+**BOG** — `.env`-ში `BOG_CLIENT_ID` / `BOG_CLIENT_SECRET` (ბანკის წერილში „OPAY CLIENT ID / SECRET KEY“),
+`PAYMENT_MOCK=0`, გადატვირთვა. callback-ის მისამართი ყოველ შეკვეთაზე თვითონ იგზავნება
+(`https://enex.ge/api/payments/bog/callback`), ბანკში ცალკე რეგისტრაცია არ სჭირდება.
+ხელმოწერა ბანკის საჯარო გასაღებით მოწმდება (კოდშია); ხელმოუწერელი callback უარიყოფა.
+სატესტო რეჟიმში ბანკი 100 ₾-ის ლიმიტს აძლევს — რეალური გაყიდვებისთვის იმავე მეილზე უნდა მოეთხოვოს მოხსნა.
 
 **ელფოსტა** — Hetzner Webhosting S (`konsoleh.hetzner.com`), ყუთი `noreply@enex.ge`, SMTP
 `mail.your-server.de:587`. MX/SPF/DKIM Hetzner Cloud DNS-შია. ლიმიტი 500/საათი; ნიუსლეთერი
