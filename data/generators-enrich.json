@@ -1,0 +1,1384 @@
+{
+ "ZEN 1000 TBI": {
+  "engine": "baudouin",
+  "file": "zen-1000-tbi_en.pdf",
+  "image": "/uploads/products/generators/zen-1000-tbi.png",
+  "attrs": {
+   "Stand-by სიმძლავრე (ESP)": "1000 kVA",
+   "Prime სიმძლავრე (PRP)": "900 kVA",
+   "სიმძლავრე kW (ESP / PRP)": "800 / 720 kW",
+   "ბრუნვა": "1500 rpm",
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "დენი": "1305 A",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "ZEN 110 TBI": {
+  "engine": "baudouin",
+  "file": "zen-110-tbi_en.pdf",
+  "image": "/uploads/products/generators/zen-110-tbi.png",
+  "attrs": {
+   "Stand-by სიმძლავრე (ESP)": "110 kVA",
+   "Prime სიმძლავრე (PRP)": "99 kVA",
+   "სიმძლავრე kW (ESP / PRP)": "88 / 79 kW",
+   "ბრუნვა": "1500 rpm",
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "დენი": "143 A",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-1100-tbi_en": {
+  "engine": "baudouin",
+  "file": "zen-1100-tbi_en.pdf",
+  "image": "/uploads/products/generators/zen-1100-tbi-en.png",
+  "attrs": {
+   "Stand-by სიმძლავრე (ESP)": "1 kVA",
+   "Prime სიმძლავრე (PRP)": "100 kVA",
+   "სიმძლავრე kW (ESP / PRP)": "8 / 80 kW",
+   "ბრუნვა": "1500 rpm",
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "დენი": "1435 A",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-125-tbi_en": {
+  "engine": "baudouin",
+  "file": "zen-125-tbi_en.pdf",
+  "image": "/uploads/products/generators/zen-125-tbi-en.png",
+  "attrs": {
+   "Stand-by სიმძლავრე (ESP)": "1 kVA",
+   "Prime სიმძლავრე (PRP)": "25 kVA",
+   "სიმძლავრე kW (ESP / PRP)": "100 / 90 kW",
+   "ბრუნვა": "1500 rpm",
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "დენი": "163 A",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-1250-tbi_en": {
+  "engine": "baudouin",
+  "file": "zen-1250-tbi_en.pdf",
+  "image": "/uploads/products/generators/zen-1250-tbi-en.png",
+  "attrs": {
+   "Stand-by სიმძლავრე (ESP)": "1 kVA",
+   "Prime სიმძლავრე (PRP)": "250 kVA",
+   "სიმძლავრე kW (ESP / PRP)": "1000 / 900 kW",
+   "ბრუნვა": "1500 rpm",
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "დენი": "1631 A",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-1400-tbi_en": {
+  "engine": "baudouin",
+  "file": "zen-1400-tbi_en.pdf",
+  "image": "/uploads/products/generators/zen-1400-tbi-en.png",
+  "attrs": {
+   "Stand-by სიმძლავრე (ESP)": "1 kVA",
+   "Prime სიმძლავრე (PRP)": "400 kVA",
+   "სიმძლავრე kW (ESP / PRP)": "1 / 120 kW",
+   "ბრუნვა": "1500 rpm",
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "დენი": "1631 A",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-150-tbi_en": {
+  "engine": "baudouin",
+  "file": "zen-150-tbi_en.pdf",
+  "image": "/uploads/products/generators/zen-150-tbi-en.png",
+  "attrs": {
+   "Stand-by სიმძლავრე (ESP)": "150 kVA",
+   "Prime სიმძლავრე (PRP)": "135 kVA",
+   "სიმძლავრე kW (ESP / PRP)": "120 / 108 kW",
+   "ბრუნვა": "1500 rpm",
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "დენი": "196 A",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-1500-tbi_en": {
+  "engine": "baudouin",
+  "file": "zen-1500-tbi_en.pdf",
+  "image": "/uploads/products/generators/zen-1500-tbi-en.png",
+  "attrs": {
+   "Stand-by სიმძლავრე (ESP)": "1 kVA",
+   "Prime სიმძლავრე (PRP)": "500 kVA",
+   "სიმძლავრე kW (ESP / PRP)": "1 / 200 kW",
+   "ბრუნვა": "1500 rpm",
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "დენი": "1957 A",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-165-tbi_en": {
+  "engine": "baudouin",
+  "file": "zen-165-tbi_en.pdf",
+  "image": "/uploads/products/generators/zen-165-tbi-en.png",
+  "attrs": {
+   "Stand-by სიმძლავრე (ESP)": "165 kVA",
+   "Prime სიმძლავრე (PRP)": "148 kVA",
+   "სიმძლავრე kW (ESP / PRP)": "132 / 118 kW",
+   "ბრუნვა": "1500 rpm",
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "დენი": "215 A",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-1650-tbi_en": {
+  "engine": "baudouin",
+  "file": "zen-1650-tbi_en.pdf",
+  "image": "/uploads/products/generators/zen-1650-tbi-en.png",
+  "attrs": {
+   "Stand-by სიმძლავრე (ESP)": "1 kVA",
+   "Prime სიმძლავრე (PRP)": "650 kVA",
+   "სიმძლავრე kW (ESP / PRP)": "1 / 320 kW",
+   "ბრუნვა": "1500 rpm",
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "დენი": "2153 A",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-17-tbi_en": {
+  "engine": "baudouin",
+  "file": "zen-17-tbi_en.pdf",
+  "image": "/uploads/products/generators/zen-17-tbi-en.png",
+  "attrs": {
+   "Stand-by სიმძლავრე (ESP)": "17 kVA",
+   "Prime სიმძლავრე (PRP)": "15 kVA",
+   "სიმძლავრე kW (ESP / PRP)": "13.6 / 12 kW",
+   "ბრუნვა": "1500 rpm",
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "დენი": "22.2 A",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-1700-tbi_en": {
+  "engine": "baudouin",
+  "file": "zen-1700-tbi_en.pdf",
+  "image": "/uploads/products/generators/zen-1700-tbi-en.png",
+  "attrs": {
+   "Stand-by სიმძლავრე (ESP)": "1700 kVA",
+   "Prime სიმძლავრე (PRP)": "1530 kVA",
+   "სიმძლავრე kW (ESP / PRP)": "1 / 3 kW",
+   "ბრუნვა": "1500 rpm",
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "დენი": "2218 A",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-1900-tbi_en": {
+  "engine": "baudouin",
+  "file": "zen-1900-tbi_en.pdf",
+  "image": "/uploads/products/generators/zen-1900-tbi-en.png",
+  "attrs": {
+   "Stand-by სიმძლავრე (ESP)": "1 kVA",
+   "Prime სიმძლავრე (PRP)": "900 kVA",
+   "სიმძლავრე kW (ESP / PRP)": "1520 / 1 kW",
+   "ბრუნვა": "1500 rpm",
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "დენი": "2 A",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "ZEN 2000 TBI": {
+  "engine": "baudouin",
+  "file": "zen-2000-tbi_en.pdf",
+  "image": "/uploads/products/generators/zen-2000-tbi.png",
+  "attrs": {
+   "Stand-by სიმძლავრე (ESP)": "2000 kVA",
+   "Prime სიმძლავრე (PRP)": "1800 kVA",
+   "სიმძლავრე kW (ESP / PRP)": "1600 / 1440 kW",
+   "ბრუნვა": "1500 rpm",
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "დენი": "2610 A",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-22-tbi_en": {
+  "engine": "baudouin",
+  "file": "zen-22-tbi_en.pdf",
+  "image": "/uploads/products/generators/zen-22-tbi-en.png",
+  "attrs": {
+   "Stand-by სიმძლავრე (ESP)": "22 kVA",
+   "Prime სიმძლავრე (PRP)": "20 kVA",
+   "სიმძლავრე kW (ESP / PRP)": "18 / 16 kW",
+   "ბრუნვა": "1500 rpm",
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "დენი": "29 A",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "ZEN 220 TBI": {
+  "engine": "baudouin",
+  "file": "zen-220-tbi_en.pdf",
+  "image": "/uploads/products/generators/zen-220-tbi.png",
+  "attrs": {
+   "Stand-by სიმძლავრე (ESP)": "220 kVA",
+   "Prime სიმძლავრე (PRP)": "198 kVA",
+   "სიმძლავრე kW (ESP / PRP)": "176 / 158 kW",
+   "ბრუნვა": "1500 rpm",
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "დენი": "287 A",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-2250-tbi_en": {
+  "engine": "baudouin",
+  "file": "zen-2250-tbi_en.pdf",
+  "image": "/uploads/products/generators/zen-2250-tbi-en.png",
+  "attrs": {
+   "Stand-by სიმძლავრე (ESP)": "2 kVA",
+   "Prime სიმძლავრე (PRP)": "250 kVA",
+   "სიმძლავრე kW (ESP / PRP)": "1800 / 1620 kW",
+   "ბრუნვა": "1500 rpm",
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "დენი": "2 A",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-25-tbi_en": {
+  "engine": "baudouin",
+  "file": "zen-25-tbi_en.pdf",
+  "image": "/uploads/products/generators/zen-25-tbi-en.png",
+  "attrs": {
+   "Stand-by სიმძლავრე (ESP)": "25 kVA",
+   "Prime სიმძლავრე (PRP)": "2 kVA",
+   "სიმძლავრე kW (ESP / PRP)": "20 / 18 kW",
+   "ბრუნვა": "1500 rpm",
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "დენი": "33 A",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-250-tbi_en": {
+  "engine": "baudouin",
+  "file": "zen-250-tbi_en.pdf",
+  "image": "/uploads/products/generators/zen-250-tbi-en.png",
+  "attrs": {
+   "Stand-by სიმძლავრე (ESP)": "2 kVA",
+   "Prime სიმძლავრე (PRP)": "50 kVA",
+   "სიმძლავრე kW (ESP / PRP)": "200 / 180 kW",
+   "ბრუნვა": "1500 rpm",
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "დენი": "326 A",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-275-tbi_en": {
+  "engine": "baudouin",
+  "file": "zen-275-tbi_en.pdf",
+  "image": "/uploads/products/generators/zen-275-tbi-en.png",
+  "attrs": {
+   "Stand-by სიმძლავრე (ESP)": "2 kVA",
+   "Prime სიმძლავრე (PRP)": "75 kVA",
+   "სიმძლავრე kW (ESP / PRP)": "220 / 198 kW",
+   "ბრუნვა": "1500 rpm",
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "დენი": "359 A",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "ZEN 300 TBI": {
+  "engine": "baudouin",
+  "file": "zen-300-tbi_en.pdf",
+  "image": "/uploads/products/generators/zen-300-tbi.png",
+  "attrs": {
+   "Stand-by სიმძლავრე (ESP)": "300 kVA",
+   "Prime სიმძლავრე (PRP)": "270 kVA",
+   "სიმძლავრე kW (ESP / PRP)": "240 / 216 kW",
+   "ბრუნვა": "1500 rpm",
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "დენი": "391 A",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-35-tbi_en": {
+  "engine": "baudouin",
+  "file": "zen-35-tbi_en.pdf",
+  "image": "/uploads/products/generators/zen-35-tbi-en.png",
+  "attrs": {
+   "Stand-by სიმძლავრე (ESP)": "35 kVA",
+   "Prime სიმძლავრე (PRP)": "31 kVA",
+   "სიმძლავრე kW (ESP / PRP)": "28 / 25 kW",
+   "ბრუნვა": "1500 rpm",
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "დენი": "46 A",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-350-tbi_en": {
+  "engine": "baudouin",
+  "file": "zen-350-tbi_en.pdf",
+  "image": "/uploads/products/generators/zen-350-tbi-en.png",
+  "attrs": {
+   "Stand-by სიმძლავრე (ESP)": "3 kVA",
+   "Prime სიმძლავრე (PRP)": "50 kVA",
+   "სიმძლავრე kW (ESP / PRP)": "280 / 252 kW",
+   "ბრუნვა": "1500 rpm",
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "დენი": "457 A",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "ZEN 400 TBI": {
+  "engine": "baudouin",
+  "file": "zen-400-tbi_en.pdf",
+  "image": "/uploads/products/generators/zen-400-tbi.png",
+  "attrs": {
+   "Stand-by სიმძლავრე (ESP)": "400 kVA",
+   "Prime სიმძლავრე (PRP)": "360 kVA",
+   "სიმძლავრე kW (ESP / PRP)": "320 / 288 kW",
+   "ბრუნვა": "1500 rpm",
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "დენი": "522 A",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "ZEN 44 TBI": {
+  "engine": "baudouin",
+  "file": "zen-44-tbi_en.pdf",
+  "image": "/uploads/products/generators/zen-44-tbi.png",
+  "attrs": {
+   "Stand-by სიმძლავრე (ESP)": "44 kVA",
+   "Prime სიმძლავრე (PRP)": "40 kVA",
+   "სიმძლავრე kW (ESP / PRP)": "35 / 32 kW",
+   "ბრუნვა": "1500 rpm",
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "დენი": "57 A",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-440-tbi_en": {
+  "engine": "baudouin",
+  "file": "zen-440-tbi_en.pdf",
+  "image": "/uploads/products/generators/zen-440-tbi-en.png",
+  "attrs": {
+   "Stand-by სიმძლავრე (ESP)": "4 kVA",
+   "Prime სიმძლავრე (PRP)": "40 kVA",
+   "სიმძლავრე kW (ESP / PRP)": "352 / 316 kW",
+   "ბრუნვა": "1500 rpm",
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "დენი": "574 A",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "ZEN 500 TBI": {
+  "engine": "baudouin",
+  "file": "zen-500-tbi_en.pdf",
+  "image": "/uploads/products/generators/zen-500-tbi.png",
+  "attrs": {
+   "Stand-by სიმძლავრე (ESP)": "500 kVA",
+   "Prime სიმძლავრე (PRP)": "450 kVA",
+   "სიმძლავრე kW (ESP / PRP)": "400 / 360 kW",
+   "ბრუნვა": "1500 rpm",
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "დენი": "652 A",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "ZEN 55 TBI": {
+  "engine": "baudouin",
+  "file": "zen-55-tbi_en.pdf",
+  "image": "/uploads/products/generators/zen-55-tbi.png",
+  "attrs": {
+   "Stand-by სიმძლავრე (ESP)": "55 kVA",
+   "Prime სიმძლავრე (PRP)": "4 kVA",
+   "სიმძლავრე kW (ESP / PRP)": "44 / 40 kW",
+   "ბრუნვა": "1500 rpm",
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "დენი": "72 A",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-550-tbi_en": {
+  "engine": "baudouin",
+  "file": "zen-550-tbi_en.pdf",
+  "image": "/uploads/products/generators/zen-550-tbi-en.png",
+  "attrs": {
+   "Stand-by სიმძლავრე (ESP)": "5 kVA",
+   "Prime სიმძლავრე (PRP)": "50 kVA",
+   "სიმძლავრე kW (ESP / PRP)": "440 / 396 kW",
+   "ბრუნვა": "1500 rpm",
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "დენი": "718 A",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "ZEN 660 TBI": {
+  "engine": "baudouin",
+  "file": "zen-660-tbi_en.pdf",
+  "image": "/uploads/products/generators/zen-660-tbi.png",
+  "attrs": {
+   "Stand-by სიმძლავრე (ESP)": "660 kVA",
+   "Prime სიმძლავრე (PRP)": "594 kVA",
+   "სიმძლავრე kW (ESP / PRP)": "528 / 475 kW",
+   "ბრუნვა": "1500 rpm",
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "დენი": "861 A",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "ZEN 715 TBI": {
+  "engine": "baudouin",
+  "file": "zen-715-tbi_en.pdf",
+  "image": "/uploads/products/generators/zen-715-tbi.png",
+  "attrs": {
+   "Stand-by სიმძლავრე (ESP)": "715 kVA",
+   "Prime სიმძლავრე (PRP)": "643 kVA",
+   "სიმძლავრე kW (ESP / PRP)": "572 / 515 kW",
+   "ბრუნვა": "1500 rpm",
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "დენი": "933 A",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "ZEN 72 TBI": {
+  "engine": "baudouin",
+  "file": "zen-72-tbi_en.pdf",
+  "image": "/uploads/products/generators/zen-72-tbi.png",
+  "attrs": {
+   "Stand-by სიმძლავრე (ESP)": "72 kVA",
+   "Prime სიმძლავრე (PRP)": "65 kVA",
+   "სიმძლავრე kW (ESP / PRP)": "58 / 52 kW",
+   "ბრუნვა": "1500 rpm",
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "დენი": "94 A",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-750-tbi_en": {
+  "engine": "baudouin",
+  "file": "zen-750-tbi_en.pdf",
+  "image": "/uploads/products/generators/zen-750-tbi-en.png",
+  "attrs": {
+   "Stand-by სიმძლავრე (ESP)": "7 kVA",
+   "Prime სიმძლავრე (PRP)": "50 kVA",
+   "სიმძლავრე kW (ESP / PRP)": "600 / 540 kW",
+   "ბრუნვა": "1500 rpm",
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "დენი": "979 A",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "ZEN 825 TBI": {
+  "engine": "baudouin",
+  "file": "zen-825-tbi_en.pdf",
+  "image": "/uploads/products/generators/zen-825-tbi.png",
+  "attrs": {
+   "Stand-by სიმძლავრე (ESP)": "825 kVA",
+   "Prime სიმძლავრე (PRP)": "742 kVA",
+   "სიმძლავრე kW (ESP / PRP)": "660 / 594 kW",
+   "ბრუნვა": "1500 rpm",
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "დენი": "1077 A",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "ZEN 90 TBI": {
+  "engine": "baudouin",
+  "file": "zen-90-tbi_en.pdf",
+  "image": "/uploads/products/generators/zen-90-tbi.png",
+  "attrs": {
+   "Stand-by სიმძლავრე (ESP)": "90 kVA",
+   "Prime სიმძლავრე (PRP)": "81 kVA",
+   "სიმძლავრე kW (ESP / PRP)": "72 / 65 kW",
+   "ბრუნვა": "1500 rpm",
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "დენი": "117 A",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "ZEN 900 TBI": {
+  "engine": "baudouin",
+  "file": "zen-900-tbi_en.pdf",
+  "image": "/uploads/products/generators/zen-900-tbi.png",
+  "attrs": {
+   "Stand-by სიმძლავრე (ESP)": "900 kVA",
+   "Prime სიმძლავრე (PRP)": "810 kVA",
+   "სიმძლავრე kW (ESP / PRP)": "720 / 648 kW",
+   "ბრუნვა": "1500 rpm",
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "დენი": "1174 A",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-110-ti_en": {
+  "engine": "iveco",
+  "file": "zen-110-ti_en.pdf",
+  "image": "/uploads/products/generators/zen-110-ti-en.png",
+  "attrs": {
+   "Stand-by სიმძლავრე (ESP)": "110 kVA",
+   "Prime სიმძლავრე (PRP)": "100 kVA",
+   "სიმძლავრე kW (ESP / PRP)": "88 / 80 kW",
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "დენი": "145 A",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-132-ti_en": {
+  "engine": "iveco",
+  "file": "zen-132-ti_en.pdf",
+  "image": "/uploads/products/generators/zen-132-ti-en.png",
+  "attrs": {
+   "Stand-by სიმძლავრე (ESP)": "132 kVA",
+   "Prime სიმძლავრე (PRP)": "1 kVA",
+   "სიმძლავრე kW (ESP / PRP)": "106 / 96 kW",
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "დენი": "171 A",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-145-ti_en": {
+  "engine": "iveco",
+  "file": "zen-145-ti_en.pdf",
+  "image": "/uploads/products/generators/zen-145-ti-en.png",
+  "attrs": {
+   "Stand-by სიმძლავრე (ESP)": "145 kVA",
+   "Prime სიმძლავრე (PRP)": "1 kVA",
+   "სიმძლავრე kW (ESP / PRP)": "1 / 1 kW",
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "დენი": "190 A",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-190-ti_en": {
+  "engine": "iveco",
+  "file": "zen-190-ti_en.pdf",
+  "image": "/uploads/products/generators/zen-190-ti-en.png",
+  "attrs": {
+   "Stand-by სიმძლავრე (ESP)": "190 kVA",
+   "Prime სიმძლავრე (PRP)": "170 kVA",
+   "სიმძლავრე kW (ESP / PRP)": "152 / 135 kW",
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "დენი": "247 A",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-220-ti_en": {
+  "engine": "iveco",
+  "file": "zen-220-ti_en.pdf",
+  "image": "/uploads/products/generators/zen-220-ti-en.png",
+  "attrs": {
+   "Stand-by სიმძლავრე (ESP)": "22 kVA",
+   "Prime სიმძლავრე (PRP)": "0 kVA",
+   "სიმძლავრე kW (ESP / PRP)": "175 / 160 kW",
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "დენი": "290 A",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-275-ti_en_": {
+  "engine": "iveco",
+  "file": "zen-275-ti_en_.pdf",
+  "image": "/uploads/products/generators/zen-275-ti-en.png",
+  "attrs": {
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-33-ti_en": {
+  "engine": "iveco",
+  "file": "zen-33-ti_en.pdf",
+  "image": "/uploads/products/generators/zen-33-ti-en.png",
+  "attrs": {
+   "Stand-by სიმძლავრე (ESP)": "33 kVA",
+   "Prime სიმძლავრე (PRP)": "30 kVA",
+   "სიმძლავრე kW (ESP / PRP)": "26,4 / 24 kW",
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "დენი": "45 A",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-330-ti_en": {
+  "engine": "iveco",
+  "file": "zen-330-ti_en.pdf",
+  "image": "/uploads/products/generators/zen-330-ti-en.png",
+  "attrs": {
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-385-ti_en": {
+  "engine": "iveco",
+  "file": "zen-385-ti_en.pdf",
+  "image": "/uploads/products/generators/zen-385-ti-en.png",
+  "attrs": {
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-440-ti_en": {
+  "engine": "iveco",
+  "file": "zen-440-ti_en.pdf",
+  "image": "/uploads/products/generators/zen-440-ti-en.png",
+  "attrs": {
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-45-ti_en": {
+  "engine": "iveco",
+  "file": "zen-45-ti_en.pdf",
+  "image": "/uploads/products/generators/zen-45-ti-en.png",
+  "attrs": {
+   "Stand-by სიმძლავრე (ESP)": "45 kVA",
+   "Prime სიმძლავრე (PRP)": "40,5 kVA",
+   "სიმძლავრე kW (ESP / PRP)": "30 / 32,4 kW",
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "დენი": "58 A",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-500-ti_en": {
+  "engine": "iveco",
+  "file": "zen-500-ti_en.pdf",
+  "image": "/uploads/products/generators/zen-500-ti-en.png",
+  "attrs": {
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-55-ti_en": {
+  "engine": "iveco",
+  "file": "zen-55-ti_en.pdf",
+  "image": "/uploads/products/generators/zen-55-ti-en.png",
+  "attrs": {
+   "Stand-by სიმძლავრე (ESP)": "5 kVA",
+   "Prime სიმძლავრე (PRP)": "5 kVA",
+   "სიმძლავრე kW (ESP / PRP)": "44 / 40 kW",
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "დენი": "72,5 A",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-550-ti_en": {
+  "engine": "iveco",
+  "file": "zen-550-ti_en.pdf",
+  "image": "/uploads/products/generators/zen-550-ti-en.png",
+  "attrs": {
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-620-ti_en": {
+  "engine": "iveco",
+  "file": "zen-620-ti_en.pdf",
+  "image": "/uploads/products/generators/zen-620-ti-en.png",
+  "attrs": {
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-70-ti_en": {
+  "engine": "iveco",
+  "file": "zen-70-ti_en.pdf",
+  "image": "/uploads/products/generators/zen-70-ti-en.png",
+  "attrs": {
+   "Stand-by სიმძლავრე (ESP)": "70 kVA",
+   "Prime სიმძლავრე (PRP)": "6 kVA",
+   "სიმძლავრე kW (ESP / PRP)": "56 / 5 kW",
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "დენი": "87 A",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-90-ti_en": {
+  "engine": "iveco",
+  "file": "zen-90-ti_en.pdf",
+  "image": "/uploads/products/generators/zen-90-ti-en.png",
+  "attrs": {
+   "Stand-by სიმძლავრე (ESP)": "9 kVA",
+   "Prime სიმძლავრე (PRP)": "0 kVA",
+   "სიმძლავრე kW (ESP / PRP)": "72 / 65 kW",
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "დენი": "116 A",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-1000-tp": {
+  "engine": "perkins",
+  "file": "zen-1000-tp.pdf",
+  "image": "/uploads/products/generators/zen-1000-tp.png",
+  "attrs": {
+   "ძაბვა": "400/ 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-110-tp": {
+  "engine": "perkins",
+  "file": "zen-110-tp.pdf",
+  "image": "/uploads/products/generators/zen-110-tp.png",
+  "attrs": {
+   "ძაბვა": "400/ 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-1100-tp-1": {
+  "engine": "perkins",
+  "file": "zen-1100-tp-1.pdf",
+  "image": "/uploads/products/generators/zen-1100-tp-1.png",
+  "attrs": {
+   "ძაბვა": "400/ 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "დენი": "400 A",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-1230-tp": {
+  "engine": "perkins",
+  "file": "zen-1230-tp.pdf",
+  "image": "/uploads/products/generators/zen-1230-tp.png",
+  "attrs": {
+   "ძაბვა": "400/ 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-1375-tp": {
+  "engine": "perkins",
+  "file": "zen-1375-tp.pdf",
+  "image": "/uploads/products/generators/zen-1375-tp.png",
+  "attrs": {
+   "ძაბვა": "400/ 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-15-tp": {
+  "engine": "perkins",
+  "file": "zen-15-tp.pdf",
+  "image": "/uploads/products/generators/zen-15-tp.png",
+  "attrs": {
+   "ძაბვა": "400/ 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-150-tp": {
+  "engine": "perkins",
+  "file": "zen-150-tp.pdf",
+  "image": "/uploads/products/generators/zen-150-tp.png",
+  "attrs": {
+   "ძაბვა": "400/ 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-1500-tp": {
+  "engine": "perkins",
+  "file": "zen-1500-tp.pdf",
+  "image": "/uploads/products/generators/zen-1500-tp.png",
+  "attrs": {
+   "ძაბვა": "400/ 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-165-tp": {
+  "engine": "perkins",
+  "file": "zen-165-tp.pdf",
+  "image": "/uploads/products/generators/zen-165-tp.png",
+  "attrs": {
+   "ძაბვა": "400/ 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-1650-tp": {
+  "engine": "perkins",
+  "file": "zen-1650-tp.pdf",
+  "image": "/uploads/products/generators/zen-1650-tp.png",
+  "attrs": {
+   "ძაბვა": "400/ 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-1870-tp": {
+  "engine": "perkins",
+  "file": "zen-1870-tp.pdf",
+  "image": "/uploads/products/generators/zen-1870-tp.png",
+  "attrs": {
+   "ძაბვა": "400/ 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-200-tp": {
+  "engine": "perkins",
+  "file": "zen-200-tp.pdf",
+  "image": "/uploads/products/generators/zen-200-tp.png",
+  "attrs": {
+   "ძაბვა": "400/ 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-22-tp": {
+  "engine": "perkins",
+  "file": "zen-22-tp.pdf",
+  "image": "/uploads/products/generators/zen-22-tp.png",
+  "attrs": {
+   "ძაბვა": "400/ 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-220-tp": {
+  "engine": "perkins",
+  "file": "zen-220-tp.pdf",
+  "image": "/uploads/products/generators/zen-220-tp.png",
+  "attrs": {
+   "ძაბვა": "400/ 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-250-tp": {
+  "engine": "perkins",
+  "file": "zen-250-tp.pdf",
+  "image": "/uploads/products/generators/zen-250-tp.png",
+  "attrs": {
+   "ძაბვა": "400/ 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-275-tp": {
+  "engine": "perkins",
+  "file": "zen-275-tp.pdf",
+  "image": "/uploads/products/generators/zen-275-tp.png",
+  "attrs": {
+   "ძაბვა": "400/ 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-300-tp": {
+  "engine": "perkins",
+  "file": "zen-300-tp.pdf",
+  "image": "/uploads/products/generators/zen-300-tp.png",
+  "attrs": {
+   "ძაბვა": "400/ 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-33-tp": {
+  "engine": "perkins",
+  "file": "zen-33-tp.pdf",
+  "image": "/uploads/products/generators/zen-33-tp.png",
+  "attrs": {
+   "ძაბვა": "400/ 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-330-tp": {
+  "engine": "perkins",
+  "file": "zen-330-tp.pdf",
+  "image": "/uploads/products/generators/zen-330-tp.png",
+  "attrs": {
+   "ძაბვა": "400/ 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-390-tp": {
+  "engine": "perkins",
+  "file": "zen-390-tp.pdf",
+  "image": "/uploads/products/generators/zen-390-tp.png",
+  "attrs": {
+   "ძაბვა": "400/ 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-44-tp": {
+  "engine": "perkins",
+  "file": "zen-44-tp.pdf",
+  "image": "/uploads/products/generators/zen-44-tp.png",
+  "attrs": {
+   "ძაბვა": "400/ 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-440-tp-2": {
+  "engine": "perkins",
+  "file": "zen-440-tp-2.pdf",
+  "image": "/uploads/products/generators/zen-440-tp-2.png",
+  "attrs": {
+   "ძაბვა": "400/ 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-50-tp": {
+  "engine": "perkins",
+  "file": "zen-50-tp.pdf",
+  "image": "/uploads/products/generators/zen-50-tp.png",
+  "attrs": {
+   "ძაბვა": "400/ 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-500-tp": {
+  "engine": "perkins",
+  "file": "zen-500-tp.pdf",
+  "image": "/uploads/products/generators/zen-500-tp.png",
+  "attrs": {
+   "ძაბვა": "400/ 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-550-tp": {
+  "engine": "perkins",
+  "file": "zen-550-tp.pdf",
+  "image": "/uploads/products/generators/zen-550-tp.png",
+  "attrs": {
+   "ძაბვა": "400/ 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-66-tp": {
+  "engine": "perkins",
+  "file": "zen-66-tp.pdf",
+  "image": "/uploads/products/generators/zen-66-tp.png",
+  "attrs": {
+   "ძაბვა": "400/ 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-660-tp": {
+  "engine": "perkins",
+  "file": "zen-660-tp.pdf",
+  "image": "/uploads/products/generators/zen-660-tp.png",
+  "attrs": {
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-715-tp": {
+  "engine": "perkins",
+  "file": "zen-715-tp.pdf",
+  "image": "/uploads/products/generators/zen-715-tp.png",
+  "attrs": {
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-72-tp": {
+  "engine": "perkins",
+  "file": "zen-72-tp.pdf",
+  "image": "/uploads/products/generators/zen-72-tp.png",
+  "attrs": {
+   "ძაბვა": "400/ 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-825-tp": {
+  "engine": "perkins",
+  "file": "zen-825-tp.pdf",
+  "image": "/uploads/products/generators/zen-825-tp.png",
+  "attrs": {
+   "ძაბვა": "400/ 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-88-tp": {
+  "engine": "perkins",
+  "file": "zen-88-tp.pdf",
+  "image": "/uploads/products/generators/zen-88-tp.png",
+  "attrs": {
+   "ძაბვა": "400/ 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-880-tp": {
+  "engine": "perkins",
+  "file": "zen-880-tp.pdf",
+  "image": "/uploads/products/generators/zen-880-tp.png",
+  "attrs": {
+   "ძაბვა": "400/ 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "გაგრილება": "თხევადი",
+   "ფაზა": "სამფაზა",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-280-ts_en": {
+  "engine": "scania",
+  "file": "zen-280-ts_en.pdf",
+  "image": "/uploads/products/generators/zen-280-ts-en.png",
+  "attrs": {
+   "ბრუნვა": "1500 rpm",
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0.2",
+   "გაგრილება": "თხევადი",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-310-ts_en": {
+  "engine": "scania",
+  "file": "zen-310-ts_en.pdf",
+  "image": "/uploads/products/generators/zen-310-ts-en.png",
+  "attrs": {
+   "ბრუნვა": "1500 rpm",
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0.2",
+   "გაგრილება": "თხევადი",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-335-ts_en": {
+  "engine": "scania",
+  "file": "zen-335-ts_en.pdf",
+  "image": "/uploads/products/generators/zen-335-ts-en.png",
+  "attrs": {
+   "ბრუნვა": "1500 rpm",
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0.2",
+   "გაგრილება": "თხევადი",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-365-ts_en": {
+  "engine": "scania",
+  "file": "zen-365-ts_en.pdf",
+  "image": "/uploads/products/generators/zen-365-ts-en.png",
+  "attrs": {
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "გაგრილება": "თხევადი",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-410-ts_en": {
+  "engine": "scania",
+  "file": "zen-410-ts_en.pdf",
+  "image": "/uploads/products/generators/zen-410-ts-en.png",
+  "attrs": {
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "გაგრილება": "თხევადი",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-460-ts_en": {
+  "engine": "scania",
+  "file": "zen-460-ts_en.pdf",
+  "image": "/uploads/products/generators/zen-460-ts-en.png",
+  "attrs": {
+   "ბრუნვა": "1500 rpm",
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0.2",
+   "გაგრილება": "თხევადი",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-500-ts_en": {
+  "engine": "scania",
+  "file": "zen-500-ts_en.pdf",
+  "image": "/uploads/products/generators/zen-500-ts-en.png",
+  "attrs": {
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "გაგრილება": "თხევადი",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-550-ts_en": {
+  "engine": "scania",
+  "file": "zen-550-ts_en.pdf",
+  "image": "/uploads/products/generators/zen-550-ts-en.png",
+  "attrs": {
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "გაგრილება": "თხევადი",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-615-ts_en": {
+  "engine": "scania",
+  "file": "zen-615-ts_en.pdf",
+  "image": "/uploads/products/generators/zen-615-ts-en.png",
+  "attrs": {
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "გაგრილება": "თხევადი",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-670-ts_en": {
+  "engine": "scania",
+  "file": "zen-670-ts_en.pdf",
+  "image": "/uploads/products/generators/zen-670-ts-en.png",
+  "attrs": {
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "გაგრილება": "თხევადი",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-715-ts_en": {
+  "engine": "scania",
+  "file": "zen-715-ts_en.pdf",
+  "image": "/uploads/products/generators/zen-715-ts-en.png",
+  "attrs": {
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "გაგრილება": "თხევადი",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-770-ts_en": {
+  "engine": "scania",
+  "file": "zen-770-ts_en.pdf",
+  "image": "/uploads/products/generators/zen-770-ts-en.png",
+  "attrs": {
+   "სიმძლავრე kW (ESP / PRP)": "616 / 554 kW",
+   "ძაბვა": "400 / 230 V",
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "დენი": "1005 A",
+   "გაგრილება": "თხევადი",
+   "სიხშირე": "50 Hz"
+  }
+ },
+ "zen-800-ts_en": {
+  "engine": "scania",
+  "file": "zen-800-ts_en.pdf",
+  "image": "/uploads/products/generators/zen-800-ts-en.png",
+  "attrs": {
+   "სიმძლავრის კოეფიციენტი": "0,8",
+   "გაგრილება": "თხევადი",
+   "სიხშირე": "50 Hz"
+  }
+ }
+}
