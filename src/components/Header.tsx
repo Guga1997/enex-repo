@@ -37,6 +37,12 @@ export default async function Header() {
             კატალოგი
           </Link>
           <Link
+            href="/generators"
+            className="hidden rounded-lg px-3 py-2 text-muted transition hover:bg-canvas hover:text-ink lg:block"
+          >
+            გენერატორები
+          </Link>
+          <Link
             href="/order/track"
             className="hidden rounded-lg px-3 py-2 text-muted transition hover:bg-canvas hover:text-ink sm:block"
           >

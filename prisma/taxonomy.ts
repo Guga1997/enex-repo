@@ -21,6 +21,15 @@ export const TAXONOMY: Node[] = [
         ],
       },
       {
+        name: "დიზელის გენერატორები",
+        children: [
+          { name: "Baudouin ძრავით" },
+          { name: "IVECO ძრავით" },
+          { name: "Perkins ძრავით" },
+          { name: "Scania ძრავით" },
+        ],
+      },
+      {
         name: "პორტატული ელსადგურები",
         children: [
           { name: "ელსადგურები" },

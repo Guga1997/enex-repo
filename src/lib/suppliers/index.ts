@@ -301,7 +301,19 @@ export async function syncSupplier(supplierId: string): Promise<SyncResult> {
             });
           }
         } else {
-          await recategorizeIfVague(productId, item.categoryPath);
+          const pid: string = productId;
+          await recategorizeIfVague(pid, item.categoryPath);
+          // დოკუმენტები/მახასიათებლები, თუ პროდუქტს ჯერ არ აქვს — მიმწოდებელმა მოგვიანებით რომ დაამატოს
+          if (item.documents?.length && !(await db.productDocument.count({ where: { productId: pid } }))) {
+            await db.productDocument.createMany({
+              data: item.documents.map((d, i) => ({ productId: pid, title: d.title, url: d.url, sortOrder: i })),
+            });
+          }
+          if (item.attributes?.length && !(await db.productAttribute.count({ where: { productId: pid } }))) {
+            await db.productAttribute.createMany({
+              data: item.attributes.map((a, i) => ({ productId: pid, name: a.name, value: a.value, sortOrder: i })),
+            });
+          }
           await db.product.update({
             where: { id: productId },
             data: {

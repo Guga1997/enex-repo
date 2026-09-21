@@ -17,3 +17,4 @@ public/uploads/*
 /prisma/schema.postgres.prisma
 tsconfig.tsbuildinfo
 data/pricelists/
+data/fx.json
