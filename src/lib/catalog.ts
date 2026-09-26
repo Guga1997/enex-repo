@@ -183,6 +183,8 @@ export type FacetValue = {
  */
 function bucketize(values: FacetValue[]): FacetValue[] {
   if (values.length <= 12) return values;
+  // შედგენილი მნიშვნელობა („1000 / 900 kW“) დიაპაზონად არ გამოდგება
+  if (values.some((v) => v.value.includes("/"))) return values;
   const numeric = values.filter((v) => numOf(v.value) !== null);
   if (numeric.length < values.length * 0.8) return values; // ტექსტურია — არ ვჯგუფავთ
 
