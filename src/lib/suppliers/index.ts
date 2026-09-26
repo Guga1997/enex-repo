@@ -82,9 +82,10 @@ const attrValue = (v: string) => {
     .replace(/\s+/g, " ")
     .replace(/\s*\/\s*/g, " / ")
     .trim();
-  if (t === "+") return "კი";
-  if (t === "-" || t === "–" || t === "—") return "არა";
-  return t;
+  const clean = t.replace(/[;,.\s]+$/, "").trim();
+  if (clean === "+") return "კი";
+  if (clean === "-" || clean === "–" || clean === "—") return "არა";
+  return clean;
 };
 
 export async function resolveCategoryId(path: string[] | undefined): Promise<string> {

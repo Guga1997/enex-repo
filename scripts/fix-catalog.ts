@@ -67,6 +67,22 @@ const say = (s: string) => console.log(s);
     }
   }
 
+  // 3a — მახასიათებლის ბოლოს ჩამოშრეტილი „;“ („ColorVu;“ → „ColorVu“)
+  const tails = await db.productAttribute.findMany({
+    where: { OR: [{ value: { endsWith: ";" } }, { value: { endsWith: "," } }, { value: { endsWith: "." } }] },
+    select: { id: true, value: true },
+  });
+  const cut = (v: string) => v.replace(/[;,.\s]+$/, "").trim();
+  say(`\n### მახასიათებლის ბოლოს ზედმეტი ნიშანი — ${tails.length}`);
+  for (const a of tails.slice(0, 5)) say(`  „${a.value}“ → „${cut(a.value)}“`);
+  if (write) {
+    for (const a of tails) {
+      const v = cut(a.value);
+      if (!v) await db.productAttribute.delete({ where: { id: a.id } });
+      else await db.productAttribute.update({ where: { id: a.id }, data: { value: v } });
+    }
+  }
+
   // 3 — „+“ / „-“ → „კი“ / „არა“
   const flags = await db.productAttribute.findMany({
     where: { value: { in: ["+", "-", "–", "—"] } },
