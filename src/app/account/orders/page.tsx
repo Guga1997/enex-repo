@@ -1,7 +1,8 @@
-import Link from "next/link";
+import Link from "@/components/Link";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/customer-auth";
 import { gel, formatDate } from "@/lib/format";
+import { getT } from "@/lib/i18n/server";
 import {
   ORDER_BUCKETS,
   ORDER_STATUS_LABELS,
@@ -18,6 +19,7 @@ export default async function AccountOrdersPage({
 }: {
   searchParams: Promise<{ tab?: string }>;
 }) {
+  const t = await getT();
   const user = (await getCurrentUser())!;
   const { tab } = await searchParams;
   const active: OrderBucket =
@@ -61,9 +63,9 @@ export default async function AccountOrdersPage({
 
       {orders.length === 0 ? (
         <div className="card p-8 text-center">
-          <p className="text-muted">ამ განყოფილებაში შეკვეთა არ არის.</p>
+          <p className="text-muted">{t("ამ განყოფილებაში შეკვეთა არ არის.")}</p>
           <Link href="/catalog" className="mt-3 inline-block text-sm font-medium text-brand-600 hover:underline">
-            კატალოგში გადასვლა
+            {t("კატალოგში გადასვლა")}
           </Link>
         </div>
       ) : (
@@ -78,12 +80,12 @@ export default async function AccountOrdersPage({
               <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted">
                 <span>{o.items.length} პოზიცია</span>
                 <span>{DELIVERY_METHOD_LABELS[o.deliveryMethod] ?? o.deliveryMethod}</span>
-                <span>{PAYMENT_METHOD_LABELS[o.paymentMethod] ?? o.paymentMethod}</span>
+                <span>{t(PAYMENT_METHOD_LABELS[o.paymentMethod] ?? o.paymentMethod)}</span>
               </div>
 
               <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
                 <span className="rounded-full bg-canvas px-2.5 py-1 text-xs font-medium">
-                  {ORDER_STATUS_LABELS[o.status] ?? o.status}
+                  {t(ORDER_STATUS_LABELS[o.status] ?? o.status)}
                 </span>
                 <span className="text-lg font-bold">{gel(o.total)}</span>
               </div>

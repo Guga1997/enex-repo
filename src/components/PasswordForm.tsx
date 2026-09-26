@@ -2,22 +2,24 @@
 
 import { useActionState } from "react";
 import { changePasswordAction, type FormState } from "@/app/actions/customer";
+import { useT } from "@/components/LocaleProvider";
 
 const field =
   "w-full rounded-lg border border-line px-3 py-2.5 text-sm outline-none focus:border-brand-500";
 
 export default function PasswordForm() {
+  const t = useT();
   const [state, action, pending] = useActionState<FormState, FormData>(changePasswordAction, null);
 
   return (
     <form action={action} className="card max-w-md space-y-4 p-4">
       <label className="block">
-        <span className="mb-1.5 block text-sm font-medium">მიმდინარე პაროლი</span>
+        <span className="mb-1.5 block text-sm font-medium">{t("მიმდინარე პაროლი")}</span>
         <input name="current" type="password" required autoComplete="current-password" className={field} />
       </label>
 
       <label className="block">
-        <span className="mb-1.5 block text-sm font-medium">ახალი პაროლი</span>
+        <span className="mb-1.5 block text-sm font-medium">{t("ახალი პაროლი")}</span>
         <input
           name="next"
           type="password"
@@ -25,12 +27,12 @@ export default function PasswordForm() {
           minLength={8}
           autoComplete="new-password"
           className={field}
-          placeholder="მინიმუმ 8 სიმბოლო"
+          placeholder={t("მინიმუმ 8 სიმბოლო")}
         />
       </label>
 
       <label className="block">
-        <span className="mb-1.5 block text-sm font-medium">გაიმეორე ახალი პაროლი</span>
+        <span className="mb-1.5 block text-sm font-medium">{t("გაიმეორე ახალი პაროლი")}</span>
         <input name="next2" type="password" required autoComplete="new-password" className={field} />
       </label>
 

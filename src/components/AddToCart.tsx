@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { useCart, type CartLine } from "./CartProvider";
+import { useT } from "@/components/LocaleProvider";
 
 type Props = { line: Omit<CartLine, "qty">; disabled?: boolean; withQty?: boolean };
 
 export default function AddToCart({ line, disabled, withQty }: Props) {
+  const t = useT();
   const { add } = useCart();
   const [qty, setQty] = useState(1);
   const [done, setDone] = useState(false);
@@ -13,7 +15,7 @@ export default function AddToCart({ line, disabled, withQty }: Props) {
   if (disabled) {
     return (
       <button disabled className="btn w-full cursor-not-allowed bg-canvas text-muted">
-        არ არის მარაგში
+        {t("არ არის მარაგში")}
       </button>
     );
   }
@@ -25,7 +27,7 @@ export default function AddToCart({ line, disabled, withQty }: Props) {
           <button
             onClick={() => setQty((q) => Math.max(1, q - 1))}
             className="px-3 py-2.5 text-muted hover:text-ink"
-            aria-label="შემცირება"
+            aria-label={t("შემცირება")}
           >
             −
           </button>
@@ -38,7 +40,7 @@ export default function AddToCart({ line, disabled, withQty }: Props) {
           <button
             onClick={() => setQty((q) => q + 1)}
             className="px-3 py-2.5 text-muted hover:text-ink"
-            aria-label="გაზრდა"
+            aria-label={t("გაზრდა")}
           >
             +
           </button>

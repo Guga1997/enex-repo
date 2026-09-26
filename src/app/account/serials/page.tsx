@@ -1,11 +1,13 @@
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/customer-auth";
 import { formatDate } from "@/lib/format";
+import { getT } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "სერიული ნომრები" };
 
 export default async function SerialsPage() {
+  const t = await getT();
   const user = (await getCurrentUser())!;
 
   const items = await db.orderItem.findMany({
@@ -25,25 +27,25 @@ export default async function SerialsPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-xl font-bold">სერიული ნომრები</h1>
+        <h1 className="text-xl font-bold">{t("სერიული ნომრები")}</h1>
         <p className="mt-1 text-sm text-muted">
-          ნომრები მიწოდებისას ჩაიწერება — სერვისში მიმართვისას ეს სია გამოგადგება.
+          {t("ნომრები მიწოდებისას ჩაიწერება — სერვისში მიმართვისას ეს სია გამოგადგება.")}
         </p>
       </div>
 
       {rows.length === 0 ? (
         <p className="card p-6 text-center text-muted">
-          სერიული ნომრები ჯერ არ დაფიქსირებულა.
+          {t("სერიული ნომრები ჯერ არ დაფიქსირებულა.")}
         </p>
       ) : (
         <div className="card overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="border-b border-line text-left text-muted">
               <tr>
-                <th className="px-4 py-3 font-medium">სერიული ნომერი</th>
-                <th className="px-4 py-3 font-medium">პროდუქტი</th>
-                <th className="px-4 py-3 font-medium">შეკვეთა</th>
-                <th className="px-4 py-3 font-medium">თარიღი</th>
+                <th className="px-4 py-3 font-medium">{t("სერიული ნომერი")}</th>
+                <th className="px-4 py-3 font-medium">{t("პროდუქტი")}</th>
+                <th className="px-4 py-3 font-medium">{t("შეკვეთა")}</th>
+                <th className="px-4 py-3 font-medium">{t("თარიღი")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">

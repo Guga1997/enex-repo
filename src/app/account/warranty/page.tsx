@@ -1,11 +1,13 @@
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/customer-auth";
 import { formatDate } from "@/lib/format";
+import { getT } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "გარანტია" };
 
 export default async function WarrantyPage() {
+  const t = await getT();
   const user = (await getCurrentUser())!;
 
   const items = await db.orderItem.findMany({
@@ -18,11 +20,11 @@ export default async function WarrantyPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold">გარანტია</h1>
+      <h1 className="text-xl font-bold">{t("გარანტია")}</h1>
 
       {items.length === 0 ? (
         <p className="card p-6 text-center text-muted">
-          გარანტიაზე მყოფი პროდუქტი ჯერ არ არის.
+          {t("გარანტიაზე მყოფი პროდუქტი ჯერ არ არის.")}
         </p>
       ) : (
         <div className="space-y-3">

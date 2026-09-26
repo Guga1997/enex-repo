@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { Noto_Sans_Georgian } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/components/CartProvider";
+import { LocaleProvider } from "@/components/LocaleProvider";
+import { getLocale } from "@/lib/i18n/server";
+import { HTML_LANG } from "@/lib/i18n/config";
 import { DEFAULT_DESCRIPTION, SITE_URL } from "@/lib/seo";
 
 /**
@@ -40,14 +43,17 @@ export const metadata: Metadata = {
  */
 const THEME_SCRIPT = `try{var t=localStorage.getItem('theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme:dark)').matches))document.documentElement.classList.add('dark')}catch(e){}`;
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const locale = await getLocale();
   return (
-    <html lang="ka" className={georgian.variable} suppressHydrationWarning>
+    <html lang={HTML_LANG[locale]} className={georgian.variable} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
       <body>
-        <CartProvider>{children}</CartProvider>
+        <LocaleProvider locale={locale}>
+          <CartProvider>{children}</CartProvider>
+        </LocaleProvider>
       </body>
     </html>
   );

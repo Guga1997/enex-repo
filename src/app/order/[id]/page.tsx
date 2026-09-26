@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/Link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { db } from "@/lib/db";
@@ -7,6 +7,7 @@ import { markOrderFailed, markOrderPaid } from "@/lib/orders";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { gel, formatDate } from "@/lib/format";
+import { getT } from "@/lib/i18n/server";
 import {
   ORDER_STATUS_LABELS,
   PAYMENT_METHOD_LABELS,
@@ -23,6 +24,7 @@ export default async function OrderPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ paid?: string; failed?: string; payment_error?: string }>;
 }) {
+  const t = await getT();
   const { id } = await params;
   const flags = await searchParams;
 
@@ -68,18 +70,18 @@ export default async function OrderPage({
           </h1>
           {!paid && !expired && order.reservedUntil && (
             <p className="mt-2 text-sm text-muted">
-              ნაშთი შენთვისაა დაკავებული <b>{formatDate(order.reservedUntil)}</b>{" "}
+              {t("ნაშთი შენთვისაა დაკავებული")} <b>{formatDate(order.reservedUntil)}</b>{" "}
               {order.reservedUntil.toLocaleTimeString("ka-GE", { timeZone: "Asia/Tbilisi", hour: "2-digit", minute: "2-digit" })}-მდე — ამის შემდეგ შეკვეთა
               ავტომატურად გაუქმდება.
             </p>
           )}
           {order.status === "EXPIRED" && (
             <p className="mt-2 text-sm text-muted">
-              გადახდა დროულად არ დადასტურდა და ნაშთი გათავისუფლდა. კალათა შენახულია — თავიდან გააფორმე.
+              {t("გადახდა დროულად არ დადასტურდა და ნაშთი გათავისუფლდა. კალათა შენახულია — თავიდან გააფორმე.")}
             </p>
           )}
           <p className="mt-1 text-sm text-muted">
-            შეკვეთის ნომერი: <b className="text-ink">{order.number}</b>
+            {t("შეკვეთის ნომერი:")} <b className="text-ink">{order.number}</b>
           </p>
 
           {!paid && order.paymentMethod === "BANK_TRANSFER" && (
@@ -94,7 +96,7 @@ export default async function OrderPage({
                     rel="noopener noreferrer"
                     className="font-medium text-brand-600 hover:underline"
                   >
-                    ინვოისის ნახვა
+                    {t("ინვოისის ნახვა")}
                   </a>
                 </>
               )}
@@ -115,28 +117,28 @@ export default async function OrderPage({
 
         <div className="card mt-6 divide-y divide-line">
           <div className="grid gap-4 p-5 sm:grid-cols-2">
-            <Info label="თარიღი" value={formatDate(order.createdAt)} />
-            <Info label="სტატუსი" value={ORDER_STATUS_LABELS[order.status] ?? order.status} />
+            <Info label={t("თარიღი")} value={formatDate(order.createdAt)} />
+            <Info label={t("სტატუსი")} value={t(ORDER_STATUS_LABELS[order.status] ?? order.status)} />
             <Info
-              label="გადახდა"
-              value={`${PAYMENT_METHOD_LABELS[order.paymentMethod] ?? order.paymentMethod} — ${
-                PAYMENT_STATUS_LABELS[order.paymentStatus] ?? order.paymentStatus
+              label={t("გადახდა")}
+              value={`${t(PAYMENT_METHOD_LABELS[order.paymentMethod] ?? order.paymentMethod)} — ${
+                t(PAYMENT_STATUS_LABELS[order.paymentStatus] ?? order.paymentStatus)
               }`}
             />
             <Info
-              label="მიწოდება"
+              label={t("მიწოდება")}
               value={
                 order.deliveryMethod === "PICKUP"
                   ? "თვითგატანა"
                   : `${order.deliveryCity ?? ""} ${order.deliveryAddress ?? ""}`.trim()
               }
             />
-            <Info label="მიმღები" value={order.customerName} />
-            <Info label="ტელეფონი" value={order.customerPhone} />
+            <Info label={t("მიმღები")} value={order.customerName} />
+            <Info label={t("ტელეფონი")} value={order.customerPhone} />
           </div>
 
           <div className="p-5">
-            <h2 className="mb-3 font-semibold">პროდუქტები</h2>
+            <h2 className="mb-3 font-semibold">{t("პროდუქტები")}</h2>
             <ul className="divide-y divide-line text-sm">
               {order.items.map((i) => (
                 <li key={i.id} className="flex justify-between gap-4 py-2.5">
@@ -151,22 +153,22 @@ export default async function OrderPage({
 
           <div className="space-y-2 p-5 text-sm">
             <div className="flex justify-between">
-              <span className="text-muted">პროდუქტები</span>
+              <span className="text-muted">{t("პროდუქტები")}</span>
               <span>{gel(order.subtotal)}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-muted">მიწოდება</span>
+              <span className="text-muted">{t("მიწოდება")}</span>
               <span>{order.deliveryFee === 0 ? "უფასო" : gel(order.deliveryFee)}</span>
             </div>
             <div className="flex justify-between border-t border-line pt-2 text-base font-bold">
-              <span>ჯამი</span>
+              <span>{t("ჯამი")}</span>
               <span>{gel(order.total)}</span>
             </div>
           </div>
         </div>
 
         <Link href="/catalog" className="btn btn-outline mt-6 w-full">
-          შოპინგის გაგრძელება
+          {t("შოპინგის გაგრძელება")}
         </Link>
       </main>
       <Footer />

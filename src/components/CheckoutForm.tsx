@@ -1,11 +1,12 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/Link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useCart } from "./CartProvider";
 import { gel } from "@/lib/format";
 import { FREE_DELIVERY_FROM, PAYMENT_METHOD_LABELS } from "@/lib/constants";
+import { useT } from "@/components/LocaleProvider";
 
 const CITIES = ["თბილისი", "ბათუმი", "ქუთაისი", "რუსთავი", "გორი", "ზუგდიდი", "თელავი", "სხვა"];
 
@@ -39,6 +40,7 @@ export default function CheckoutForm({
   user?: CheckoutUser;
   organizations?: CheckoutOrg[];
 }) {
+  const t = useT();
   const { lines, subtotal, clear, ready } = useCart();
   const router = useRouter();
 
@@ -77,9 +79,9 @@ export default function CheckoutForm({
   if (lines.length === 0) {
     return (
       <div className="card p-12 text-center">
-        <p className="text-muted">კალათა ცარიელია.</p>
+        <p className="text-muted">{t("კალათა ცარიელია.")}</p>
         <Link href="/catalog" className="btn btn-primary mt-4">
-          კატალოგში გადასვლა
+          {t("კატალოგში გადასვლა")}
         </Link>
       </div>
     );
@@ -143,21 +145,21 @@ export default function CheckoutForm({
     <form onSubmit={submit} className="grid gap-6 lg:grid-cols-[1fr_20rem]">
       <div className="space-y-6">
         <fieldset className="card p-5">
-          <legend className="px-1 font-semibold">საკონტაქტო ინფორმაცია</legend>
+          <legend className="px-1 font-semibold">{t("საკონტაქტო ინფორმაცია")}</legend>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <Field name="customerName" label="სახელი და გვარი" required defaultValue={user?.name} />
+            <Field name="customerName" label={t("სახელი და გვარი")} required defaultValue={user?.name} />
             <Field
               name="customerPhone"
-              label="ტელეფონი"
+              label={t("ტელეფონი")}
               type="tel"
               placeholder="5XX XX XX XX"
               required
               defaultValue={user?.phone}
             />
-            <Field name="customerEmail" label="ელფოსტა" type="email" required defaultValue={user?.email} />
+            <Field name="customerEmail" label={t("ელფოსტა")} type="email" required defaultValue={user?.email} />
             <Field
               name="customerId"
-              label="პირადი ნომერი"
+              label={t("პირადი ნომერი")}
               hint="ზედნადებისთვის, არასავალდებულო"
               defaultValue={user?.taxId}
             />
@@ -170,13 +172,13 @@ export default function CheckoutForm({
               onChange={(e) => setIsCompany(e.target.checked)}
               className="size-4 accent-brand-500"
             />
-            იურიდიული პირი
+            {t("იურიდიული პირი")}
           </label>
           {isCompany && (
             <div className="mt-4">
               {organizations.length > 0 ? (
                 <label className="block">
-                  <span className="mb-1.5 block text-sm font-medium">ორგანიზაცია</span>
+                  <span className="mb-1.5 block text-sm font-medium">{t("ორგანიზაცია")}</span>
                   <select
                     value={organizationId}
                     onChange={(e) => setOrganizationId(e.target.value)}
@@ -189,29 +191,29 @@ export default function CheckoutForm({
                     ))}
                   </select>
                   <span className="mt-1 block text-xs text-muted">
-                    ინვოისი არჩეული ორგანიზაციის რეკვიზიტებით გამოიწერება
+                    {t("ინვოისი არჩეული ორგანიზაციის რეკვიზიტებით გამოიწერება")}
                   </span>
                 </label>
               ) : (
-                <Field name="companyName" label="კომპანიის დასახელება და ს/კ" required />
+                <Field name="companyName" label={t("კომპანიის დასახელება და ს/კ")} required />
               )}
             </div>
           )}
         </fieldset>
 
         <fieldset className="card p-5">
-          <legend className="px-1 font-semibold">მიწოდება</legend>
+          <legend className="px-1 font-semibold">{t("მიწოდება")}</legend>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <Radio
               checked={deliveryMethod === "COURIER"}
               onChange={() => setDeliveryMethod("COURIER")}
-              title="ადგილზე მიტანა"
+              title={t("ადგილზე მიტანა")}
               desc={subtotal >= FREE_DELIVERY_FROM ? "უფასო" : "15₾"}
             />
             <Radio
               checked={deliveryMethod === "PICKUP"}
               onChange={() => setDeliveryMethod("PICKUP")}
-              title="საწყობიდან გატანა"
+              title={t("საწყობიდან გატანა")}
               desc="უფასო"
             />
           </div>
@@ -219,7 +221,7 @@ export default function CheckoutForm({
           {deliveryMethod === "COURIER" && (
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <label className="block">
-                <span className="mb-1.5 block text-sm font-medium">ქალაქი</span>
+                <span className="mb-1.5 block text-sm font-medium">{t("ქალაქი")}</span>
                 <select
                   name="deliveryCity"
                   className="w-full rounded-lg border border-line px-3 py-2.5 text-sm outline-none focus:border-brand-500"
@@ -229,20 +231,20 @@ export default function CheckoutForm({
                   ))}
                 </select>
               </label>
-              <Field name="deliveryAddress" label="მისამართი" required />
+              <Field name="deliveryAddress" label={t("მისამართი")} required />
             </div>
           )}
         </fieldset>
 
         <fieldset className="card p-5">
-          <legend className="px-1 font-semibold">გადახდის მეთოდი</legend>
+          <legend className="px-1 font-semibold">{t("გადახდის მეთოდი")}</legend>
           <div className="mt-4 space-y-3">
             {(["BOG", "BANK_TRANSFER", "POS", "INSTALLMENT"] as const).map((m) => (
               <Radio
                 key={m}
                 checked={paymentMethod === m}
                 onChange={() => setPaymentMethod(m)}
-                title={PAYMENT_METHOD_LABELS[m]}
+                title={t(PAYMENT_METHOD_LABELS[m])}
                 desc={
                   m === "BANK_TRANSFER"
                     ? "ინვოისი მაშინვე მოვა " + (user?.email ?? "მითითებულ ელფოსტაზე")
@@ -258,18 +260,18 @@ export default function CheckoutForm({
         </fieldset>
 
         <fieldset className="card p-5">
-          <legend className="px-1 font-semibold">კომენტარი</legend>
+          <legend className="px-1 font-semibold">{t("კომენტარი")}</legend>
           <textarea
             name="comment"
             rows={3}
-            placeholder="დამატებითი ინფორმაცია შეკვეთაზე"
+            placeholder={t("დამატებითი ინფორმაცია შეკვეთაზე")}
             className="mt-4 w-full rounded-lg border border-line px-3 py-2.5 text-sm outline-none focus:border-brand-500"
           />
         </fieldset>
       </div>
 
       <aside className="card h-fit p-5 lg:sticky lg:top-24">
-        <h2 className="mb-4 font-semibold">თქვენი შეკვეთა</h2>
+        <h2 className="mb-4 font-semibold">{t("თქვენი შეკვეთა")}</h2>
         <ul className="max-h-64 space-y-3 overflow-y-auto text-sm">
           {(quote?.lines ?? lines.map((l) => ({
             productId: l.productId, name: l.name, qty: l.qty,
@@ -292,7 +294,7 @@ export default function CheckoutForm({
 
         <dl className="mt-4 space-y-2 border-t border-line pt-4 text-sm">
           <div className="flex justify-between">
-            <dt className="text-muted">პროდუქტები</dt>
+            <dt className="text-muted">{t("პროდუქტები")}</dt>
             <dd>{gel(shownSubtotal)}</dd>
           </div>
           {quote && quote.saved > 0 && (
@@ -302,25 +304,25 @@ export default function CheckoutForm({
             </div>
           )}
           <div className="flex justify-between">
-            <dt className="text-muted">მიწოდება</dt>
+            <dt className="text-muted">{t("მიწოდება")}</dt>
             <dd>{deliveryFee === 0 ? "უფასო" : gel(deliveryFee)}</dd>
           </div>
           {quote && quote.weightKg > 0 && (
             <div className="flex justify-between">
-              <dt className="text-muted">წონა</dt>
+              <dt className="text-muted">{t("წონა")}</dt>
               <dd>{quote.weightKg} კგ</dd>
             </div>
           )}
           {quote && quote.volumeM3 > 0 && (
             <div className="flex justify-between">
-              <dt className="text-muted">მოცულობა</dt>
+              <dt className="text-muted">{t("მოცულობა")}</dt>
               <dd>{quote.volumeM3} მ³</dd>
             </div>
           )}
         </dl>
 
         <div className="mt-4 flex justify-between border-t border-line pt-4 text-lg font-bold">
-          <span>ჯამი</span>
+          <span>{t("ჯამი")}</span>
           <span>{gel(total)}</span>
         </div>
 

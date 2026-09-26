@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/Link";
 import { db } from "@/lib/db";
 import Logo from "./Logo";
 import CartButton from "./CartButton";
@@ -6,8 +6,11 @@ import SearchBox from "./SearchBox";
 import AccountButton from "./AccountButton";
 import NavSegment from "./NavSegment";
 import ThemeToggle from "./ThemeToggle";
+import LangSwitcher from "./LangSwitcher";
+import { getT } from "@/lib/i18n/server";
 
 export default async function Header() {
+  const t = await getT();
   // სამი დონე ერთი მოთხოვნით: სეგმენტი → ქვეჯგუფი → ქვე-ქვეჯგუფი
   const categories = await db.category.findMany({
     where: { parentId: null, isActive: true },
@@ -26,7 +29,7 @@ export default async function Header() {
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-surface">
       <div className="container-x flex h-16 items-center gap-4">
-        <Link href="/" className="shrink-0 text-ink" aria-label="Enex — მთავარი">
+        <Link href="/" className="shrink-0 text-ink" aria-label={t("Enex — მთავარი")}>
           <Logo className="h-9 w-auto" />
         </Link>
 
@@ -36,26 +39,27 @@ export default async function Header() {
 
         <nav className="ml-auto flex items-center gap-1 text-sm">
           <Link href="/catalog" className="rounded-lg px-3 py-2 text-muted transition hover:bg-canvas hover:text-ink">
-            კატალოგი
+            {t("კატალოგი")}
           </Link>
           <Link
             href="/generators"
             className="hidden rounded-lg px-3 py-2 text-muted transition hover:bg-canvas hover:text-ink lg:block"
           >
-            გენერატორები
+            {t("გენერატორები")}
           </Link>
           <Link
             href="/hotel"
             className="hidden rounded-lg px-3 py-2 text-muted transition hover:bg-canvas hover:text-ink lg:block"
           >
-            სასტუმროსთვის
+            {t("სასტუმროსთვის")}
           </Link>
           <Link
             href="/order/track"
             className="hidden rounded-lg px-3 py-2 text-muted transition hover:bg-canvas hover:text-ink sm:block"
           >
-            შეკვეთის მოძებნა
+            {t("შეკვეთის მოძებნა")}
           </Link>
+          <LangSwitcher className="hidden sm:flex" />
           <ThemeToggle />
           <AccountButton />
           <CartButton />

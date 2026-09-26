@@ -1,9 +1,10 @@
 import Image from "next/image";
-import Link from "next/link";
+import Link from "@/components/Link";
 import { gel } from "@/lib/format";
 import { stockLabel } from "@/lib/stock";
 import { effectivePrice, type Viewer } from "@/lib/pricing";
 import ProductPlaceholder from "./ProductPlaceholder";
+import { getT } from "@/lib/i18n/server";
 
 export type CardProduct = {
   id: string;
@@ -32,8 +33,9 @@ const TONE = {
   none: "text-muted",
 } as const;
 
-export default function ProductCard({ p, viewer }: { p: CardProduct; viewer?: Viewer }) {
-  const stock = stockLabel(p);
+export default async function ProductCard({ p, viewer }: { p: CardProduct; viewer?: Viewer }) {
+  const t = await getT();
+  const stock = stockLabel(p, t);
   const price = effectivePrice(p, viewer ?? null);
 
   // ბეჯი ეყრდნობა ან ძველ ფასს, ან მომხმარებლის დონეს
@@ -67,7 +69,7 @@ export default function ProductCard({ p, viewer }: { p: CardProduct; viewer?: Vi
           ) : null}
           {p.isNew && (
             <span className="rounded bg-brand-500 px-2 py-0.5 text-[11px] font-bold text-white">
-              ახალი
+              {t("ახალი")}
             </span>
           )}
         </div>
@@ -91,7 +93,7 @@ export default function ProductCard({ p, viewer }: { p: CardProduct; viewer?: Vi
                 <span className="text-lg font-bold text-brand-600">{gel(price.value)}</span>
               </div>
               <div className="flex items-baseline gap-2 text-xs text-muted">
-                <span>საცალო:</span>
+                <span>{t("საცალო:")}</span>
                 <span className="line-through">{gel(price.retail)}</span>
               </div>
             </div>

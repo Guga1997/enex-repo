@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/Link";
 import Image from "next/image";
 import { db } from "@/lib/db";
 import Header from "@/components/Header";
@@ -9,10 +9,13 @@ import CategoryIcon from "@/components/CategoryIcon";
 import { segmentTheme } from "@/lib/segment-theme";
 import { JsonLd, organizationJsonLd, websiteJsonLd } from "@/lib/seo";
 import { productCardSelect } from "@/lib/catalog";
+import { getT } from "@/lib/i18n/server";
+import type { T } from "@/lib/i18n/dict";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
+  const t = await getT();
   const [banners, categories, discounted] = await Promise.all([
     db.banner.findMany({
       where: { isActive: true },
@@ -37,14 +40,14 @@ export default async function HomePage() {
       <JsonLd data={websiteJsonLd()} />
       <Header />
       <main className="container-x py-8">
-        <h1 className="sr-only">Enex — პროფესიონალური აღჭურვილობის ონლაინ მაღაზია</h1>
+        <h1 className="sr-only">{t("Enex — პროფესიონალური აღჭურვილობის ონლაინ მაღაზია")}</h1>
         {/* ბანერები ადმინიდან იმართება; სანამ არცერთი არ არის — ზოგადი ბლოკი */}
         {banners.length > 0 ? (
           <HeroSlider slides={banners} />
         ) : (
         <section className="mb-10 overflow-hidden rounded-2xl bg-gradient-to-br from-brand-700 to-brand-500 px-8 py-14 text-white">
           <h1 className="max-w-2xl text-3xl font-bold leading-tight sm:text-4xl">
-            პროფესიონალური აღჭურვილობა — ერთ ადგილას
+            {t("პროფესიონალური აღჭურვილობა — ერთ ადგილას")}
           </h1>
           <p className="mt-3 max-w-xl text-brand-100">
             ვიდეო-მეთვალყურეობა, ქსელური მოწყობილობები, ენერგო უზრუნველყოფა.
@@ -54,14 +57,14 @@ export default async function HomePage() {
             href="/catalog"
             className="btn mt-6 bg-white text-brand-700 hover:bg-brand-50"
           >
-            კატალოგის ნახვა
+            {t("კატალოგის ნახვა")}
           </Link>
         </section>
         )}
 
         {categories.length > 0 && (
           <section className="mb-12">
-            <h2 className="mb-4 text-xl font-bold">კატეგორიები</h2>
+            <h2 className="mb-4 text-xl font-bold">{t("კატეგორიები")}</h2>
             <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
               {categories.map((c) => (
                 <Link
@@ -87,11 +90,11 @@ export default async function HomePage() {
           </section>
         )}
 
-        <ProductRow title="ფასდაკლებები" href="/catalog?discount=1" products={discounted} />
+        <ProductRow t={t} title={t("ფასდაკლებები")} href="/catalog?discount=1" products={discounted} />
 
         {/* რა საიტია — ადამიანისთვისაც და საძიებო სისტემისთვისაც; სახელი საკურიერო კომპანიას ჰგავს */}
         <section className="mt-12 rounded-2xl border border-line bg-surface p-6 sm:p-8">
-          <h2 className="text-lg font-bold">Enex — პროფესიონალური აღჭურვილობის ონლაინ მაღაზია</h2>
+          <h2 className="text-lg font-bold">{t("Enex — პროფესიონალური აღჭურვილობის ონლაინ მაღაზია")}</h2>
           <div className="mt-3 grid gap-4 text-sm leading-relaxed text-muted sm:grid-cols-2">
             <p>
               ვყიდით ტექნიკას, რომლითაც ობიექტები, ოფისები და ქსელები იგება: ვიდეო-მეთვალყურეობის
@@ -113,10 +116,12 @@ export default async function HomePage() {
 }
 
 function ProductRow({
+  t,
   title,
   href,
   products,
 }: {
+  t: T;
   title: string;
   href: string;
   products: React.ComponentProps<typeof ProductCard>["p"][];
@@ -127,7 +132,7 @@ function ProductRow({
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-xl font-bold">{title}</h2>
         <Link href={href} className="text-sm font-medium text-brand-600 hover:underline">
-          ყველას ნახვა →
+          {t("ყველას ნახვა →")}
         </Link>
       </div>
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">

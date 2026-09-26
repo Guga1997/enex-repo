@@ -1,9 +1,10 @@
-import Link from "next/link";
+import Link from "@/components/Link";
 import { redirect } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import LoginForm from "@/components/LoginForm";
 import { getCurrentUser } from "@/lib/customer-auth";
+import { getT } from "@/lib/i18n/server";
 
 export const metadata = { title: "შესვლა" };
 
@@ -12,6 +13,7 @@ export default async function LoginPage({
 }: {
   searchParams: Promise<{ next?: string }>;
 }) {
+  const t = await getT();
   const { next } = await searchParams;
   if (await getCurrentUser()) redirect(next?.startsWith("/") ? next : "/account");
 
@@ -24,7 +26,7 @@ export default async function LoginPage({
           <p className="text-center text-sm text-muted">
             ანგარიში არ გაქვს?{" "}
             <Link href={next ? `/register?next=${encodeURIComponent(next)}` : "/register"} className="font-medium text-brand-600 hover:underline">
-              რეგისტრაცია
+              {t("რეგისტრაცია")}
             </Link>
           </p>
         </div>

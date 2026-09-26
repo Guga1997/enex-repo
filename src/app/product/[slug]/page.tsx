@@ -1,5 +1,5 @@
 import Image from "next/image";
-import Link from "next/link";
+import Link from "@/components/Link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import type { Metadata } from "next";
@@ -17,6 +17,7 @@ import { gel } from "@/lib/format";
 import { isPurchasable, stockLabel } from "@/lib/stock";
 import { productCardSelect } from "@/lib/catalog";
 import { StockStatus } from "@/lib/constants";
+import { getT } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -66,6 +67,7 @@ const DOC_KIND: Record<string, string> = {
 };
 
 export default async function ProductPage({ params }: Props) {
+  const t = await getT();
   const { slug } = await params;
 
   const p = await db.product.findUnique({
@@ -94,7 +96,7 @@ export default async function ProductPage({ params }: Props) {
       }))
     : false;
 
-  const stock = stockLabel(p);
+  const stock = stockLabel(p, t);
   const canBuy = isPurchasable(p);
   const discount =
     p.oldPrice && p.oldPrice > p.price ? Math.round((1 - p.price / p.oldPrice) * 100) : null;
@@ -116,7 +118,7 @@ export default async function ProductPage({ params }: Props) {
 
       <main className="container-x py-6">
         <nav className="mb-6 flex flex-wrap items-center gap-1.5 text-sm text-muted">
-          <Link href="/" className="hover:text-brand-600">მთავარი</Link>
+          <Link href="/" className="hover:text-brand-600">{t("მთავარი")}</Link>
           <span>/</span>
           {p.category.parent && (
             <>
@@ -144,15 +146,15 @@ export default async function ProductPage({ params }: Props) {
             <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
               {p.model && (
                 <>
-                  <dt className="text-muted">მოდელი</dt>
+                  <dt className="text-muted">{t("მოდელი")}</dt>
                   <dd className="font-medium">{p.model}</dd>
                 </>
               )}
-              <dt className="text-muted">კოდი</dt>
+              <dt className="text-muted">{t("კოდი")}</dt>
               <dd className="font-medium">#{p.sku}</dd>
               {p.brand && (
                 <>
-                  <dt className="text-muted">ბრენდი</dt>
+                  <dt className="text-muted">{t("ბრენდი")}</dt>
                   <dd>
                     <Link
                       href={`/catalog?brand=${p.brand.slug}`}
@@ -171,7 +173,7 @@ export default async function ProductPage({ params }: Props) {
                 href="/bluetti"
                 className="mt-4 inline-flex items-center gap-2 rounded-lg border border-brand-200 bg-brand-50 px-4 py-2 text-sm font-medium text-brand-700 hover:bg-brand-100"
               >
-                ⚡ Bluetti კონფიგურატორი — რამდენ ხანს გაძლებს შენს დატვირთვაზე
+                {t("⚡ Bluetti კონფიგურატორი — რამდენ ხანს გაძლებს შენს დატვირთვაზე")}
               </Link>
             )}
 
@@ -188,7 +190,7 @@ export default async function ProductPage({ params }: Props) {
                     </span>
                   </div>
                   <div className="flex items-baseline gap-3 text-sm text-muted">
-                    <span>საცალო:</span>
+                    <span>{t("საცალო:")}</span>
                     <span className="line-through">{gel(price.retail)}</span>
                   </div>
                 </div>
@@ -209,7 +211,7 @@ export default async function ProductPage({ params }: Props) {
               {!viewer && (
                 <p className="mt-2 text-sm text-muted">
                   <Link href="/register" className="font-medium text-brand-600 hover:underline">
-                    დარეგისტრირდი
+                    {t("დარეგისტრირდი")}
                   </Link>{" "}
                   და შენს ფასს დაინახავ.
                 </p>
@@ -240,9 +242,9 @@ export default async function ProductPage({ params }: Props) {
               </div>
 
               <ul className="mt-5 space-y-2 border-t border-line pt-4 text-sm text-muted">
-                <li>✓ ოფიციალური გარანტია</li>
-                <li>✓ მიწოდება საქართველოს მასშტაბით</li>
-                <li>✓ გადახდა ბარათით ან განვადებით</li>
+                <li>{t("✓ ოფიციალური გარანტია")}</li>
+                <li>{t("✓ მიწოდება საქართველოს მასშტაბით")}</li>
+                <li>{t("✓ გადახდა ბარათით ან განვადებით")}</li>
               </ul>
             </div>
           </div>
@@ -252,7 +254,7 @@ export default async function ProductPage({ params }: Props) {
           <div className="mt-12 grid gap-8 lg:grid-cols-2">
             {p.descriptionKa && (
               <section>
-                <h2 className="mb-3 text-lg font-bold">აღწერა</h2>
+                <h2 className="mb-3 text-lg font-bold">{t("აღწერა")}</h2>
                 <div className="card whitespace-pre-line p-5 text-sm leading-relaxed text-ink">
                   {p.descriptionKa}
                 </div>
@@ -260,7 +262,7 @@ export default async function ProductPage({ params }: Props) {
             )}
             {p.attributes.length > 0 && (
               <section>
-                <h2 className="mb-3 text-lg font-bold">მახასიათებლები</h2>
+                <h2 className="mb-3 text-lg font-bold">{t("მახასიათებლები")}</h2>
                 <table className="card w-full overflow-hidden text-sm">
                   <tbody>
                     {p.attributes.map((a, i) => (
@@ -278,7 +280,7 @@ export default async function ProductPage({ params }: Props) {
 
         {p.documents.length > 0 && (
           <section className="mt-12">
-            <h2 className="mb-3 text-lg font-bold">დოკუმენტაცია</h2>
+            <h2 className="mb-3 text-lg font-bold">{t("დოკუმენტაცია")}</h2>
             <div className="card divide-y divide-line">
               {p.documents.map((d) => (
                 <a
@@ -302,7 +304,7 @@ export default async function ProductPage({ params }: Props) {
 
         {related.length > 0 && (
           <section className="mt-12">
-            <h2 className="mb-4 text-xl font-bold">მსგავსი პროდუქტები</h2>
+            <h2 className="mb-4 text-xl font-bold">{t("მსგავსი პროდუქტები")}</h2>
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
               {related.map((r) => (
                 <ProductCard key={r.id} p={r} viewer={viewer} />

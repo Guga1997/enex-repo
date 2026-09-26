@@ -2,11 +2,13 @@ import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/customer-auth";
 import { formatDate } from "@/lib/format";
 import OrganizationForm from "@/components/OrganizationForm";
+import { getT } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "ყველა ორგანიზაცია" };
 
 export default async function OrganizationsPage() {
+  const t = await getT();
   const user = (await getCurrentUser())!;
   const orgs = await db.organization.findMany({
     where: { userId: user.id },
@@ -17,7 +19,7 @@ export default async function OrganizationsPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-xl font-bold">ყველა ორგანიზაცია</h1>
+        <h1 className="text-xl font-bold">{t("ყველა ორგანიზაცია")}</h1>
         <p className="mt-1 text-sm text-muted">
           ერთი ანგარიშიდან რამდენიმე იურიდიული პირის სახელზე შეგიძლია შეკვეთა — ინვოისი
           არჩეული ორგანიზაციის რეკვიზიტებით გამოიწერება.
@@ -25,7 +27,7 @@ export default async function OrganizationsPage() {
       </div>
 
       {orgs.length === 0 ? (
-        <p className="card p-6 text-center text-muted">ორგანიზაცია ჯერ დამატებული არ არის.</p>
+        <p className="card p-6 text-center text-muted">{t("ორგანიზაცია ჯერ დამატებული არ არის.")}</p>
       ) : (
         <div className="space-y-3">
           {orgs.map((o) => (
@@ -34,7 +36,7 @@ export default async function OrganizationsPage() {
                 <span className="font-medium">{o.name}</span>
                 {o.isDefault && (
                   <span className="rounded-full bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-700">
-                    ნაგულისხმევი
+                    {t("ნაგულისხმევი")}
                   </span>
                 )}
               </div>

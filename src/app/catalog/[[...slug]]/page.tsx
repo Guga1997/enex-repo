@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/Link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import type { Metadata } from "next";
@@ -11,6 +11,7 @@ import FilterSidebar from "@/components/FilterSidebar";
 import SortSelect from "@/components/SortSelect";
 import Pagination from "@/components/Pagination";
 import { getCurrentUser } from "@/lib/customer-auth";
+import { getT } from "@/lib/i18n/server";
 import {
   categoryIdsWithDescendants,
   getFacets,
@@ -62,6 +63,7 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
 }
 
 export default async function CatalogPage({ params, searchParams }: Props) {
+  const t = await getT();
   const { slug } = await params;
   const sp = await searchParams;
 
@@ -96,7 +98,7 @@ export default async function CatalogPage({ params, searchParams }: Props) {
       <main className="container-x py-6">
         {/* ნავიგაციის ჯაჭვი */}
         <nav className="mb-4 flex flex-wrap items-center gap-1.5 text-sm text-muted">
-          <Link href="/" className="hover:text-brand-600">მთავარი</Link>
+          <Link href="/" className="hover:text-brand-600">{t("მთავარი")}</Link>
           <span>/</span>
           {category?.parent && (
             <>
@@ -138,7 +140,7 @@ export default async function CatalogPage({ params, searchParams }: Props) {
           <div>
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <span className="text-sm text-muted">
-                ნაპოვნია <b className="text-ink">{total}</b> პროდუქტი
+                {t("ნაპოვნია")} <b className="text-ink">{total}</b> {t("პროდუქტი")}
               </span>
               <Suspense>
                 <SortSelect />
@@ -148,10 +150,10 @@ export default async function CatalogPage({ params, searchParams }: Props) {
             {items.length === 0 ? (
               <div className="card p-12 text-center">
                 <p className="text-muted">
-                  მითითებული ფილტრით პროდუქტი ვერ მოიძებნა.
+                  {t("მითითებული ფილტრით პროდუქტი ვერ მოიძებნა.")}
                 </p>
                 <Link href="/catalog" className="btn btn-outline mt-4">
-                  ფილტრის გასუფთავება
+                  {t("ფილტრის გასუფთავება")}
                 </Link>
               </div>
             ) : (

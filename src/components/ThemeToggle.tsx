@@ -1,5 +1,7 @@
 "use client";
 
+import { useT } from "@/components/LocaleProvider";
+
 /**
  * დღე/ღამე გადამრთველი.
  *
@@ -9,6 +11,7 @@
  * ამიტომ სერვერისა და ბრაუზერის HTML ყოველთვის ემთხვევა.
  */
 export default function ThemeToggle({ className = "" }: { className?: string }) {
+  const t = useT();
   function toggle() {
     const dark = document.documentElement.classList.toggle("dark");
     try {
@@ -22,8 +25,8 @@ export default function ThemeToggle({ className = "" }: { className?: string }) 
     <button
       type="button"
       onClick={toggle}
-      aria-label="დღის/ღამის რეჟიმი"
-      title="დღის/ღამის რეჟიმი"
+      aria-label={t("დღის/ღამის რეჟიმი")}
+      title={t("დღის/ღამის რეჟიმი")}
       className={`flex size-9 items-center justify-center rounded-lg text-muted transition hover:bg-canvas hover:text-ink ${className}`}
     >
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" className="size-5 dark:hidden" aria-hidden>

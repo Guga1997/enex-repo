@@ -4,8 +4,10 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
 import { STOCK_LABELS } from "@/lib/constants";
 import type { Facets } from "@/lib/catalog";
+import { useT } from "@/components/LocaleProvider";
 
 export default function FilterSidebar({ facets }: { facets: Facets }) {
+  const t = useT();
   const router = useRouter();
   const pathname = usePathname();
   const sp = useSearchParams();
@@ -84,15 +86,15 @@ export default function FilterSidebar({ facets }: { facets: Facets }) {
       >
         <div className="card divide-y divide-line">
           <div className="flex items-center justify-between p-4">
-            <h2 className="font-semibold">ფილტრი</h2>
+            <h2 className="font-semibold">{t("ფილტრი")}</h2>
             {activeCount > 0 && (
               <button onClick={reset} className="text-xs font-medium text-brand-600 hover:underline">
-                გასუფთავება
+                {t("გასუფთავება")}
               </button>
             )}
           </div>
 
-          <Section title="ფასი">
+          <Section title={t("ფასი")}>
             <div className="flex items-center gap-2">
               <input
                 type="number"
@@ -114,12 +116,12 @@ export default function FilterSidebar({ facets }: { facets: Facets }) {
               <span className="text-sm text-muted">₾</span>
             </div>
             <button onClick={applyPrice} className="btn btn-primary mt-3 w-full">
-              გაფილტვრა
+              {t("გაფილტვრა")}
             </button>
           </Section>
 
           {facets.brands.length > 0 && (
-            <Section title="ბრენდი" scroll>
+            <Section title={t("ბრენდი")} scroll>
               {facets.brands.map((b) => (
                 <Check
                   key={b.slug}
@@ -133,11 +135,11 @@ export default function FilterSidebar({ facets }: { facets: Facets }) {
           )}
 
           {facets.statuses.length > 0 && (
-            <Section title="სტატუსი">
+            <Section title={t("სტატუსი")}>
               {facets.statuses.map((s) => (
                 <Check
                   key={s.key}
-                  label={STOCK_LABELS[s.key] ?? s.key}
+                  label={t(STOCK_LABELS[s.key] ?? s.key)}
                   count={s.count}
                   checked={selected("status").includes(s.key)}
                   onChange={() => toggleMulti("status", s.key)}
@@ -147,10 +149,10 @@ export default function FilterSidebar({ facets }: { facets: Facets }) {
           )}
 
           {(facets.discountCount > 0 || facets.newCount > 0) && (
-            <Section title="დამატებითი მახასიათებლები">
+            <Section title={t("დამატებითი მახასიათებლები")}>
               {facets.discountCount > 0 && (
                 <Check
-                  label="ფასდაკლება"
+                  label={t("ფასდაკლება")}
                   count={facets.discountCount}
                   checked={sp.get("discount") === "1"}
                   onChange={() => toggleFlag("discount")}
@@ -158,7 +160,7 @@ export default function FilterSidebar({ facets }: { facets: Facets }) {
               )}
               {facets.newCount > 0 && (
                 <Check
-                  label="ახალი"
+                  label={t("ახალი")}
                   count={facets.newCount}
                   checked={sp.get("new") === "1"}
                   onChange={() => toggleFlag("new")}

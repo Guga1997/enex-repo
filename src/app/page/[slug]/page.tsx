@@ -3,6 +3,8 @@ import { Suspense } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
+export const dynamic = "force-dynamic";
+
 /**
  * სტატიკური საინფორმაციო გვერდები. ტექსტი რედაქტირდება პირდაპირ აქ —
  * თუ დაგჭირდა ადმინიდან მართვა, ეს ობიექტი ბაზის ცხრილით ჩანაცვლდება.

@@ -1,9 +1,11 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/Link";
 import { useCart } from "./CartProvider";
+import { useT } from "@/components/LocaleProvider";
 
 export default function CartButton() {
+  const t = useT();
   const { count } = useCart();
   return (
     <Link
@@ -15,7 +17,7 @@ export default function CartButton() {
         <circle cx="10" cy="20" r="1" />
         <circle cx="18" cy="20" r="1" />
       </svg>
-      <span className="hidden sm:inline">კალათა</span>
+      <span className="hidden sm:inline">{t("კალათა")}</span>
       {count > 0 && (
         <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-ink px-1 text-[11px] font-bold text-white">
           {count}

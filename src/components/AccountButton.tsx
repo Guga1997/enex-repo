@@ -1,13 +1,15 @@
-import Link from "next/link";
+import Link from "@/components/Link";
 import { getCurrentUser } from "@/lib/customer-auth";
+import { getT } from "@/lib/i18n/server";
 
 export default async function AccountButton() {
+  const t = await getT();
   const user = await getCurrentUser();
 
   if (!user) {
     return (
       <Link href="/login" className="rounded-lg px-3 py-2 hover:bg-canvas">
-        შესვლა
+        {t("შესვლა")}
       </Link>
     );
   }
@@ -21,10 +23,10 @@ export default async function AccountButton() {
       title={user.name}
     >
       <span className="hidden sm:inline">{short}</span>
-      <span className="sm:hidden">ჩემი ანგარიში</span>
+      <span className="sm:hidden">{t("ჩემი ანგარიში")}</span>
       {user.priceTier === "DEALER" && (
         <span className="rounded bg-brand-600 px-1.5 py-0.5 text-[11px] font-medium text-white">
-          დილერი
+          {t("დილერი")}
         </span>
       )}
     </Link>

@@ -1,8 +1,10 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useT } from "@/components/LocaleProvider";
 
 export default function Pagination({ page, pages }: { page: number; pages: number }) {
+  const t = useT();
   const router = useRouter();
   const pathname = usePathname();
   const sp = useSearchParams();
@@ -26,7 +28,7 @@ export default function Pagination({ page, pages }: { page: number; pages: numbe
         onClick={() => go(page - 1)}
         disabled={page === 1}
         className="btn btn-outline disabled:opacity-40"
-        aria-label="წინა გვერდი"
+        aria-label={t("წინა გვერდი")}
       >
         &lsaquo;
       </button>
@@ -46,7 +48,7 @@ export default function Pagination({ page, pages }: { page: number; pages: numbe
         onClick={() => go(page + 1)}
         disabled={page === pages}
         className="btn btn-outline disabled:opacity-40"
-        aria-label="შემდეგი გვერდი"
+        aria-label={t("შემდეგი გვერდი")}
       >
         &rsaquo;
       </button>

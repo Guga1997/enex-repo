@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/Link";
 import Image from "next/image";
 import ProductPlaceholder from "@/components/ProductPlaceholder";
 import { Suspense } from "react";
@@ -11,6 +11,7 @@ import { effectivePrice } from "@/lib/pricing";
 import { JsonLd, breadcrumbJsonLd, clip } from "@/lib/seo";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { getT } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +35,7 @@ export default async function HotelPage({
 }: {
   searchParams: Promise<{ group?: string }>;
 }) {
+  const t = await getT();
   const { group } = await searchParams;
   const root = await db.category.findFirst({
     where: { nameKa: ROOT },
@@ -75,18 +77,18 @@ export default async function HotelPage({
 
       <main className="container-x py-6">
         <nav className="mb-4 flex flex-wrap items-center gap-1.5 text-sm text-muted">
-          <Link href="/" className="hover:text-brand-600">მთავარი</Link>
+          <Link href="/" className="hover:text-brand-600">{t("მთავარი")}</Link>
           <span>/</span>
           <span className="text-ink">{ROOT}</span>
         </nav>
 
         <section className="mb-6 rounded-2xl bg-gradient-to-br from-nav to-brand-700 px-6 py-8 text-white sm:px-10 sm:py-10">
-          <h1 className="text-2xl font-bold sm:text-3xl">სასტუმროს სისტემები</h1>
+          <h1 className="text-2xl font-bold sm:text-3xl">{t("სასტუმროს სისტემები")}</h1>
           <p className="mt-2 max-w-2xl text-sm text-white/80 sm:text-base">
             <b className="text-white">Omnitec Systems</b> — ესპანური ბრენდი, 10 000-ზე მეტ სასტუმროში
             მსოფლიოს 5 კონტინენტზე: ელექტრონული საკეტები, დაშვების კონტროლი, სეიფები, მინიბარები,
             ენერგოსეივერები, ლოკერები და მართვის პროგრამა. ყველა პოზიცია{" "}
-            <b className="text-white">შეკვეთით</b> მოდის; ობიექტის კონფიგურაცია და მონტაჟი — ჩვენი გუნდით.
+            <b className="text-white">{t("შეკვეთით")}</b> მოდის; ობიექტის კონფიგურაცია და მონტაჟი — ჩვენი გუნდით.
           </p>
           {fx && (
             <p className="mt-4 text-xs text-white/60">
@@ -116,17 +118,17 @@ export default async function HotelPage({
         </div>
 
         {rows.length === 0 ? (
-          <p className="card p-8 text-center text-muted">ამ ჯგუფში პოზიციები ჯერ არ არის გამოქვეყნებული.</p>
+          <p className="card p-8 text-center text-muted">{t("ამ ჯგუფში პოზიციები ჯერ არ არის გამოქვეყნებული.")}</p>
         ) : (
           <div className="card overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="border-b border-line bg-canvas text-left text-xs text-muted">
                 <tr>
-                  <th className="p-3 font-medium" colSpan={2}>დასახელება</th>
-                  <th className="p-3 font-medium">ჯგუფი</th>
-                  <th className="p-3 font-medium">კოდი</th>
-                  <th className="p-3 text-right font-medium">ფასი</th>
-                  <th className="p-3 font-medium">მიწოდება</th>
+                  <th className="p-3 font-medium" colSpan={2}>{t("დასახელება")}</th>
+                  <th className="p-3 font-medium">{t("ჯგუფი")}</th>
+                  <th className="p-3 font-medium">{t("კოდი")}</th>
+                  <th className="p-3 text-right font-medium">{t("ფასი")}</th>
+                  <th className="p-3 font-medium">{t("მიწოდება")}</th>
                   <th className="p-3" />
                 </tr>
               </thead>
@@ -157,7 +159,7 @@ export default async function HotelPage({
                     <td className="p-3 font-mono text-xs text-muted">{p.sku}</td>
                     <td className="p-3 text-right">
                       <div className="font-bold tabular-nums">{gel(price.value)}</div>
-                      {price.saved > 0 && <div className="text-xs text-emerald-700">სადილერო ფასი</div>}
+                      {price.saved > 0 && <div className="text-xs text-emerald-700">{t("სადილერო ფასი")}</div>}
                     </td>
                     <td className="p-3 text-muted">{leadOf(p) || "შეკვეთით"}</td>
                     <td className="p-3 text-right">
@@ -165,7 +167,7 @@ export default async function HotelPage({
                         href={`/product/${p.slug}`}
                         className="inline-block rounded-lg bg-brand-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-600"
                       >
-                        შეკვეთა
+                        {t("შეკვეთა")}
                       </Link>
                     </td>
                   </tr>

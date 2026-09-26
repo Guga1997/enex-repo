@@ -1,9 +1,10 @@
-import Link from "next/link";
+import Link from "@/components/Link";
 import { redirect } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { getCurrentUser } from "@/lib/customer-auth";
 import { logoutAction } from "@/app/actions/customer";
+import { getT } from "@/lib/i18n/server";
 
 const LINKS: { href: string; label: string }[] = [
   { href: "/account/orders?tab=current", label: "მიმდინარე შეკვეთები" },
@@ -18,6 +19,7 @@ const LINKS: { href: string; label: string }[] = [
 ];
 
 export default async function AccountLayout({ children }: { children: React.ReactNode }) {
+  const t = await getT();
   const user = await getCurrentUser();
   if (!user) redirect("/login?next=/account");
 
@@ -31,11 +33,11 @@ export default async function AccountLayout({ children }: { children: React.Reac
               <p className="font-medium">{user.name}</p>
               <p className="mt-0.5 text-sm text-muted">{user.email}</p>
               <p className="mt-2 text-sm">
-                <span className="text-muted">ფასის დონე: </span>
+                <span className="text-muted">{t("ფასის დონე:")} </span>
                 {user.priceTier === "DEALER" ? (
-                  <span className="font-medium text-brand-600">სადილერო</span>
+                  <span className="font-medium text-brand-600">{t("სადილერო")}</span>
                 ) : (
-                  <span className="font-medium">საცალო</span>
+                  <span className="font-medium">{t("საცალო")}</span>
                 )}
               </p>
             </div>
@@ -52,7 +54,7 @@ export default async function AccountLayout({ children }: { children: React.Reac
               ))}
               <form action={logoutAction} className="border-t border-line pt-2 mt-2">
                 <button className="w-full rounded-lg px-3 py-2 text-left text-sm text-rose-600 hover:bg-rose-50">
-                  გასვლა
+                  {t("გასვლა")}
                 </button>
               </form>
             </nav>

@@ -2,15 +2,17 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { SORT_OPTIONS } from "@/lib/constants";
+import { useT } from "@/components/LocaleProvider";
 
 export default function SortSelect() {
+  const t = useT();
   const router = useRouter();
   const pathname = usePathname();
   const sp = useSearchParams();
 
   return (
     <select
-      aria-label="დალაგება"
+      aria-label={t("დალაგება")}
       value={sp.get("sort") ?? "default"}
       onChange={(e) => {
         const next = new URLSearchParams(sp.toString());
@@ -24,7 +26,7 @@ export default function SortSelect() {
     >
       {SORT_OPTIONS.map((o) => (
         <option key={o.value} value={o.value}>
-          {o.label}
+          {t(o.label)}
         </option>
       ))}
     </select>

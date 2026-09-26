@@ -5,11 +5,13 @@ import Footer from "@/components/Footer";
 import CheckoutForm from "@/components/CheckoutForm";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/customer-auth";
+import { getT } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "შეკვეთის გაფორმება" };
 
 export default async function CheckoutPage() {
+  const t = await getT();
   const user = await getCurrentUser();
   // შეკვეთა მხოლოდ ანგარიშით. კალათა localStorage-შია — შესვლის შემდეგ აქვე დაბრუნდება.
   if (!user) redirect("/login?next=/checkout");
@@ -29,7 +31,7 @@ export default async function CheckoutPage() {
         <Header />
       </Suspense>
       <main className="container-x py-8">
-        <h1 className="mb-6 text-2xl font-bold">შეკვეთის გაფორმება</h1>
+        <h1 className="mb-6 text-2xl font-bold">{t("შეკვეთის გაფორმება")}</h1>
         <CheckoutForm
           user={
             user

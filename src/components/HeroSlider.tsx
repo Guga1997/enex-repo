@@ -1,8 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
+import Link from "@/components/Link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useT } from "@/components/LocaleProvider";
 
 export type Slide = {
   id: string;
@@ -20,6 +21,7 @@ const INTERVAL_MS = 6000;
  * მაუსის ქვეშ ჩერდება; ისრები, წერტილები და თითით გადაფურცვლა.
  */
 export default function HeroSlider({ slides }: { slides: Slide[] }) {
+  const t = useT();
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const touchX = useRef<number | null>(null);
@@ -76,7 +78,7 @@ export default function HeroSlider({ slides }: { slides: Slide[] }) {
                 <p className="mt-2 hidden text-sm text-white/85 drop-shadow sm:block lg:mt-3 lg:text-lg">{s.subtitle}</p>
               )}
               <span className="mt-3 inline-flex w-fit items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-brand-700 sm:mt-5 sm:px-4 sm:py-2 sm:text-sm">
-                ნახვა →
+                {t("ნახვა →")}
               </span>
             </div>
           </Link>
@@ -87,7 +89,7 @@ export default function HeroSlider({ slides }: { slides: Slide[] }) {
         <>
           <button
             type="button"
-            aria-label="წინა"
+            aria-label={t("წინა")}
             onClick={() => go(index - 1)}
             className="absolute left-3 top-1/2 hidden size-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-lg text-ink opacity-0 transition hover:bg-white group-hover:opacity-100 sm:flex"
           >
@@ -95,7 +97,7 @@ export default function HeroSlider({ slides }: { slides: Slide[] }) {
           </button>
           <button
             type="button"
-            aria-label="შემდეგი"
+            aria-label={t("შემდეგი")}
             onClick={() => go(index + 1)}
             className="absolute right-3 top-1/2 hidden size-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-lg text-ink opacity-0 transition hover:bg-white group-hover:opacity-100 sm:flex"
           >

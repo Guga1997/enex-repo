@@ -1,8 +1,9 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import Link from "next/link";
+import Link from "@/components/Link";
 import { registerAction, type FormState } from "@/app/actions/customer";
+import { useT } from "@/components/LocaleProvider";
 
 const field =
   "w-full rounded-lg border border-line px-3 py-2.5 text-sm outline-none focus:border-brand-500";
@@ -10,6 +11,7 @@ const field =
 type Kind = "INDIVIDUAL" | "COMPANY";
 
 export default function RegisterForm({ next }: { next?: string }) {
+  const t = useT();
   const [type, setType] = useState<Kind>("INDIVIDUAL");
   const [state, action, pending] = useActionState<FormState, FormData>(registerAction, null);
 
@@ -19,9 +21,9 @@ export default function RegisterForm({ next }: { next?: string }) {
   return (
     <form action={action} className="card space-y-5 p-6 sm:p-8">
       <div>
-        <h1 className="text-xl font-bold">რეგისტრაცია</h1>
+        <h1 className="text-xl font-bold">{t("რეგისტრაცია")}</h1>
         <p className="mt-1 text-sm text-muted">
-          დარეგისტრირებული მომხმარებელი ხედავს თავის ფასს და შეკვეთების ისტორიას.
+          {t("დარეგისტრირებული მომხმარებელი ხედავს თავის ფასს და შეკვეთების ისტორიას.")}
         </p>
       </div>
 
@@ -72,18 +74,18 @@ export default function RegisterForm({ next }: { next?: string }) {
       </label>
 
       <label className="block">
-        <span className="mb-1.5 block text-sm font-medium">ფიზიკური მისამართი</span>
+        <span className="mb-1.5 block text-sm font-medium">{t("ფიზიკური მისამართი")}</span>
         <input
           name="address"
           required
           className={`${field} ${err("address") ? "border-rose-400" : ""}`}
-          placeholder="თბილისი, თერგვაძის 42"
+          placeholder={t("თბილისი, თერგვაძის 42")}
         />
       </label>
 
       <div className="grid gap-5 sm:grid-cols-2">
         <label className="block">
-          <span className="mb-1.5 block text-sm font-medium">ელფოსტა</span>
+          <span className="mb-1.5 block text-sm font-medium">{t("ელფოსტა")}</span>
           <input
             name="email"
             type="email"
@@ -94,7 +96,7 @@ export default function RegisterForm({ next }: { next?: string }) {
         </label>
 
         <label className="block">
-          <span className="mb-1.5 block text-sm font-medium">საკონტაქტო ტელეფონი</span>
+          <span className="mb-1.5 block text-sm font-medium">{t("საკონტაქტო ტელეფონი")}</span>
           <input
             name="phone"
             required
@@ -108,7 +110,7 @@ export default function RegisterForm({ next }: { next?: string }) {
 
       <div className="grid gap-5 sm:grid-cols-2">
         <label className="block">
-          <span className="mb-1.5 block text-sm font-medium">პაროლი</span>
+          <span className="mb-1.5 block text-sm font-medium">{t("პაროლი")}</span>
           <input
             name="password"
             type="password"
@@ -116,12 +118,12 @@ export default function RegisterForm({ next }: { next?: string }) {
             minLength={8}
             autoComplete="new-password"
             className={`${field} ${err("password") ? "border-rose-400" : ""}`}
-            placeholder="მინიმუმ 8 სიმბოლო"
+            placeholder={t("მინიმუმ 8 სიმბოლო")}
           />
         </label>
 
         <label className="block">
-          <span className="mb-1.5 block text-sm font-medium">გაიმეორე პაროლი</span>
+          <span className="mb-1.5 block text-sm font-medium">{t("გაიმეორე პაროლი")}</span>
           <input
             name="password2"
             type="password"
@@ -148,7 +150,7 @@ export default function RegisterForm({ next }: { next?: string }) {
       <p className="text-center text-sm text-muted">
         უკვე გაქვს ანგარიში?{" "}
         <Link href={next ? `/login?next=${encodeURIComponent(next)}` : "/login"} className="font-medium text-brand-600 hover:underline">
-          შესვლა
+          {t("შესვლა")}
         </Link>
       </p>
     </form>

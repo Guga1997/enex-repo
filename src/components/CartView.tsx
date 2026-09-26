@@ -1,12 +1,14 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
+import Link from "@/components/Link";
 import { useCart } from "./CartProvider";
 import { gel } from "@/lib/format";
 import { FREE_DELIVERY_FROM } from "@/lib/constants";
+import { useT } from "@/components/LocaleProvider";
 
 export default function CartView() {
+  const t = useT();
   const { lines, subtotal, setQty, remove, ready } = useCart();
 
   if (!ready) return <div className="card h-64 animate-pulse" />;
@@ -14,9 +16,9 @@ export default function CartView() {
   if (lines.length === 0) {
     return (
       <div className="card p-12 text-center">
-        <p className="text-muted">კალათა ცარიელია.</p>
+        <p className="text-muted">{t("კალათა ცარიელია.")}</p>
         <Link href="/catalog" className="btn btn-primary mt-4">
-          კატალოგში გადასვლა
+          {t("კატალოგში გადასვლა")}
         </Link>
       </div>
     );
@@ -34,7 +36,7 @@ export default function CartView() {
                 <Image src={l.image} alt={l.name} fill className="object-contain p-1.5" />
               ) : (
                 <div className="flex size-full items-center justify-center rounded-lg bg-canvas text-[10px] text-muted">
-                  სურათი
+                  {t("სურათი")}
                 </div>
               )}
             </Link>
@@ -50,7 +52,7 @@ export default function CartView() {
                   <button
                     onClick={() => setQty(l.productId, l.qty - 1)}
                     className="px-3 py-1.5 text-muted hover:text-ink"
-                    aria-label="შემცირება"
+                    aria-label={t("შემცირება")}
                   >
                     −
                   </button>
@@ -59,7 +61,7 @@ export default function CartView() {
                     onClick={() => setQty(l.productId, l.qty + 1)}
                     disabled={l.maxQty > 0 && l.qty >= l.maxQty}
                     className="px-3 py-1.5 text-muted hover:text-ink disabled:opacity-30"
-                    aria-label="გაზრდა"
+                    aria-label={t("გაზრდა")}
                   >
                     +
                   </button>
@@ -71,7 +73,7 @@ export default function CartView() {
                   onClick={() => remove(l.productId)}
                   className="text-xs text-muted hover:text-rose-600"
                 >
-                  წაშლა
+                  {t("წაშლა")}
                 </button>
               </div>
             </div>
@@ -85,14 +87,14 @@ export default function CartView() {
       </div>
 
       <aside className="card h-fit p-5">
-        <h2 className="mb-4 font-semibold">შეკვეთის ჯამი</h2>
+        <h2 className="mb-4 font-semibold">{t("შეკვეთის ჯამი")}</h2>
         <dl className="space-y-2 text-sm">
           <div className="flex justify-between">
-            <dt className="text-muted">პროდუქტები</dt>
+            <dt className="text-muted">{t("პროდუქტები")}</dt>
             <dd>{gel(subtotal)}</dd>
           </div>
           <div className="flex justify-between">
-            <dt className="text-muted">მიწოდება</dt>
+            <dt className="text-muted">{t("მიწოდება")}</dt>
             <dd>{delivery === 0 ? "უფასო" : gel(delivery)}</dd>
           </div>
         </dl>
@@ -102,14 +104,14 @@ export default function CartView() {
           </p>
         )}
         <div className="mt-4 flex justify-between border-t border-line pt-4 text-lg font-bold">
-          <span>ჯამი</span>
+          <span>{t("ჯამი")}</span>
           <span>{gel(subtotal + delivery)}</span>
         </div>
         <Link href="/checkout" className="btn btn-primary mt-5 w-full hover:bg-brand-600">
-          შეკვეთის გაფორმება
+          {t("შეკვეთის გაფორმება")}
         </Link>
         <Link href="/catalog" className="btn btn-outline mt-2 w-full">
-          შოპინგის გაგრძელება
+          {t("შოპინგის გაგრძელება")}
         </Link>
       </aside>
     </div>

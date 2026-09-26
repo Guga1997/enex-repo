@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import Link from "@/components/Link";
+import { usePath } from "./LocaleProvider";
 import CategoryIcon from "./CategoryIcon";
 import { segmentTheme } from "@/lib/segment-theme";
 
@@ -11,7 +11,7 @@ import { segmentTheme } from "@/lib/segment-theme";
  * ფერის მუქი ტონით რჩება — ანუ ფონზე კარგად ჩანს.
  */
 export default function NavSegment({ name, slug }: { name: string; slug: string }) {
-  const pathname = usePathname();
+  const pathname = usePath();
   const active = pathname === `/catalog/${slug}` || pathname.startsWith(`/catalog/${slug}/`);
   const t = segmentTheme(name, slug);
 

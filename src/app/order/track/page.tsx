@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { db } from "@/lib/db";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { getT } from "@/lib/i18n/server";
 
 export const metadata = { title: "შეკვეთის მოძებნა" };
 
@@ -11,6 +12,7 @@ export default async function TrackPage({
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
+  const t = await getT();
   const { error } = await searchParams;
 
   async function find(formData: FormData) {
@@ -32,14 +34,14 @@ export default async function TrackPage({
         <Header />
       </Suspense>
       <main className="container-x max-w-md py-12">
-        <h1 className="mb-2 text-2xl font-bold">შეკვეთის მოძებნა</h1>
+        <h1 className="mb-2 text-2xl font-bold">{t("შეკვეთის მოძებნა")}</h1>
         <p className="mb-6 text-sm text-muted">
-          შეიყვანეთ შეკვეთის ნომერი და ელფოსტა, რომელიც შეკვეთისას მიუთითეთ.
+          {t("შეიყვანეთ შეკვეთის ნომერი და ელფოსტა, რომელიც შეკვეთისას მიუთითეთ.")}
         </p>
 
         <form action={find} className="card space-y-4 p-5">
           <label className="block">
-            <span className="mb-1.5 block text-sm font-medium">შეკვეთის ნომერი</span>
+            <span className="mb-1.5 block text-sm font-medium">{t("შეკვეთის ნომერი")}</span>
             <input
               name="number"
               required
@@ -48,7 +50,7 @@ export default async function TrackPage({
             />
           </label>
           <label className="block">
-            <span className="mb-1.5 block text-sm font-medium">ელფოსტა</span>
+            <span className="mb-1.5 block text-sm font-medium">{t("ელფოსტა")}</span>
             <input
               name="email"
               type="email"
@@ -59,11 +61,11 @@ export default async function TrackPage({
 
           {error && (
             <p className="rounded-lg bg-rose-50 p-3 text-sm text-rose-700">
-              შეკვეთა ვერ მოიძებნა. შეამოწმეთ ნომერი და ელფოსტა.
+              {t("შეკვეთა ვერ მოიძებნა. შეამოწმეთ ნომერი და ელფოსტა.")}
             </p>
           )}
 
-          <button className="btn btn-primary w-full hover:bg-brand-600">მოძებნა</button>
+          <button className="btn btn-primary w-full hover:bg-brand-600">{t("მოძებნა")}</button>
         </form>
       </main>
       <Footer />
