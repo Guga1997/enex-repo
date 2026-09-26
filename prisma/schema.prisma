@@ -24,6 +24,7 @@ model Category {
   slug      String  @unique
   nameKa    String
   nameEn    String?
+  nameRu    String?
   image     String?
   sortOrder Int     @default(0)
   isActive  Boolean @default(true)
@@ -66,9 +67,11 @@ model Product {
   slug          String  @unique
   nameKa        String
   nameEn        String?
+  nameRu        String?
   model         String? // მწარმოებლის მოდელი: IPC3634SE-ADF28KMC-WP-I1
   descriptionKa String?
   descriptionEn String?
+  descriptionRu String?
 
   price       Float // საცალო ფასი ₾ — რასაც სტუმარი ხედავს
   dealerPrice Float? // სადილერო ფასი; ხედავს მხოლოდ DEALER დონის მომხმარებელი

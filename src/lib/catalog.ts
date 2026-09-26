@@ -212,6 +212,8 @@ export const productCardSelect = {
   sku: true,
   slug: true,
   nameKa: true,
+  nameEn: true,
+  nameRu: true,
   model: true,
   price: true,
   dealerPrice: true,
@@ -224,7 +226,7 @@ export const productCardSelect = {
   isNew: true,
   images: { select: { url: true, alt: true }, orderBy: { sortOrder: "asc" }, take: 1 },
   brand: { select: { name: true, slug: true } },
-  category: { select: { nameKa: true } },
+  category: { select: { nameKa: true, nameEn: true, nameRu: true } },
 } satisfies Prisma.ProductSelect;
 
 export async function getProducts(q: CatalogQuery) {

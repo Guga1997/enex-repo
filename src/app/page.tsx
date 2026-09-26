@@ -9,13 +9,21 @@ import CategoryIcon from "@/components/CategoryIcon";
 import { segmentTheme } from "@/lib/segment-theme";
 import { JsonLd, organizationJsonLd, websiteJsonLd } from "@/lib/seo";
 import { productCardSelect } from "@/lib/catalog";
-import { getT } from "@/lib/i18n/server";
+import { getI18n } from "@/lib/i18n/server";
+import { nameOf } from "@/lib/i18n/content";
 import type { T } from "@/lib/i18n/dict";
+import type { Metadata } from "next";
+import { getLocale } from "@/lib/i18n/server";
+import { alts } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
+export async function generateMetadata(): Promise<Metadata> {
+  return { alternates: alts("/", await getLocale()) };
+}
+
 export default async function HomePage() {
-  const t = await getT();
+  const { locale, t } = await getI18n();
   const [banners, categories, discounted] = await Promise.all([
     db.banner.findMany({
       where: { isActive: true },
@@ -74,7 +82,7 @@ export default async function HomePage() {
                 >
                   <div className="relative size-14">
                     {c.image ? (
-                      <Image src={c.image} alt={c.nameKa} fill className="object-contain" />
+                      <Image src={c.image} alt={nameOf(c, locale)} fill className="object-contain" />
                     ) : (
                       <div
                         className={`flex size-14 items-center justify-center rounded-full ${segmentTheme(c.nameKa, c.slug).tint} ${segmentTheme(c.nameKa, c.slug).ink}`}
@@ -83,7 +91,7 @@ export default async function HomePage() {
                       </div>
                     )}
                   </div>
-                  <span className="text-sm font-medium leading-tight">{c.nameKa}</span>
+                  <span className="text-sm font-medium leading-tight">{nameOf(c, locale)}</span>
                 </Link>
               ))}
             </div>

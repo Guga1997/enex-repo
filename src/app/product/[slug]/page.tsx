@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { db } from "@/lib/db";
-import { JsonLd, breadcrumbJsonLd, productDescription, productJsonLd, realBrand } from "@/lib/seo";
+import { JsonLd, breadcrumbJsonLd, productDescription, productJsonLd, realBrand, alts } from "@/lib/seo";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
@@ -17,13 +17,16 @@ import { gel } from "@/lib/format";
 import { isPurchasable, stockLabel } from "@/lib/stock";
 import { productCardSelect } from "@/lib/catalog";
 import { StockStatus } from "@/lib/constants";
-import { getT } from "@/lib/i18n/server";
+import { getI18n } from "@/lib/i18n/server";
+import { nameOf, descriptionOf } from "@/lib/i18n/content";
+import { getLocale } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
 type Props = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const locale = await getLocale();
   const { slug } = await params;
   const p = await db.product.findUnique({
     where: { slug },
@@ -37,18 +40,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!p || !p.isActive) return { title: "პროდუქტი ვერ მოიძებნა", robots: { index: false } };
 
   // სათაურში ბრენდი და მოდელი — ამით ეძებენ; სახელი ისედაც აღწერითია
-  const title = [p.nameKa, realBrand(p.brand), p.model].filter(Boolean).join(" — ");
+  const title = [nameOf(p, locale), realBrand(p.brand), p.model].filter(Boolean).join(" — ");
   const description = productDescription(p);
   return {
     title,
     description,
-    alternates: { canonical: `/product/${p.slug}` },
+    alternates: alts(`/product/${p.slug}`, locale),
     openGraph: {
       type: "website",
       title,
       description,
       url: `/product/${p.slug}`,
-      images: p.images[0] ? [{ url: p.images[0].url, alt: p.nameKa }] : undefined,
+      images: p.images[0] ? [{ url: p.images[0].url, alt: nameOf(p, locale) }] : undefined,
     },
   };
 }
@@ -67,7 +70,7 @@ const DOC_KIND: Record<string, string> = {
 };
 
 export default async function ProductPage({ params }: Props) {
-  const t = await getT();
+  const { locale, t } = await getI18n();
   const { slug } = await params;
 
   const p = await db.product.findUnique({
@@ -81,6 +84,8 @@ export default async function ProductPage({ params }: Props) {
     },
   });
   if (!p || !p.isActive) notFound();
+  const name = nameOf(p, locale);
+  const description = descriptionOf(p, locale);
 
   const related = await db.product.findMany({
     where: { categoryId: p.categoryId, isActive: true, id: { not: p.id } },
@@ -103,9 +108,9 @@ export default async function ProductPage({ params }: Props) {
 
   const crumbs = [
     { name: "მთავარი", path: "/" },
-    ...(p.category.parent ? [{ name: p.category.parent.nameKa, path: `/catalog/${p.category.parent.slug}` }] : []),
-    { name: p.category.nameKa, path: `/catalog/${p.category.slug}` },
-    { name: p.nameKa, path: `/product/${p.slug}` },
+    ...(p.category.parent ? [{ name: nameOf(p.category.parent, locale), path: `/catalog/${p.category.parent.slug}` }] : []),
+    { name: nameOf(p.category, locale), path: `/catalog/${p.category.slug}` },
+    { name, path: `/product/${p.slug}` },
   ];
 
   return (
@@ -123,25 +128,25 @@ export default async function ProductPage({ params }: Props) {
           {p.category.parent && (
             <>
               <Link href={`/catalog/${p.category.parent.slug}`} className="hover:text-brand-600">
-                {p.category.parent.nameKa}
+                {nameOf(p.category.parent, locale)}
               </Link>
               <span>/</span>
             </>
           )}
           <Link href={`/catalog/${p.category.slug}`} className="hover:text-brand-600">
-            {p.category.nameKa}
+            {nameOf(p.category, locale)}
           </Link>
         </nav>
 
         <div className="grid gap-8 lg:grid-cols-2">
           <Gallery
-            images={p.images.map((i) => ({ url: i.url, alt: i.alt ?? p.nameKa }))}
-            category={p.category.nameKa}
+            images={p.images.map((i) => ({ url: i.url, alt: i.alt ?? name }))}
+            category={nameOf(p.category, locale)}
             label={p.model ?? p.sku}
           />
 
           <div>
-            <h1 className="text-2xl font-bold leading-snug">{p.nameKa}</h1>
+            <h1 className="text-2xl font-bold leading-snug">{name}</h1>
 
             <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
               {p.model && (
@@ -232,7 +237,7 @@ export default async function ProductPage({ params }: Props) {
                   line={{
                     productId: p.id,
                     sku: p.sku,
-                    name: p.nameKa,
+                    name,
                     slug: p.slug,
                     price: price.value,
                     image: p.images[0]?.url,
@@ -250,13 +255,13 @@ export default async function ProductPage({ params }: Props) {
           </div>
         </div>
 
-        {(p.descriptionKa || p.attributes.length > 0) && (
+        {(description || p.attributes.length > 0) && (
           <div className="mt-12 grid gap-8 lg:grid-cols-2">
-            {p.descriptionKa && (
+            {description && (
               <section>
                 <h2 className="mb-3 text-lg font-bold">{t("აღწერა")}</h2>
                 <div className="card whitespace-pre-line p-5 text-sm leading-relaxed text-ink">
-                  {p.descriptionKa}
+                  {description}
                 </div>
               </section>
             )}

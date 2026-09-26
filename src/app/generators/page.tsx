@@ -6,22 +6,26 @@ import { gel, formatDate } from "@/lib/format";
 import { getRate } from "@/lib/fx";
 import { getCurrentUser } from "@/lib/customer-auth";
 import { effectivePrice } from "@/lib/pricing";
-import { JsonLd, breadcrumbJsonLd, clip } from "@/lib/seo";
+import { JsonLd, breadcrumbJsonLd, clip, alts } from "@/lib/seo";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { getT } from "@/lib/i18n/server";
+import { getLocale } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
 const ROOT = "დიზელის გენერატორები";
 
-export const metadata: Metadata = {
+const META = {
   title: "დიზელის გენერატორები 15–2000 kVA — Baudouin, IVECO, Perkins, Scania",
   description: clip(
     "ZEN დიზელ-გენერატორები Baudouin, IVECO, Perkins და Scania ძრავებით, 15-დან 2000 kVA-მდე. ფასი ლარში ეროვნული ბანკის დღიური კურსით, ტექნიკური დოკუმენტაცია ყველა მოდელზე, მიწოდება შეკვეთით — Enex."
   ),
-  alternates: { canonical: "/generators" },
-};
+} as const;
+
+export async function generateMetadata(): Promise<Metadata> {
+  return { ...META, alternates: alts("/generators", await getLocale()) };
+}
 
 /** kVA სახელიდან ან მახასიათებლიდან — დალაგებისთვის */
 const kvaOf = (p: { attributes: { name: string; value: string }[]; nameKa: string }) => {

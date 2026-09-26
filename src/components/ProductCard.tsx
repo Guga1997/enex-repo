@@ -4,13 +4,16 @@ import { gel } from "@/lib/format";
 import { stockLabel } from "@/lib/stock";
 import { effectivePrice, type Viewer } from "@/lib/pricing";
 import ProductPlaceholder from "./ProductPlaceholder";
-import { getT } from "@/lib/i18n/server";
+import { getI18n } from "@/lib/i18n/server";
+import { nameOf } from "@/lib/i18n/content";
 
 export type CardProduct = {
   id: string;
   sku: string;
   slug: string;
   nameKa: string;
+  nameEn?: string | null;
+  nameRu?: string | null;
   model: string | null;
   price: number;
   dealerPrice?: number | null;
@@ -23,7 +26,7 @@ export type CardProduct = {
   isNew: boolean;
   images: { url: string; alt: string | null }[];
   brand: { name: string; slug: string } | null;
-  category?: { nameKa: string } | null;
+  category?: { nameKa: string; nameEn?: string | null; nameRu?: string | null } | null;
 };
 
 const TONE = {
@@ -34,7 +37,8 @@ const TONE = {
 } as const;
 
 export default async function ProductCard({ p, viewer }: { p: CardProduct; viewer?: Viewer }) {
-  const t = await getT();
+  const { locale, t } = await getI18n();
+  const name = nameOf(p, locale);
   const stock = stockLabel(p, t);
   const price = effectivePrice(p, viewer ?? null);
 
@@ -52,13 +56,13 @@ export default async function ProductCard({ p, viewer }: { p: CardProduct; viewe
         {p.images[0] ? (
           <Image
             src={p.images[0].url}
-            alt={p.images[0].alt ?? p.nameKa}
+            alt={p.images[0].alt ?? name}
             fill
             sizes="(max-width: 768px) 50vw, 25vw"
             className="object-contain p-4 transition group-hover:scale-105"
           />
         ) : (
-          <ProductPlaceholder category={p.category?.nameKa} label={p.model ?? p.sku} />
+          <ProductPlaceholder category={p.category ? nameOf(p.category, locale) : null} label={p.model ?? p.sku} />
         )}
 
         <div className="absolute left-3 top-3 flex flex-col gap-1">
@@ -77,7 +81,7 @@ export default async function ProductCard({ p, viewer }: { p: CardProduct; viewe
 
       <div className="flex flex-1 flex-col gap-1.5 border-t border-line p-4">
         <h3 className="line-clamp-2 text-sm font-medium leading-snug text-ink group-hover:text-brand-600">
-          {p.nameKa}
+          {name}
         </h3>
         {p.model && <div className="text-xs text-muted">{p.model}</div>}
         <div className="text-xs text-muted">#{p.sku}</div>

@@ -8,22 +8,26 @@ import { gel, formatDate } from "@/lib/format";
 import { getRate } from "@/lib/fx";
 import { getCurrentUser } from "@/lib/customer-auth";
 import { effectivePrice } from "@/lib/pricing";
-import { JsonLd, breadcrumbJsonLd, clip } from "@/lib/seo";
+import { JsonLd, breadcrumbJsonLd, clip, alts } from "@/lib/seo";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { getT } from "@/lib/i18n/server";
+import { getLocale } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
 const ROOT = "სასტუმროს სისტემები";
 
-export const metadata: Metadata = {
+const META = {
   title: "სასტუმროს სისტემები — ელექტრონული საკეტები, სეიფები, მინიბარები",
   description: clip(
     "Omnitec Systems: სასტუმროს ელექტრონული საკეტები (OS Slim, EVO, Gaudi 3), დაშვების კონტროლი, სეიფები, მინიბარები, ენერგოსეივერები, ლოკერები და მართვის პროგრამა. ფასი ლარში ეროვნული ბანკის დღიური კურსით, მიწოდება შეკვეთით — Enex."
   ),
-  alternates: { canonical: "/hotel" },
-};
+} as const;
+
+export async function generateMetadata(): Promise<Metadata> {
+  return { ...META, alternates: alts("/hotel", await getLocale()) };
+}
 
 const serieOf = (p: { attributes: { name: string; value: string }[] }) =>
   p.attributes.find((x) => x.name === "სერია")?.value ?? "";

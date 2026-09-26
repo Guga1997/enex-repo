@@ -6,6 +6,7 @@ import { intellcom } from "./intellcom";
 import { spreadsheet } from "./spreadsheet";
 import { computePrices, Pricer, repriceProduct } from "./pricing";
 import type { SupplierAdapter, SupplierConfig, SupplierItem } from "./types";
+import { translateName } from "../i18n/translate-name";
 
 export type { SupplierItem, SupplierConfig, SupplierAdapter } from "./types";
 
@@ -258,8 +259,13 @@ export async function syncSupplier(supplierId: string): Promise<SyncResult> {
               sku: item.supplierSku,
               slug: await uniqueProductSlug(item.name, item.supplierSku),
               nameKa: item.name,
+              // ახალ პროდუქტს თარგმანიც მაშინვე ეწერება — /en და /ru რომ არ ჩამორჩეს
+              nameEn: translateName(item.name, "en"),
+              nameRu: translateName(item.name, "ru"),
               model: item.model ?? null,
               descriptionKa: item.description ?? null,
+              descriptionEn: item.description ? translateName(item.description, "en") : null,
+              descriptionRu: item.description ? translateName(item.description, "ru") : null,
               price: prices.price,
               dealerPrice: prices.dealerPrice,
               cost: item.cost ?? null,

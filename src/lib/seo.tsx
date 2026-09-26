@@ -1,3 +1,4 @@
+import { LOCALES, withLocale, type Locale } from "./i18n/config";
 /**
  * SEO-ს საერთო ნაწილი: საიტის მისამართი, სტრუქტურირებული მონაცემები (JSON-LD),
  * აღწერის ავტომატური აწყობა იქ, სადაც ხელით არავის დაუწერია.
@@ -149,4 +150,15 @@ export function JsonLd({ data }: { data: unknown }) {
       dangerouslySetInnerHTML={{ __html: JSON.stringify(data).replace(/</g, "\\u003c") }}
     />
   );
+}
+
+/**
+ * hreflang — გვერდის სამივე ენის ვერსია ერთმანეთზე მიბმული.
+ * canonical მიმდინარე ენის მისამართია, languages კი სამივეს ჩამოთვლის.
+ */
+export function alts(path: string, locale: Locale) {
+  return {
+    canonical: withLocale(path, locale),
+    languages: Object.fromEntries(LOCALES.map((l) => [l, withLocale(path, l)])),
+  };
 }

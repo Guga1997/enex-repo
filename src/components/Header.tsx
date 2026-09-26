@@ -7,10 +7,11 @@ import AccountButton from "./AccountButton";
 import NavSegment from "./NavSegment";
 import ThemeToggle from "./ThemeToggle";
 import LangSwitcher from "./LangSwitcher";
-import { getT } from "@/lib/i18n/server";
+import { getI18n } from "@/lib/i18n/server";
+import { nameOf } from "@/lib/i18n/content";
 
 export default async function Header() {
-  const t = await getT();
+  const { locale, t } = await getI18n();
   // სამი დონე ერთი მოთხოვნით: სეგმენტი → ქვეჯგუფი → ქვე-ქვეჯგუფი
   const categories = await db.category.findMany({
     where: { parentId: null, isActive: true },
@@ -71,7 +72,7 @@ export default async function Header() {
         <div className="container-x flex items-stretch gap-1 overflow-x-auto">
           {categories.map((segment) => (
             <div key={segment.id} className="group static">
-              <NavSegment name={segment.nameKa} slug={segment.slug} />
+              <NavSegment name={nameOf(segment, locale)} slug={segment.slug} />
 
               {segment.children.length > 0 && (
                 <div className="invisible absolute left-0 right-0 top-full z-50 border-b border-line bg-surface opacity-0 shadow-xl transition group-hover:visible group-hover:opacity-100">
@@ -82,7 +83,7 @@ export default async function Header() {
                           href={`/catalog/${group.slug}`}
                           className="block text-sm font-semibold text-ink transition hover:text-brand-600"
                         >
-                          {group.nameKa}
+                          {nameOf(group, locale)}
                         </Link>
                         {group.children.length > 0 && (
                           <ul className="mt-2 space-y-1">
@@ -92,7 +93,7 @@ export default async function Header() {
                                   href={`/catalog/${leaf.slug}`}
                                   className="block text-sm leading-6 text-muted transition hover:text-brand-600"
                                 >
-                                  {leaf.nameKa}
+                                  {nameOf(leaf, locale)}
                                 </Link>
                               </li>
                             ))}

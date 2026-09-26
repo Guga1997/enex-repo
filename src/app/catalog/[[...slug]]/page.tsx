@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { db } from "@/lib/db";
-import { clip } from "@/lib/seo";
+import { clip, alts } from "@/lib/seo";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
@@ -11,7 +11,10 @@ import FilterSidebar from "@/components/FilterSidebar";
 import SortSelect from "@/components/SortSelect";
 import Pagination from "@/components/Pagination";
 import { getCurrentUser } from "@/lib/customer-auth";
-import { getT } from "@/lib/i18n/server";
+import { getI18n } from "@/lib/i18n/server";
+import { nameOf } from "@/lib/i18n/content";
+import { getLocale } from "@/lib/i18n/server";
+import { translate } from "@/lib/i18n/dict";
 import {
   categoryIdsWithDescendants,
   getFacets,
@@ -28,6 +31,7 @@ type Props = {
 };
 
 export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
+  const locale = await getLocale();
   const { slug } = await params;
   const sp = await searchParams;
   // ფილტრიანი/დალაგებული/გვერდიანი ვარიანტები ერთი გვერდის ასლებია — კანონიკური ბაზისურია,
@@ -38,32 +42,35 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
 
   if (!slug?.length) {
     return {
-      title: "კატალოგი — ვიდეო-მეთვალყურეობა, ქსელი, ენერგო უზრუნველყოფა",
-      description: "სრული კატალოგი: IP კამერები, ჩამწერები, სვიჩები, როუტერები, UPS, მზის სისტემები და სხვა — ოფიციალური გარანტიით.",
-      alternates: { canonical: base },
+      title: translate(locale, "კატალოგი — ვიდეო-მეთვალყურეობა, ქსელი, ენერგო უზრუნველყოფა"),
+      description: translate(locale, "სრული კატალოგი: IP კამერები, ჩამწერები, სვიჩები, როუტერები, UPS, მზის სისტემები და სხვა — ოფიციალური გარანტიით."),
+      alternates: alts(base, locale),
       robots,
     };
   }
   const cat = await db.category.findUnique({
     where: { slug: slug[slug.length - 1] },
-    include: { parent: true, children: { where: { isActive: true }, select: { nameKa: true }, take: 8 } },
+    include: {
+      parent: true,
+      children: { where: { isActive: true }, select: { nameKa: true, nameEn: true, nameRu: true }, take: 8 },
+    },
   });
-  if (!cat) return { title: "კატალოგი" };
+  if (!cat) return { title: translate(locale, "კატალოგი") };
   const count = await db.product.count({ where: { isActive: true, categoryId: cat.id } });
-  const subs = cat.children.map((c) => c.nameKa).join(", ");
+  const subs = cat.children.map((c) => nameOf(c, locale)).join(", ");
   const description = clip(
-    `${cat.nameKa}${cat.parent ? " — " + cat.parent.nameKa : ""}: ${subs ? subs + ". " : ""}${count ? count + " პროდუქტი" : "პროფესიონალური აღჭურვილობა"} ოფიციალური გარანტიით, მიწოდება საქართველოს მასშტაბით — Enex.`
+    `${nameOf(cat, locale)}${cat.parent ? " — " + nameOf(cat.parent, locale) : ""}: ${subs ? subs + ". " : ""}${count ? count + " პროდუქტი" : "პროფესიონალური აღჭურვილობა"} ოფიციალური გარანტიით, მიწოდება საქართველოს მასშტაბით — Enex.`
   );
   return {
-    title: cat.parent ? `${cat.nameKa} — ${cat.parent.nameKa}` : cat.nameKa,
+    title: cat.parent ? `${nameOf(cat, locale)} — ${nameOf(cat.parent, locale)}` : nameOf(cat, locale),
     description,
-    alternates: { canonical: base },
+    alternates: alts(base, locale),
     robots,
   };
 }
 
 export default async function CatalogPage({ params, searchParams }: Props) {
-  const t = await getT();
+  const { locale, t } = await getI18n();
   const { slug } = await params;
   const sp = await searchParams;
 
@@ -103,18 +110,18 @@ export default async function CatalogPage({ params, searchParams }: Props) {
           {category?.parent && (
             <>
               <Link href={`/catalog/${category.parent.slug}`} className="hover:text-brand-600">
-                {category.parent.nameKa}
+                {nameOf(category.parent, locale)}
               </Link>
               <span>/</span>
             </>
           )}
           <span className="font-medium text-ink">
-            {category?.nameKa ?? (query.q ? `ძებნა: ${query.q}` : "კატალოგი")}
+            {(category ? nameOf(category, locale) : null) ?? (query.q ? `ძებნა: ${query.q}` : "კატალოგი")}
           </span>
         </nav>
 
         <h1 className="mb-4 text-2xl font-bold">
-          {category?.nameKa ?? (query.q ? `ძებნის შედეგები: ${query.q}` : "ყველა პროდუქტი")}
+          {(category ? nameOf(category, locale) : null) ?? (query.q ? `ძებნის შედეგები: ${query.q}` : "ყველა პროდუქტი")}
         </h1>
 
         {/* ქვეკატეგორიების ჩიპები */}
@@ -126,7 +133,7 @@ export default async function CatalogPage({ params, searchParams }: Props) {
                 href={`/catalog/${c.slug}`}
                 className="rounded-full border border-line bg-surface px-4 py-2 text-sm hover:border-brand-500 hover:text-brand-600"
               >
-                {c.nameKa}
+                {nameOf(c, locale)}
               </Link>
             ))}
           </div>
