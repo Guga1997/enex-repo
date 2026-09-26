@@ -35,7 +35,7 @@ export default function RegisterForm({ next }: { next?: string }) {
             className={`rounded-lg border px-4 py-2.5 text-sm font-medium transition ${
               type === k
                 ? "border-brand-500 bg-brand-50 text-brand-700"
-                : "border-line bg-white text-ink hover:bg-canvas"
+                : "border-line bg-surface text-ink hover:bg-canvas"
             }`}
           >
             {k === "INDIVIDUAL" ? "ფიზიკური პირი" : "იურიდიული პირი"}

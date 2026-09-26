@@ -20,7 +20,7 @@ export default function SearchBox() {
         value={q}
         onChange={(e) => setQ(e.target.value)}
         placeholder="ძებნა დასახელებით, მოდელით ან კოდით..."
-        className="w-full rounded-lg border border-line bg-canvas py-2.5 pl-4 pr-11 text-sm outline-none focus:border-brand-500 focus:bg-white"
+        className="w-full rounded-lg border border-line bg-canvas py-2.5 pl-4 pr-11 text-sm outline-none focus:border-brand-500 focus:bg-surface"
       />
       <button
         type="submit"

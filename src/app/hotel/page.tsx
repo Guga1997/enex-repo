@@ -100,7 +100,7 @@ export default async function HotelPage({
         <div className="mb-5 flex flex-wrap gap-2">
           <Link
             href="/hotel"
-            className={`rounded-full border px-4 py-2 text-sm ${!active ? "border-brand-500 bg-brand-500 text-white" : "border-line bg-white hover:border-brand-500"}`}
+            className={`rounded-full border px-4 py-2 text-sm ${!active ? "border-brand-500 bg-brand-500 text-white" : "border-line bg-surface hover:border-brand-500"}`}
           >
             ყველა ({products.length})
           </Link>
@@ -108,7 +108,7 @@ export default async function HotelPage({
             <Link
               key={c.id}
               href={`/hotel?group=${c.slug}`}
-              className={`rounded-full border px-4 py-2 text-sm ${active?.id === c.id ? "border-brand-500 bg-brand-500 text-white" : "border-line bg-white hover:border-brand-500"}`}
+              className={`rounded-full border px-4 py-2 text-sm ${active?.id === c.id ? "border-brand-500 bg-brand-500 text-white" : "border-line bg-surface hover:border-brand-500"}`}
             >
               {c.nameKa}
             </Link>

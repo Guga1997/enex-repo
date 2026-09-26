@@ -50,7 +50,7 @@ export default async function AccountOrdersPage({
             className={`rounded-lg border px-3 py-2 text-sm transition ${
               key === active
                 ? "border-brand-500 bg-brand-50 font-medium text-brand-700"
-                : "border-line bg-white hover:bg-canvas"
+                : "border-line bg-surface hover:bg-canvas"
             }`}
           >
             {ORDER_BUCKETS[key].label}

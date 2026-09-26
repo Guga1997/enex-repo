@@ -34,9 +34,18 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
+/**
+ * რეჟიმის კლასი ხატვამდე უნდა დაჯდეს, თორემ გვერდი ჯერ თეთრად აციმციმდება.
+ * ამიტომ პატარა სკრიპტი <head>-ში, ყველაფერზე ადრე.
+ */
+const THEME_SCRIPT = `try{var t=localStorage.getItem('theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme:dark)').matches))document.documentElement.classList.add('dark')}catch(e){}`;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ka" className={georgian.variable}>
+    <html lang="ka" className={georgian.variable} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body>
         <CartProvider>{children}</CartProvider>
       </body>

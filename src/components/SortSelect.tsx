@@ -20,7 +20,7 @@ export default function SortSelect() {
         const qs = next.toString();
         router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
       }}
-      className="rounded-lg border border-line bg-white px-3 py-2 text-sm outline-none focus:border-brand-500"
+      className="rounded-lg border border-line bg-surface px-3 py-2 text-sm outline-none focus:border-brand-500"
     >
       {SORT_OPTIONS.map((o) => (
         <option key={o.value} value={o.value}>

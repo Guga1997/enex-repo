@@ -38,7 +38,7 @@ export default function FavoriteButton({
       className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition disabled:opacity-60 ${
         on
           ? "border-brand-200 bg-brand-50 text-brand-600"
-          : "border-line bg-white text-muted hover:bg-canvas"
+          : "border-line bg-surface text-muted hover:bg-canvas"
       }`}
     >
       <span aria-hidden>{on ? "♥" : "♡"}</span>

@@ -122,7 +122,7 @@ export default async function CatalogPage({ params, searchParams }: Props) {
               <Link
                 key={c.id}
                 href={`/catalog/${c.slug}`}
-                className="rounded-full border border-line bg-white px-4 py-2 text-sm hover:border-brand-500 hover:text-brand-600"
+                className="rounded-full border border-line bg-surface px-4 py-2 text-sm hover:border-brand-500 hover:text-brand-600"
               >
                 {c.nameKa}
               </Link>

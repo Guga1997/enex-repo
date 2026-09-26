@@ -5,6 +5,7 @@ import CartButton from "./CartButton";
 import SearchBox from "./SearchBox";
 import AccountButton from "./AccountButton";
 import NavSegment from "./NavSegment";
+import ThemeToggle from "./ThemeToggle";
 
 export default async function Header() {
   // სამი დონე ერთი მოთხოვნით: სეგმენტი → ქვეჯგუფი → ქვე-ქვეჯგუფი
@@ -23,7 +24,7 @@ export default async function Header() {
   });
 
   return (
-    <header className="sticky top-0 z-40 border-b border-line bg-white">
+    <header className="sticky top-0 z-40 border-b border-line bg-surface">
       <div className="container-x flex h-16 items-center gap-4">
         <Link href="/" className="shrink-0 text-ink" aria-label="Enex — მთავარი">
           <Logo className="h-9 w-auto" />
@@ -55,20 +56,21 @@ export default async function Header() {
           >
             შეკვეთის მოძებნა
           </Link>
+          <ThemeToggle />
           <AccountButton />
           <CartButton />
         </nav>
       </div>
 
       {/* სეგმენტების ზოლი — hover-ზე იშლება ქვეჯგუფები და მათი ქვეჯგუფები */}
-      <div className="border-t border-line bg-white">
+      <div className="border-t border-line bg-surface">
         <div className="container-x flex items-stretch gap-1 overflow-x-auto">
           {categories.map((segment) => (
             <div key={segment.id} className="group static">
               <NavSegment name={segment.nameKa} slug={segment.slug} />
 
               {segment.children.length > 0 && (
-                <div className="invisible absolute left-0 right-0 top-full z-50 border-b border-line bg-white opacity-0 shadow-xl transition group-hover:visible group-hover:opacity-100">
+                <div className="invisible absolute left-0 right-0 top-full z-50 border-b border-line bg-surface opacity-0 shadow-xl transition group-hover:visible group-hover:opacity-100">
                   <div className="container-x grid gap-x-8 gap-y-6 py-6 sm:grid-cols-2 lg:grid-cols-4">
                     {segment.children.map((group) => (
                       <div key={group.id}>

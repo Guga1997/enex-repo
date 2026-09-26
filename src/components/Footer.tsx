@@ -4,7 +4,7 @@ import { CONTACT } from "@/lib/seo";
 
 export default function Footer() {
   return (
-    <footer className="mt-16 border-t border-line bg-white">
+    <footer className="mt-16 border-t border-line bg-surface">
       <div className="container-x grid gap-8 py-12 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <Logo className="h-10 w-auto text-ink" />

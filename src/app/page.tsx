@@ -90,7 +90,7 @@ export default async function HomePage() {
         <ProductRow title="ფასდაკლებები" href="/catalog?discount=1" products={discounted} />
 
         {/* რა საიტია — ადამიანისთვისაც და საძიებო სისტემისთვისაც; სახელი საკურიერო კომპანიას ჰგავს */}
-        <section className="mt-12 rounded-2xl border border-line bg-white p-6 sm:p-8">
+        <section className="mt-12 rounded-2xl border border-line bg-surface p-6 sm:p-8">
           <h2 className="text-lg font-bold">Enex — პროფესიონალური აღჭურვილობის ონლაინ მაღაზია</h2>
           <div className="mt-3 grid gap-4 text-sm leading-relaxed text-muted sm:grid-cols-2">
             <p>
