@@ -272,8 +272,8 @@ export default async function ProductPage({ params }: Props) {
                   <tbody>
                     {p.attributes.map((a, i) => (
                       <tr key={a.id} className={i % 2 ? "bg-canvas" : ""}>
-                        <td className="w-1/2 px-4 py-2.5 text-muted">{a.name}</td>
-                        <td className="px-4 py-2.5 font-medium">{a.value}</td>
+                        <td className="w-1/2 px-4 py-2.5 text-muted">{t(a.name)}</td>
+                        <td className="px-4 py-2.5 font-medium">{t(a.value)}</td>
                       </tr>
                     ))}
                   </tbody>

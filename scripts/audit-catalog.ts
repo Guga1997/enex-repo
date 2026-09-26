@@ -77,7 +77,8 @@ function numbersWithUnit(s: string): { n: number; unit: string }[] {
     const seen = new Map<string, string>();
     for (const a of p.attributes) {
       const v = a.value.trim();
-      if (!v || v === "-" || v === "—") { add("მახასიათებელი", p.sku, `ცარიელი: ${a.name}`); continue; }
+      // „+“ და „-“ მიმწოდებლის ენაა: აქვს / არ აქვს — ცარიელი არ არის
+      if (!v) { add("მახასიათებელი", p.sku, `ცარიელი: ${a.name}`); continue; }
       const key = `${a.name.toLowerCase()}|${v.toLowerCase()}`;
       if (seen.has(key)) add("მახასიათებელი", p.sku, `დუბლი: ${a.name} = ${v}`);
       seen.set(key, v);
@@ -114,7 +115,8 @@ function numbersWithUnit(s: string): { n: number; unit: string }[] {
   });
   const variants = new Map<string, Set<string>>();
   for (const a of attrs) {
-    const key = `${a.name}|${a.value.toLowerCase().replace(/[\s.,]/g, "")}`;
+    // წერტილსა და მძიმეს არ ვშლით — „16.5 კგ“ და „165 კგ“ სხვადასხვა მნიშვნელობაა
+    const key = `${a.name}|${a.value.toLowerCase().replace(/\s/g, "")}`;
     const set = variants.get(key) ?? new Set();
     set.add(a.value);
     variants.set(key, set);

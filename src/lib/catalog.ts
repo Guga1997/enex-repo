@@ -98,7 +98,8 @@ export function buildWhere(
   q: CatalogQuery,
   skip?: "brand" | "status" | "price" | "attrs"
 ): Prisma.ProductWhereInput {
-  const AND: Prisma.ProductWhereInput[] = [{ isActive: true }];
+  // ფასის გარეშე პროდუქტი კატალოგში არ უნდა ჩანდეს — შეცდომით „0 ₾“ არ გაიყიდოს
+  const AND: Prisma.ProductWhereInput[] = [{ isActive: true }, { price: { gt: 0 } }];
 
   if (q.categoryIds.length) AND.push({ categoryId: { in: q.categoryIds } });
   if (skip !== "brand" && q.brands.length) AND.push({ brand: { slug: { in: q.brands } } });

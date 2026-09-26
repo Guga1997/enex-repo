@@ -94,7 +94,7 @@ export default function FilterSidebar({ facets }: { facets: Facets }) {
         ...ranges.map((r) => ({
           key: attr.name,
           value: r.value,
-          label: `${attr.name}: ${r.value}`,
+          label: `${t(attr.name)}: ${t(r.value)}`,
           remove: () => toggleValues(key, r.members!),
         })),
         ...cur
@@ -102,7 +102,7 @@ export default function FilterSidebar({ facets }: { facets: Facets }) {
           .map((v) => ({
             key: attr.name,
             value: v,
-            label: `${attr.name}: ${v}`,
+            label: `${t(attr.name)}: ${t(v)}`,
             remove: () => toggleMulti(key, v),
           })),
       ];
@@ -261,7 +261,7 @@ export default function FilterSidebar({ facets }: { facets: Facets }) {
           {facets.attributes.map((attr) => {
             const key = attrKey(attr.name);
             return (
-              <Section key={attr.name} title={attr.name} scroll>
+              <Section key={attr.name} title={t(attr.name)} scroll>
                 {attr.values.map((v) => {
                   // დიაპაზონი = მისი ყველა მნიშვნელობა ერთად
                   const members = v.members ?? [v.value];
@@ -269,7 +269,7 @@ export default function FilterSidebar({ facets }: { facets: Facets }) {
                   return (
                     <Check
                       key={v.value}
-                      label={v.value}
+                      label={t(v.value)}
                       count={v.count}
                       checked={members.every((m) => cur.includes(m))}
                       onChange={() => toggleValues(key, members)}
