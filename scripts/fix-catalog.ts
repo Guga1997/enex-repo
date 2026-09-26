@@ -45,7 +45,14 @@ const say = (s: string) => console.log(s);
   const named = await db.product.findMany({
     select: { id: true, sku: true, nameKa: true, nameEn: true, nameRu: true },
   });
-  const tidy = (v: string | null) => (v === null ? null : v.replace(/\s+/g, " ").replace(/\s+([,.;:])/g, "$1").trim());
+  const tidy = (v: string | null) =>
+    v === null
+      ? null
+      : v
+          .replace(/\s+/g, " ")
+          .replace(/\s+([,.;:])/g, "$1")
+          .replace(/[,;\s-]+$/, "") // ბოლოში ჩამოშრეტილი მძიმე/დეფისი
+          .trim();
   const dirty = named.filter(
     (p) => tidy(p.nameKa) !== p.nameKa || tidy(p.nameEn) !== p.nameEn || tidy(p.nameRu) !== p.nameRu
   );

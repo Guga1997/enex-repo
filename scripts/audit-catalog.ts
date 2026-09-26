@@ -63,7 +63,8 @@ function numbersWithUnit(s: string): { n: number; unit: string }[] {
     if (n.trim().length < 6) add("დასახელება", p.sku, `ძალიან მოკლე: „${n}“`);
     if (/\s{2,}/.test(n)) add("დასახელება", p.sku, `ორმაგი ღარი: „${n}“`);
     if (/[-,/]\s*$/.test(n.trim())) add("დასახელება", p.sku, `ბოლოში სასვენი ნიშანი: „${n}“`);
-    if (/undefined|null|NaN|\[object/i.test(n)) add("დასახელება", p.sku, `ტექნიკური ნაგავი: „${n}“`);
+    // მთელი სიტყვით, თორემ „NanoStation“ NaN-ად ითვლება
+    if (/\b(undefined|null|NaN)\b|\[object/.test(n)) add("დასახელება", p.sku, `ტექნიკური ნაგავი: „${n}“`);
 
     // — კატეგორია
     if (!p.category) add("კატეგორია", p.sku, "კატეგორია არ აქვს");
