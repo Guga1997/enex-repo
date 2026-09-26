@@ -46,11 +46,29 @@ export async function categoryIdsWithDescendants(rootId: string): Promise<string
   return out;
 }
 
+/**
+ * მახასიათებლის პარამეტრის სახელი მისამართში.
+ * განზრახ ნედლია: URLSearchParams თვითონ დააკოდირებს და უკან გაშიფრავს —
+ * encodeURIComponent-ს აქ ორმაგი კოდირება მოჰქონდა და მონიშნული ფილტრი
+ * ბრაუზერში „არჩეულად“ აღარ ჩანდა.
+ */
+export const attrKey = (name: string) => `attr_${name}`;
+
+const safeDecode = (v: string) => {
+  try {
+    return decodeURIComponent(v);
+  } catch {
+    return v;
+  }
+};
+
 export function parseQuery(sp: SearchParams, categoryIds: string[]): CatalogQuery {
   const attrs: Record<string, string[]> = {};
   for (const [key, value] of Object.entries(sp)) {
     if (!key.startsWith("attr_")) continue;
-    const name = decodeURIComponent(key.slice(5));
+    // Next-ი მისამართს უკვე შიფრავს; % მხოლოდ ძველ (ორმაგად დაკოდირებულ) ბმულებშია
+    const raw = key.slice(5);
+    const name = raw.includes("%") ? safeDecode(raw) : raw;
     const values = asArray(value).filter(Boolean);
     if (values.length) attrs[name] = values;
   }
@@ -72,11 +90,13 @@ export function parseQuery(sp: SearchParams, categoryIds: string[]): CatalogQuer
 
 /**
  * Prisma where-ის აწყობა. `skip` საშუალებას გვაძლევს ერთი ფასეტი გამოვრიცხოთ
- * საკუთარი რაოდენობების დათვლისას (სტანდარტული faceted-search ქცევა).
+ * საკუთარი რაოდენობების დათვლისას (სტანდარტული faceted-search ქცევა):
+ * მონიშნულ ბრენდს სხვა ბრენდების რაოდენობა არ უნდა გაუქრეს. "attrs" ყველა
+ * მახასიათებლის ფილტრს ხსნის — მათ რაოდენობებს მეხსიერებაში ვთვლით.
  */
 export function buildWhere(
   q: CatalogQuery,
-  skip?: "brand" | "status" | "price"
+  skip?: "brand" | "status" | "price" | "attrs"
 ): Prisma.ProductWhereInput {
   const AND: Prisma.ProductWhereInput[] = [{ isActive: true }];
 
@@ -107,8 +127,10 @@ export function buildWhere(
     });
   }
 
-  for (const [name, values] of Object.entries(q.attrs)) {
-    AND.push({ attributes: { some: { name, value: { in: values } } } });
+  if (skip !== "attrs") {
+    for (const [name, values] of Object.entries(q.attrs)) {
+      AND.push({ attributes: { some: { name, value: { in: values } } } });
+    }
   }
 
   return { AND };
@@ -128,6 +150,21 @@ function orderBy(sort: string): Prisma.ProductOrderByWithRelationInput[] {
       return [{ sortOrder: "asc" }, { price: "asc" }];
   }
 }
+
+
+/** „15 kVA“, „2.5 მმ“ — რიცხვით ვალაგებთ, თორემ 100 kVA 15-ის წინ დგება */
+const numOf = (v: string): number | null => {
+  const m = v.replace(",", ".").match(/-?d+(.d+)?/);
+  return m ? Number(m[0]) : null;
+};
+const byValue = (a: { value: string; count: number }, b: { value: string; count: number }) => {
+  const x = numOf(a.value);
+  const y = numOf(b.value);
+  if (x !== null && y !== null && x !== y) return x - y;
+  if (x !== null && y === null) return -1;
+  if (x === null && y !== null) return 1;
+  return a.value.localeCompare(b.value, "ka");
+};
 
 export type Facets = Awaited<ReturnType<typeof getFacets>>;
 
@@ -149,9 +186,11 @@ export async function getFacets(q: CatalogQuery) {
       _min: { price: true },
       _max: { price: true },
     }),
+    // მახასიათებლების ფილტრი აქ არ ედება — თითოეულ მათგანს თავისი რაოდენობა
+    // სხვა მახასიათებლების ფილტრით ეთვლება (ქვემოთ, მეხსიერებაში)
     db.productAttribute.findMany({
-      where: { filterable: true, product: buildWhere(q) },
-      select: { name: true, value: true },
+      where: { filterable: true, product: buildWhere(q, "attrs") },
+      select: { productId: true, name: true, value: true },
     }),
   ]);
 
@@ -172,24 +211,40 @@ export async function getFacets(q: CatalogQuery) {
     .map((g) => ({ key: g.stockStatus, count: g._count._all }))
     .sort((a, b) => b.count - a.count);
 
-  // მახასიათებლების ფასეტი: name -> [{value, count}]
-  const attrMap = new Map<string, Map<string, number>>();
+  // პროდუქტი → მახასიათებელი → მნიშვნელობები
+  const byProduct = new Map<string, Map<string, Set<string>>>();
   for (const row of attrRows) {
-    if (!attrMap.has(row.name)) attrMap.set(row.name, new Map());
-    const vals = attrMap.get(row.name)!;
-    vals.set(row.value, (vals.get(row.value) ?? 0) + 1);
+    let attrs = byProduct.get(row.productId);
+    if (!attrs) byProduct.set(row.productId, (attrs = new Map()));
+    const set = attrs.get(row.name) ?? new Set<string>();
+    set.add(row.value);
+    attrs.set(row.name, set);
   }
-  const attributes = [...attrMap.entries()]
-    .map(([name, vals]) => ({
-      name,
-      values: [...vals.entries()]
-        .map(([value, count]) => ({ value, count }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 15),
-    }))
-    .filter((a) => a.values.length > 1)
+
+  /** აკმაყოფილებს თუ არა პროდუქტი მონიშნულ მახასიათებლებს, გარდა `except`-ისა */
+  const matchesOtherAttrs = (attrs: Map<string, Set<string>>, except: string) => {
+    for (const [name, values] of Object.entries(q.attrs)) {
+      if (name === except) continue;
+      const have = attrs.get(name);
+      if (!have || !values.some((v) => have.has(v))) return false;
+    }
+    return true;
+  };
+
+  const names = [...new Set(attrRows.map((r) => r.name))];
+  const attributes = names
+    .map((name) => {
+      const counts = new Map<string, number>();
+      for (const attrs of byProduct.values()) {
+        if (!matchesOtherAttrs(attrs, name)) continue;
+        for (const value of attrs.get(name) ?? []) counts.set(value, (counts.get(value) ?? 0) + 1);
+      }
+      return { name, values: [...counts.entries()].map(([value, count]) => ({ value, count })).sort(byValue) };
+    })
+    // ერთმნიშვნელობიანი არაფერს ფილტრავს; 25-ზე მეტი (დენი, წონა…) ფილტრად არ ვარგა
+    .filter((a) => a.values.length > 1 && a.values.length <= 25)
     .sort((a, b) => a.name.localeCompare(b.name))
-    .slice(0, 8);
+    .slice(0, 10);
 
   const [discountCount, newCount] = await Promise.all([
     db.product.count({ where: { AND: [buildWhere(q), { oldPrice: { not: null } }] } }),

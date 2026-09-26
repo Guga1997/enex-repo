@@ -3,7 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
 import { STOCK_LABELS } from "@/lib/constants";
-import type { Facets } from "@/lib/catalog";
+import { attrKey, type Facets } from "@/lib/catalog";
 import { useT } from "@/components/LocaleProvider";
 
 export default function FilterSidebar({ facets }: { facets: Facets }) {
@@ -59,6 +59,51 @@ export default function FilterSidebar({ facets }: { facets: Facets }) {
     push(next);
   }
 
+  /** მონიშნული ფილტრები ერთ სიაში — ჩიპებისთვის */
+  const active: { key: string; value: string; label: string; remove: () => void }[] = [
+    ...selected("brand").map((v) => ({
+      key: "brand",
+      value: v,
+      label: facets.brands.find((b) => b.slug === v)?.name ?? v,
+      remove: () => toggleMulti("brand", v),
+    })),
+    ...selected("status").map((v) => ({
+      key: "status",
+      value: v,
+      label: t(STOCK_LABELS[v] ?? v),
+      remove: () => toggleMulti("status", v),
+    })),
+    ...facets.attributes.flatMap((attr) =>
+      selected(attrKey(attr.name)).map((v) => ({
+        key: attr.name,
+        value: v,
+        label: `${attr.name}: ${v}`,
+        remove: () => toggleMulti(attrKey(attr.name), v),
+      }))
+    ),
+    ...(sp.get("discount") === "1"
+      ? [{ key: "discount", value: "1", label: t("ფასდაკლება"), remove: () => toggleFlag("discount") }]
+      : []),
+    ...(sp.get("new") === "1" ? [{ key: "new", value: "1", label: t("ახალი"), remove: () => toggleFlag("new") }] : []),
+    ...(sp.get("min") || sp.get("max")
+      ? [
+          {
+            key: "price",
+            value: "range",
+            label: `${t("ფასი")}: ${sp.get("min") ?? facets.priceMin} — ${sp.get("max") ?? facets.priceMax} ₾`,
+            remove: () => {
+              const next = new URLSearchParams(sp.toString());
+              next.delete("min");
+              next.delete("max");
+              setMin("");
+              setMax("");
+              push(next);
+            },
+          },
+        ]
+      : []),
+  ];
+
   const activeCount =
     ["brand", "status"].reduce((n, k) => n + selected(k).length, 0) +
     (sp.get("min") || sp.get("max") ? 1 : 0) +
@@ -93,6 +138,23 @@ export default function FilterSidebar({ facets }: { facets: Facets }) {
               </button>
             )}
           </div>
+
+          {/* მონიშნული ფილტრები — ერთი შეხედვით ჩანს რა არის გააქტიურებული */}
+          {active.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 p-4">
+              {active.map((a) => (
+                <button
+                  key={a.key + a.value}
+                  onClick={a.remove}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-700 transition hover:bg-brand-100"
+                  title={t("წაშლა")}
+                >
+                  {a.label}
+                  <span aria-hidden>×</span>
+                </button>
+              ))}
+            </div>
+          )}
 
           <Section title={t("ფასი")}>
             <div className="flex items-center gap-2">
@@ -171,7 +233,7 @@ export default function FilterSidebar({ facets }: { facets: Facets }) {
 
           {/* დინამიური მახასიათებლები — რეზოლუცია, პორტების რაოდენობა და ა.შ. */}
           {facets.attributes.map((attr) => {
-            const key = `attr_${encodeURIComponent(attr.name)}`;
+            const key = attrKey(attr.name);
             return (
               <Section key={attr.name} title={attr.name} scroll>
                 {attr.values.map((v) => (

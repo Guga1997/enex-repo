@@ -12,7 +12,8 @@
     "db:studio": "prisma studio",
     "db:pg": "node scripts/to-postgres.mjs",
     "build:prod": "prisma generate --schema prisma/schema.postgres.prisma && next build",
-    "db:deploy": "prisma migrate deploy --schema prisma/schema.postgres.prisma"
+    "db:deploy": "prisma migrate deploy --schema prisma/schema.postgres.prisma",
+    "test": "tsx --test tests/*.test.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.1.0",
