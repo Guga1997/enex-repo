@@ -154,7 +154,7 @@ function orderBy(sort: string): Prisma.ProductOrderByWithRelationInput[] {
 
 /** „15 kVA“, „2.5 მმ“ — რიცხვით ვალაგებთ, თორემ 100 kVA 15-ის წინ დგება */
 const numOf = (v: string): number | null => {
-  const m = v.replace(",", ".").match(/-?d+(.d+)?/);
+  const m = v.replace(",", ".").match(/-?\d+(\.\d+)?/);
   return m ? Number(m[0]) : null;
 };
 const byValue = (a: { value: string; count: number }, b: { value: string; count: number }) => {
@@ -165,6 +165,54 @@ const byValue = (a: { value: string; count: number }, b: { value: string; count:
   if (x === null && y !== null) return 1;
   return a.value.localeCompare(b.value, "ka");
 };
+
+
+export type FacetValue = {
+  /** მისამართში მიმავალი მნიშვნელობა ან დიაპაზონის წარწერა */
+  value: string;
+  count: number;
+  /** დიაპაზონისთვის — კონკრეტული მნიშვნელობები, რომლებსაც ის მოიცავს */
+  members?: string[];
+};
+
+/**
+ * ბევრრიცხვიანი რიცხვითი მახასიათებელი დიაპაზონებად ჯგუფდება:
+ * „15 kVA, 22 kVA, 25 kVA…“ 90 ცალი ჩამონათვალად უსარგებლოა, „15–50 kVA“ კი მუშაობს.
+ * დიაპაზონის მონიშვნა მისი ყველა მნიშვნელობის მონიშვნას უდრის — სერვერს
+ * ცვლილება არ სჭირდება.
+ */
+function bucketize(values: FacetValue[]): FacetValue[] {
+  if (values.length <= 12) return values;
+  const numeric = values.filter((v) => numOf(v.value) !== null);
+  if (numeric.length < values.length * 0.8) return values; // ტექსტურია — არ ვჯგუფავთ
+
+  const unit = values[0].value.replace(/^[\d\s.,-]+/, "").trim();
+  const total = numeric.reduce((n, v) => n + v.count, 0);
+  const target = Math.ceil(total / 6); // დაახლოებით ექვსი თანაბარი ჯგუფი
+
+  const out: FacetValue[] = [];
+  let chunk: FacetValue[] = [];
+  let acc = 0;
+  const flush = () => {
+    if (!chunk.length) return;
+    const lo = numOf(chunk[0].value)!;
+    const hi = numOf(chunk[chunk.length - 1].value)!;
+    out.push({
+      value: lo === hi ? chunk[0].value : `${lo}–${hi}${unit ? " " + unit : ""}`,
+      count: acc,
+      members: chunk.map((c) => c.value),
+    });
+    chunk = [];
+    acc = 0;
+  };
+  for (const v of numeric) {
+    chunk.push(v);
+    acc += v.count;
+    if (acc >= target) flush();
+  }
+  flush();
+  return out;
+}
 
 export type Facets = Awaited<ReturnType<typeof getFacets>>;
 
@@ -239,9 +287,11 @@ export async function getFacets(q: CatalogQuery) {
         if (!matchesOtherAttrs(attrs, name)) continue;
         for (const value of attrs.get(name) ?? []) counts.set(value, (counts.get(value) ?? 0) + 1);
       }
-      return { name, values: [...counts.entries()].map(([value, count]) => ({ value, count })).sort(byValue) };
+      const values = [...counts.entries()].map(([value, count]) => ({ value, count })).sort(byValue);
+      return { name, values: bucketize(values) };
     })
-    // ერთმნიშვნელობიანი არაფერს ფილტრავს; 25-ზე მეტი (დენი, წონა…) ფილტრად არ ვარგა
+    // ერთმნიშვნელობიანი არაფერს ფილტრავს; 25-ზე მეტი ჩამონათვალი ფილტრად არ ვარგა
+    // (დაჯგუფების შემდეგაც თუ ბევრია, მაშინ ტექსტური მნიშვნელობებია — გამოვტოვოთ)
     .filter((a) => a.values.length > 1 && a.values.length <= 25)
     .sort((a, b) => a.name.localeCompare(b.name))
     .slice(0, 10);

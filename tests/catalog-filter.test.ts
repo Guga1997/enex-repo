@@ -69,7 +69,8 @@ test("მახასიათებლის ფასეტის რიცხ
 
   for (const attr of facets.attributes.slice(0, 3)) {
     for (const v of attr.values.slice(0, 5)) {
-      const filtered = await query(null, { [attrKey(attr.name)]: v.value });
+      // დიაპაზონი მისი ყველა მნიშვნელობით ფილტრავს
+      const filtered = await query(null, { [attrKey(attr.name)]: (v.members ?? [v.value]).join(",") });
       const got = await count({ where: buildWhere(filtered) });
       assert.equal(got, v.count, `${attr.name} = ${v.value}: ფასეტში ${v.count}, ფილტრით ${got}`);
     }
@@ -100,7 +101,8 @@ test("ერთი მახასიათებლის ორი მნი�
   assert.ok(attr);
 
   const [a, b] = attr.values;
-  const both = await query(null, { [attrKey(attr.name)]: `${a.value},${b.value}` });
+  const members = [...(a.members ?? [a.value]), ...(b.members ?? [b.value])];
+  const both = await query(null, { [attrKey(attr.name)]: members.join(",") });
   const got = await count({ where: buildWhere(both) });
 
   // ერთი პროდუქტი ორივე მნიშვნელობას ვერ ექნება (ერთი მახასიათებელი, ერთი მნიშვნელობა)

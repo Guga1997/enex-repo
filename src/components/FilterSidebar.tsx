@@ -25,6 +25,17 @@ export default function FilterSidebar({ facets }: { facets: Facets }) {
     startTransition(() => router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false }));
   }
 
+  /** დიაპაზონისთვის — რამდენიმე მნიშვნელობა ერთად ინიშნება/იხსნება */
+  function toggleValues(key: string, values: string[]) {
+    const next = new URLSearchParams(sp.toString());
+    const cur = selected(key);
+    const allOn = values.every((v) => cur.includes(v));
+    const updated = allOn ? cur.filter((v) => !values.includes(v)) : [...new Set([...cur, ...values])];
+    if (updated.length) next.set(key, updated.join(","));
+    else next.delete(key);
+    push(next);
+  }
+
   function toggleMulti(key: string, value: string) {
     const next = new URLSearchParams(sp.toString());
     const cur = selected(key);
@@ -73,14 +84,29 @@ export default function FilterSidebar({ facets }: { facets: Facets }) {
       label: t(STOCK_LABELS[v] ?? v),
       remove: () => toggleMulti("status", v),
     })),
-    ...facets.attributes.flatMap((attr) =>
-      selected(attrKey(attr.name)).map((v) => ({
-        key: attr.name,
-        value: v,
-        label: `${attr.name}: ${v}`,
-        remove: () => toggleMulti(attrKey(attr.name), v),
-      }))
-    ),
+    ...facets.attributes.flatMap((attr) => {
+      const key = attrKey(attr.name);
+      const cur = selected(key);
+      // მონიშნული დიაპაზონი ერთ ჩიპად, ცალკეული მნიშვნელობა — თავისით
+      const ranges = attr.values.filter((v) => v.members && v.members.every((m) => cur.includes(m)));
+      const inRange = new Set(ranges.flatMap((r) => r.members!));
+      return [
+        ...ranges.map((r) => ({
+          key: attr.name,
+          value: r.value,
+          label: `${attr.name}: ${r.value}`,
+          remove: () => toggleValues(key, r.members!),
+        })),
+        ...cur
+          .filter((v) => !inRange.has(v))
+          .map((v) => ({
+            key: attr.name,
+            value: v,
+            label: `${attr.name}: ${v}`,
+            remove: () => toggleMulti(key, v),
+          })),
+      ];
+    }),
     ...(sp.get("discount") === "1"
       ? [{ key: "discount", value: "1", label: t("ფასდაკლება"), remove: () => toggleFlag("discount") }]
       : []),
@@ -236,15 +262,20 @@ export default function FilterSidebar({ facets }: { facets: Facets }) {
             const key = attrKey(attr.name);
             return (
               <Section key={attr.name} title={attr.name} scroll>
-                {attr.values.map((v) => (
-                  <Check
-                    key={v.value}
-                    label={v.value}
-                    count={v.count}
-                    checked={selected(key).includes(v.value)}
-                    onChange={() => toggleMulti(key, v.value)}
-                  />
-                ))}
+                {attr.values.map((v) => {
+                  // დიაპაზონი = მისი ყველა მნიშვნელობა ერთად
+                  const members = v.members ?? [v.value];
+                  const cur = selected(key);
+                  return (
+                    <Check
+                      key={v.value}
+                      label={v.value}
+                      count={v.count}
+                      checked={members.every((m) => cur.includes(m))}
+                      onChange={() => toggleValues(key, members)}
+                    />
+                  );
+                })}
               </Section>
             );
           })}
