@@ -4,7 +4,8 @@ import "./globals.css";
 import { CartProvider } from "@/components/CartProvider";
 import { LocaleProvider } from "@/components/LocaleProvider";
 import { getLocale } from "@/lib/i18n/server";
-import { HTML_LANG } from "@/lib/i18n/config";
+import { HTML_LANG, OG_LOCALE } from "@/lib/i18n/config";
+import { translate } from "@/lib/i18n/dict";
 import { DEFAULT_DESCRIPTION, SITE_URL } from "@/lib/seo";
 
 /**
@@ -19,7 +20,7 @@ const georgian = Noto_Sans_Georgian({
   variable: "--font-georgian",
 });
 
-export const metadata: Metadata = {
+const META: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
     default: "Enex — პროფესიონალური აღჭურვილობა",
@@ -42,6 +43,19 @@ export const metadata: Metadata = {
  * ამიტომ პატარა სკრიპტი <head>-ში, ყველაფერზე ადრე.
  */
 const THEME_SCRIPT = `try{var t=localStorage.getItem('theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme:dark)').matches))document.documentElement.classList.add('dark')}catch(e){}`;
+
+
+/** სათაური და აღწერა მიმდინარე ენაზე */
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  const t = (s: string) => translate(locale, s);
+  return {
+    ...META,
+    title: { default: t("Enex — პროფესიონალური აღჭურვილობა"), template: "%s | Enex" },
+    description: t(DEFAULT_DESCRIPTION),
+    openGraph: { ...META.openGraph, locale: OG_LOCALE[locale] },
+  };
+}
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const locale = await getLocale();

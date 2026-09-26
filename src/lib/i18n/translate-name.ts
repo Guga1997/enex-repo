@@ -27,7 +27,7 @@ function boundary(ka: string): RegExp {
   return re;
 }
 
-let CACHE: { phrases: [string, Entry][]; categories: Record<string, Entry> } | null = null;
+let CACHE: { phrases: [string, Entry][]; whole: Record<string, Entry> } | null = null;
 
 function load() {
   if (CACHE) return CACHE;
@@ -40,17 +40,18 @@ function load() {
     }
   };
   const phrases = Object.entries(read("phrases-i18n.json")).sort((a, b) => b[0].length - a[0].length);
-  CACHE = { phrases, categories: read("category-i18n.json") };
+  // სრული დამთხვევით: კატეგორიები და ბანერების ტექსტები
+  CACHE = { phrases, whole: { ...read("category-i18n.json"), ...read("banner-i18n.json") } };
   return CACHE;
 }
 
 /** ერთი დასახელება; null — თუ სრულად ვერ ითარგმნა */
 export function translateName(name: string, locale: "en" | "ru"): string | null {
   if (!GEO.test(name)) return name; // მთლიანად ლათინურია — თარგმანი არ სჭირდება
-  const { phrases, categories } = load();
+  const { phrases, whole } = load();
 
-  const whole = categories[name.trim()];
-  if (whole) return whole[locale];
+  const exact = whole[name.trim()];
+  if (exact) return exact[locale];
 
   let out = name;
   for (const [ka, tr] of phrases) {
@@ -65,6 +66,6 @@ export function translateName(name: string, locale: "en" | "ru"): string | null 
 
 /** კატეგორიის სახელი — ცალკე ლექსიკონი, სრული დამთხვევით */
 export function translateCategory(name: string, locale: "en" | "ru"): string | null {
-  const { categories } = load();
-  return categories[name.trim()]?.[locale] ?? translateName(name, locale);
+  const { whole } = load();
+  return whole[name.trim()]?.[locale] ?? translateName(name, locale);
 }

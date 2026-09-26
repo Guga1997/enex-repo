@@ -1,0 +1,30 @@
+{
+  "Bluetti — ენერგია ყველგან": { "en": "Bluetti — power anywhere", "ru": "Bluetti — энергия везде" },
+  "პორტატული ელსადგურები 600W-დან 3840W-მდე · გამოთვალე შენი კონფიგურაცია": {
+    "en": "Portable power stations from 600 W to 3840 W · calculate your configuration",
+    "ru": "Портативные электростанции от 600 Вт до 3840 Вт · рассчитайте свою конфигурацию"
+  },
+  "დიზელის გენერატორები 15–2000 kVA": {
+    "en": "Diesel generators 15–2000 kVA",
+    "ru": "Дизельные генераторы 15–2000 кВА"
+  },
+  "Zenessis — Baudouin, IVECO, Perkins, Scania ძრავებით. ფასი ლარში, ყოველდღიური კურსით, მიწოდება შეკვეთით": {
+    "en": "Zenessis — with Baudouin, IVECO, Perkins and Scania engines. Price in GEL at the daily rate, delivery to order",
+    "ru": "Zenessis — с двигателями Baudouin, IVECO, Perkins и Scania. Цена в лари по дневному курсу, поставка под заказ"
+  },
+  "Delta Electronics — უწყვეტი კვება": {
+    "en": "Delta Electronics — uninterruptible power",
+    "ru": "Delta Electronics — бесперебойное питание"
+  },
+  "On-Line UPS 1-დან 40 kVA-მდე, აკუმულატორის ბლოკები, PDU": {
+    "en": "On-line UPS from 1 to 40 kVA, battery packs, PDU",
+    "ru": "ИБП On-line от 1 до 40 кВА, батарейные блоки, PDU"
+  },
+  "სახლის სარეზერვო კვება": { "en": "Home backup power", "ru": "Резервное питание для дома" },
+  "Bluetti AC200P L + B300K — 5 kWh, გათიშვისას მაცივარი, გათბობა და ინტერნეტი მუშაობს": {
+    "en": "Bluetti AC200P L + B300K — 5 kWh: fridge, heating and internet keep running during an outage",
+    "ru": "Bluetti AC200P L + B300K — 5 кВт·ч: при отключении холодильник, отопление и интернет продолжают работать"
+  },
+  "ქსელური სვიჩები": { "en": "Network switches", "ru": "Сетевые коммутаторы" },
+  "Ubiquiti, EdgeCore, Uniview — PoE და 10G": { "en": "Ubiquiti, EdgeCore, Uniview — PoE and 10G", "ru": "Ubiquiti, EdgeCore, Uniview — PoE и 10G" }
+}

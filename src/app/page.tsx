@@ -15,6 +15,7 @@ import type { T } from "@/lib/i18n/dict";
 import type { Metadata } from "next";
 import { getLocale } from "@/lib/i18n/server";
 import { alts } from "@/lib/seo";
+import { translateName } from "@/lib/i18n/translate-name";
 
 export const dynamic = "force-dynamic";
 
@@ -42,6 +43,16 @@ export default async function HomePage() {
     }),
   ]);
 
+  // ბანერის ტექსტი ენის მიხედვით — თარგმანის გარეშე ქართული რჩება
+  const slides =
+    locale === "ka"
+      ? banners
+      : banners.map((b) => ({
+          ...b,
+          title: translateName(b.title, locale) ?? b.title,
+          subtitle: b.subtitle ? translateName(b.subtitle, locale) ?? b.subtitle : null,
+        }));
+
   return (
     <>
       <JsonLd data={organizationJsonLd()} />
@@ -51,7 +62,7 @@ export default async function HomePage() {
         <h1 className="sr-only">{t("Enex — პროფესიონალური აღჭურვილობის ონლაინ მაღაზია")}</h1>
         {/* ბანერები ადმინიდან იმართება; სანამ არცერთი არ არის — ზოგადი ბლოკი */}
         {banners.length > 0 ? (
-          <HeroSlider slides={banners} />
+          <HeroSlider slides={slides} />
         ) : (
         <section className="mb-10 overflow-hidden rounded-2xl bg-gradient-to-br from-brand-700 to-brand-500 px-8 py-14 text-white">
           <h1 className="max-w-2xl text-3xl font-bold leading-tight sm:text-4xl">
