@@ -132,7 +132,11 @@ export default async function ProductPage({ params }: Props) {
         </nav>
 
         <div className="grid gap-8 lg:grid-cols-2">
-          <Gallery images={p.images.map((i) => ({ url: i.url, alt: i.alt ?? p.nameKa }))} />
+          <Gallery
+            images={p.images.map((i) => ({ url: i.url, alt: i.alt ?? p.nameKa }))}
+            category={p.category.nameKa}
+            label={p.model ?? p.sku}
+          />
 
           <div>
             <h1 className="text-2xl font-bold leading-snug">{p.nameKa}</h1>

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { gel } from "@/lib/format";
 import { stockLabel } from "@/lib/stock";
 import { effectivePrice, type Viewer } from "@/lib/pricing";
+import ProductPlaceholder from "./ProductPlaceholder";
 
 export type CardProduct = {
   id: string;
@@ -21,6 +22,7 @@ export type CardProduct = {
   isNew: boolean;
   images: { url: string; alt: string | null }[];
   brand: { name: string; slug: string } | null;
+  category?: { nameKa: string } | null;
 };
 
 const TONE = {
@@ -54,9 +56,7 @@ export default function ProductCard({ p, viewer }: { p: CardProduct; viewer?: Vi
             className="object-contain p-4 transition group-hover:scale-105"
           />
         ) : (
-          <div className="flex h-full items-center justify-center text-xs text-muted">
-            სურათი არ არის
-          </div>
+          <ProductPlaceholder category={p.category?.nameKa} label={p.model ?? p.sku} />
         )}
 
         <div className="absolute left-3 top-3 flex flex-col gap-1">

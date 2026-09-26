@@ -224,6 +224,7 @@ export const productCardSelect = {
   isNew: true,
   images: { select: { url: true, alt: true }, orderBy: { sortOrder: "asc" }, take: 1 },
   brand: { select: { name: true, slug: true } },
+  category: { select: { nameKa: true } },
 } satisfies Prisma.ProductSelect;
 
 export async function getProducts(q: CatalogQuery) {

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
+import ProductPlaceholder from "@/components/ProductPlaceholder";
 import { Suspense } from "react";
 import { db } from "@/lib/db";
 import { gel, formatDate } from "@/lib/format";
@@ -133,17 +134,19 @@ export default async function HotelPage({
                 {rows.map(({ p, price }) => (
                   <tr key={p.id} className="hover:bg-canvas/60">
                     <td className="w-16 p-2">
-                      {p.images[0] && (
-                        <Link href={`/product/${p.slug}`} className="block">
+                      <Link href={`/product/${p.slug}`} className="block size-12 overflow-hidden rounded">
+                        {p.images[0] ? (
                           <Image
                             src={p.images[0].url}
                             alt=""
                             width={48}
                             height={48}
-                            className="h-12 w-12 rounded object-contain"
+                            className="size-12 object-contain"
                           />
-                        </Link>
-                      )}
+                        ) : (
+                          <ProductPlaceholder category={p.category.nameKa} />
+                        )}
+                      </Link>
                     </td>
                     <td className="p-3">
                       <Link href={`/product/${p.slug}`} className="font-medium hover:text-brand-600">

@@ -2,16 +2,25 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import ProductPlaceholder from "./ProductPlaceholder";
 
 type Img = { url: string; alt: string };
 
-export default function Gallery({ images }: { images: Img[] }) {
+export default function Gallery({
+  images,
+  category,
+  label,
+}: {
+  images: Img[];
+  category?: string | null;
+  label?: string | null;
+}) {
   const [active, setActive] = useState(0);
 
   if (!images.length) {
     return (
-      <div className="card flex aspect-square items-center justify-center text-sm text-muted">
-        სურათი არ არის
+      <div className="card aspect-square overflow-hidden">
+        <ProductPlaceholder category={category} label={label} />
       </div>
     );
   }
