@@ -5,13 +5,15 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
 import HeroSlider from "@/components/HeroSlider";
+import CategoryIcon from "@/components/CategoryIcon";
+import { segmentTheme } from "@/lib/segment-theme";
 import { JsonLd, organizationJsonLd, websiteJsonLd } from "@/lib/seo";
 import { productCardSelect } from "@/lib/catalog";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [banners, categories, newest, discounted] = await Promise.all([
+  const [banners, categories, discounted] = await Promise.all([
     db.banner.findMany({
       where: { isActive: true },
       orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
@@ -20,12 +22,6 @@ export default async function HomePage() {
     db.category.findMany({
       where: { parentId: null, isActive: true },
       orderBy: { sortOrder: "asc" },
-    }),
-    db.product.findMany({
-      where: { isActive: true },
-      select: productCardSelect,
-      orderBy: { createdAt: "desc" },
-      take: 8,
     }),
     db.product.findMany({
       where: { isActive: true, oldPrice: { not: null } },
@@ -71,19 +67,16 @@ export default async function HomePage() {
                 <Link
                   key={c.id}
                   href={`/catalog/${c.slug}`}
-                  className="card flex flex-col items-center gap-3 p-5 text-center transition hover:border-brand-200 hover:shadow-md"
+                  className="group card flex flex-col items-center gap-3 p-5 text-center transition hover:border-brand-200 hover:shadow-md"
                 >
                   <div className="relative size-14">
                     {c.image ? (
                       <Image src={c.image} alt={c.nameKa} fill className="object-contain" />
                     ) : (
-                      <div className="flex size-14 items-center justify-center rounded-full bg-brand-50 text-brand-500">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <rect x="3" y="3" width="7" height="7" rx="1" />
-                          <rect x="14" y="3" width="7" height="7" rx="1" />
-                          <rect x="3" y="14" width="7" height="7" rx="1" />
-                          <rect x="14" y="14" width="7" height="7" rx="1" />
-                        </svg>
+                      <div
+                        className={`flex size-14 items-center justify-center rounded-full ${segmentTheme(c.nameKa, c.slug).tint} ${segmentTheme(c.nameKa, c.slug).ink}`}
+                      >
+                        <CategoryIcon name={c.nameKa} slug={c.slug} className="size-7" />
                       </div>
                     )}
                   </div>
@@ -94,7 +87,6 @@ export default async function HomePage() {
           </section>
         )}
 
-        <ProductRow title="ახალი პროდუქტები" href="/catalog?sort=newest" products={newest} />
         <ProductRow title="ფასდაკლებები" href="/catalog?discount=1" products={discounted} />
 
         {/* რა საიტია — ადამიანისთვისაც და საძიებო სისტემისთვისაც; სახელი საკურიერო კომპანიას ჰგავს */}

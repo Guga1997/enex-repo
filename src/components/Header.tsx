@@ -4,6 +4,7 @@ import Logo from "./Logo";
 import CartButton from "./CartButton";
 import SearchBox from "./SearchBox";
 import AccountButton from "./AccountButton";
+import NavSegment from "./NavSegment";
 
 export default async function Header() {
   // სამი დონე ერთი მოთხოვნით: სეგმენტი → ქვეჯგუფი → ქვე-ქვეჯგუფი
@@ -60,16 +61,11 @@ export default async function Header() {
       </div>
 
       {/* სეგმენტების ზოლი — hover-ზე იშლება ქვეჯგუფები და მათი ქვეჯგუფები */}
-      <div className="bg-nav text-white">
-        <div className="container-x flex items-stretch gap-0.5 overflow-x-auto">
+      <div className="border-t border-line bg-white">
+        <div className="container-x flex items-stretch gap-1 overflow-x-auto">
           {categories.map((segment) => (
             <div key={segment.id} className="group static">
-              <Link
-                href={`/catalog/${segment.slug}`}
-                className="flex h-12 items-center whitespace-nowrap px-4 text-sm font-medium text-white/85 transition group-hover:bg-nav-soft group-hover:text-white"
-              >
-                {segment.nameKa}
-              </Link>
+              <NavSegment name={segment.nameKa} slug={segment.slug} />
 
               {segment.children.length > 0 && (
                 <div className="invisible absolute left-0 right-0 top-full z-50 border-b border-line bg-white opacity-0 shadow-xl transition group-hover:visible group-hover:opacity-100">
