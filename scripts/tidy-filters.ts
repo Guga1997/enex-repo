@@ -32,6 +32,20 @@ const OFF = [
     console.log(`  ${name}: ${n} ჩანაწერი`);
     if (write) await db.productAttribute.updateMany({ where: { name }, data: { filterable: false } });
   }
+  // ერთი და იგივე მნიშვნელობა ორ სახედ („400 / 230 V“ და „400/ 230 V“) ორ ფილტრად იშლებოდა
+  const norm = (v: string) =>
+    v
+      .replace(/\s+/g, " ")
+      .replace(/\s*\/\s*/g, " / ")
+      .trim();
+  const all = await db.productAttribute.findMany({ select: { id: true, value: true } });
+  const dirty = all.filter((a) => norm(a.value) !== a.value);
+  console.log(`  მნიშვნელობის გასწორება: ${dirty.length}`);
+  if (write) {
+    for (const a of dirty) {
+      await db.productAttribute.update({ where: { id: a.id }, data: { value: norm(a.value) } });
+    }
+  }
   console.log(write ? "✓ ჩაწერილია" : "— მხოლოდ ჩვენება (--write გჭირდება)");
   await db.$disconnect();
 })();
