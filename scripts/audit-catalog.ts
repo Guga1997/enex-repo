@@ -12,6 +12,9 @@ import { db } from "../src/lib/db";
 const full = process.argv.includes("--full");
 const LIMIT = full ? 1000 : 10;
 
+/** საზომი ერთეულები, სადაც ციფრის ჩამოჭრა სახიფათოა */
+const UNITS = new Set(["kva", "kw", "w", "v", "a", "mm", "მმ", "მპ", "gb", "tb", "mbps", "gbps", "კვა", "კგ"]);
+
 type Issue = { kind: string; sku: string; detail: string };
 const issues: Issue[] = [];
 const add = (kind: string, sku: string, detail: string) => issues.push({ kind, sku, detail });
@@ -85,7 +88,7 @@ function numbersWithUnit(s: string): { n: number; unit: string }[] {
 
       // ჩამოჭრილი რიცხვი: მახასიათებელში „1 kVA“, სახელში კი „1250 kVA“
       for (const av of numbersWithUnit(v)) {
-        if (!av.unit || av.n === 0) continue;
+        if (!av.unit || av.n === 0 || !UNITS.has(av.unit)) continue;
         const inName = numbersWithUnit(n).find(
           (x) => x.unit === av.unit && x.n !== av.n && String(x.n).startsWith(String(av.n))
         );
@@ -96,6 +99,24 @@ function numbersWithUnit(s: string): { n: number; unit: string }[] {
     // — თარგმანი
     if (p.nameEn && p.nameEn === p.nameKa && /[Ⴀ-ჿ]/.test(p.nameKa))
       add("თარგმანი", p.sku, "ინგლისური = ქართული");
+  }
+
+  // — ერთი პროდუქტი, ძალიან განსხვავებული თვითღირებულებები: სავარაუდოდ არასწორი დამთხვევა
+  const supplies = await db.productSupply.findMany({
+    where: { product: { isActive: true }, cost: { gt: 0 } },
+    select: { cost: true, product: { select: { sku: true } }, supplier: { select: { name: true } } },
+  });
+  const bySku = new Map<string, { cost: number; supplier: string }[]>();
+  for (const s2 of supplies) {
+    const k = s2.product.sku;
+    bySku.set(k, [...(bySku.get(k) ?? []), { cost: s2.cost!, supplier: s2.supplier.name }]);
+  }
+  for (const [sku, list] of bySku) {
+    if (list.length < 2) continue;
+    const lo = list.reduce((a, b) => (a.cost < b.cost ? a : b));
+    const hi = list.reduce((a, b) => (a.cost > b.cost ? a : b));
+    if (hi.cost > lo.cost * 3)
+      add("მიმწოდებელი", sku, `${lo.supplier} ${lo.cost} ₾, ${hi.supplier} ${hi.cost} ₾ — სავარაუდოდ სხვადასხვა საქონელია`);
   }
 
   // — კატეგორიები პროდუქტის გარეშე

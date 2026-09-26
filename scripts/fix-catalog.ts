@@ -28,6 +28,19 @@ const say = (s: string) => console.log(s);
     await db.product.updateMany({ where: { id: { in: free.map((p) => p.id) } }, data: { isActive: false } });
   }
 
+  // 1b — თვითღირებულებაზე ორჯერ იაფი: ფასი ან დამთხვევა არასწორია
+  const cheap = await db.product.findMany({
+    where: { isActive: true, cost: { gt: 0 }, price: { gt: 0 } },
+    select: { id: true, sku: true, nameKa: true, price: true, cost: true },
+  });
+  const losing = cheap.filter((p) => p.price < p.cost! * 0.5);
+  say(`
+### თვითღირებულებაზე ორჯერ იაფი — ${losing.length} გამოირთვება`);
+  for (const p of losing) say(`  ${p.sku}: ფასი ${p.price} ₾, თვითღირებულება ${p.cost} ₾ — ${p.nameKa.slice(0, 40)}`);
+  if (write && losing.length) {
+    await db.product.updateMany({ where: { id: { in: losing.map((p) => p.id) } }, data: { isActive: false } });
+  }
+
   // 2 — ორმაგი ღარები დასახელებებში
   const named = await db.product.findMany({
     select: { id: true, sku: true, nameKa: true, nameEn: true, nameRu: true },
