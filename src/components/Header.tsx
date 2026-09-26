@@ -43,6 +43,12 @@ export default async function Header() {
             გენერატორები
           </Link>
           <Link
+            href="/hotel"
+            className="hidden rounded-lg px-3 py-2 text-muted transition hover:bg-canvas hover:text-ink lg:block"
+          >
+            სასტუმროსთვის
+          </Link>
+          <Link
             href="/order/track"
             className="hidden rounded-lg px-3 py-2 text-muted transition hover:bg-canvas hover:text-ink sm:block"
           >

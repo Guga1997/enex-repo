@@ -146,6 +146,11 @@ certbot განახლებას თვითონ გეგმავს.
 კურსის ცვლილება ფასებში ავტომატურად აისახება. datasheet-ები `public/uploads/docs/<docsDir>/`-ში,
 ფაილის სახელი მოდელით იწყება (zen-72-tbi_en.pdf → ZEN 72 TBI).
 
+**Omnitec (სასტუმროს სისტემები)** — ფასთა ნუსხა PDF-ით მოდის; scratchpad-ის სკრიპტი მას ხსნის
+`data/pricelists/omnitec.xlsx`-ად (ფურცელი = კატეგორია) და `data/omnitec-enrich.json`-ად
+(სურათები + მახასიათებლები). ახალი ნუსხის მოსვლისას: xlsx თავიდან აიწყობა, ადმინში იტვირთება,
+შემდეგ `npx tsx scripts/enrich-omnitec.ts`. გვერდი: `/hotel`.
+
 **Bluetti კონფიგურატორი** — `public/tools/bluetti.html`, მისამართი `/bluetti` (rewrite next.config-ში).
 ფასი და ნაშთი კატალოგიდან მოაქვს (`/api/catalog/prices`) — HTML-ში ჩაშენებული ციფრები მხოლოდ სათადარიგოა.
 
