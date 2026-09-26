@@ -76,6 +76,17 @@ const parenCode = (s: string) => s.match(/\(([A-Za-z0-9/ ]{3,})\)/)?.[1].toUpper
  * ზუსტი დამთხვევა → ნორმალიზებული (მხოლობითი/მრავლობითი, ფრჩხილები) → ალიასი → ფრჩხილების კოდი.
  * ვერ ამოცნობილი ჯდება საიმპორტო კალათაში.
  */
+/** მიმწოდებლის „+“/„-“ ადამიანურ ენაზე; ღარებიც ერთ სახეზე */
+const attrValue = (v: string) => {
+  const t = v
+    .replace(/\s+/g, " ")
+    .replace(/\s*\/\s*/g, " / ")
+    .trim();
+  if (t === "+") return "კი";
+  if (t === "-" || t === "–" || t === "—") return "არა";
+  return t;
+};
+
 export async function resolveCategoryId(path: string[] | undefined): Promise<string> {
   if (path?.length) {
     // SQLite-ს რეგისტრის უგულებელყოფა არ შეუძლია — შედარებას მეხსიერებაში ვაკეთებთ
@@ -291,7 +302,7 @@ export async function syncSupplier(supplierId: string): Promise<SyncResult> {
               data: item.attributes.map((a, i) => ({
                 productId: product.id,
                 name: a.name,
-                value: a.value,
+                value: attrValue(a.value),
                 sortOrder: i,
               })),
             });
@@ -317,7 +328,7 @@ export async function syncSupplier(supplierId: string): Promise<SyncResult> {
           }
           if (item.attributes?.length && !(await db.productAttribute.count({ where: { productId: pid } }))) {
             await db.productAttribute.createMany({
-              data: item.attributes.map((a, i) => ({ productId: pid, name: a.name, value: a.value, sortOrder: i })),
+              data: item.attributes.map((a, i) => ({ productId: pid, name: a.name, value: attrValue(a.value), sortOrder: i })),
             });
           }
           await db.product.update({
