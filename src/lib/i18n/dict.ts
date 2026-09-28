@@ -313,6 +313,35 @@ export const en: Record<string, string> = {
   "⚡ Bluetti კონფიგურატორი — რამდენ ხანს გაძლებს შენს დატვირთვაზე":
     "⚡ Bluetti configurator — how long it lasts on your load",
 
+  // — კონფიგურატორის ტექნიკური მახასიათებლები (გასაღები ინგლისურია)
+  "socket": "Socket",
+  "chipset": "Chipset",
+  "form": "Form factor",
+  "forms": "Supported form factors",
+  "ramType": "Memory type",
+  "ramSlots": "RAM slots",
+  "m2": "M.2 slots",
+  "cores": "Cores",
+  "threads": "Threads",
+  "boost": "Boost clock",
+  "tdp": "TDP",
+  "igpu": "Integrated graphics",
+  "sockets": "Supported sockets",
+  "capacity": "Capacity",
+  "modules": "Modules",
+  "speed": "Speed",
+  "vram": "Video memory",
+  "length": "Length",
+  "watt": "Power",
+  "rating": "Efficiency rating",
+  "modular": "Modular",
+  "maxGpu": "Max GPU length",
+  "fans": "Fans",
+  "rgb": "RGB",
+  "color": "Colour",
+  "brand": "Brand",
+  "type": "Type",
+
   // — SEO
   "ვიდეო-მეთვალყურეობა, ქსელური მოწყობილობები, ენერგო უზრუნველყოფა — პროფესიონალური აღჭურვილობა ოფიციალური გარანტიით და მიწოდებით საქართველოს მასშტაბით.":
     "Video surveillance, network equipment and power systems — professional equipment with official warranty and delivery across Georgia.",
@@ -640,6 +669,35 @@ export const ru: Record<string, string> = {
   "ამ ჯგუფში პოზიციები ჯერ არ არის გამოქვეყნებული.": "В этой группе позиции ещё не опубликованы.",
   "⚡ Bluetti კონფიგურატორი — რამდენ ხანს გაძლებს შენს დატვირთვაზე":
     "⚡ Конфигуратор Bluetti — на сколько хватит при вашей нагрузке",
+
+  // — კონფიგურატორის ტექნიკური მახასიათებლები (გასაღები ინგლისურია)
+  "socket": "Сокет",
+  "chipset": "Чипсет",
+  "form": "Форм-фактор",
+  "forms": "Поддерживаемые форм-факторы",
+  "ramType": "Тип памяти",
+  "ramSlots": "Слоты RAM",
+  "m2": "Слоты M.2",
+  "cores": "Ядра",
+  "threads": "Потоки",
+  "boost": "Частота Boost",
+  "tdp": "TDP",
+  "igpu": "Встроенная графика",
+  "sockets": "Поддерживаемые сокеты",
+  "capacity": "Объём",
+  "modules": "Модули",
+  "speed": "Частота",
+  "vram": "Видеопамять",
+  "length": "Длина",
+  "watt": "Мощность",
+  "rating": "Сертификат",
+  "modular": "Модульный",
+  "maxGpu": "Макс. длина видеокарты",
+  "fans": "Вентиляторы",
+  "rgb": "RGB",
+  "color": "Цвет",
+  "brand": "Бренд",
+  "type": "Тип",
 
   // — SEO
   "ვიდეო-მეთვალყურეობა, ქსელური მოწყობილობები, ენერგო უზრუნველყოფა — პროფესიონალური აღჭურვილობა ოფიციალური გარანტიით და მიწოდებით საქართველოს მასშტაბით.":

@@ -4,10 +4,21 @@ import { db } from "@/lib/db";
 import { authenticateApiKey } from "@/lib/api-auth";
 import { slugify } from "@/lib/format";
 import { StockStatus } from "@/lib/constants";
+import { categoryIdsWithDescendants } from "@/lib/catalog";
+import { ci } from "@/lib/search-mode";
+import type { Prisma } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 
-/** GET /api/v1/products — სრული კატალოგის ექსპორტი გარე სისტემისთვის */
+/**
+ * GET /api/v1/products — კატალოგის ექსპორტი გარე სისტემისთვის.
+ * პარამეტრები:
+ *   ?category=slug     — მოცემული კატეგორია და ყველა ქვეკატეგორია
+ *   ?active=1          — მხოლოდ გამოქვეყნებული
+ *   ?updated_since=ISO — მხოლოდ შეცვლილი (ნაწილობრივი სინქრონიზაცია)
+ *   ?q=ტექსტი          — ძებნა დასახელებით, მოდელით, კოდით
+ *   ?page=1&limit=100
+ */
 export async function GET(req: Request) {
   const auth = await authenticateApiKey(req, "stock:read");
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
@@ -15,9 +26,23 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const page = Math.max(1, Number(url.searchParams.get("page")) || 1);
   const limit = Math.min(500, Math.max(1, Number(url.searchParams.get("limit")) || 100));
+  const categorySlug = url.searchParams.get("category");
+  const since = url.searchParams.get("updated_since");
+  const q = url.searchParams.get("q")?.trim();
+
+  const where: Prisma.ProductWhereInput = {};
+  if (url.searchParams.get("active") === "1") where.isActive = true;
+  if (since) where.updatedAt = { gte: new Date(since) };
+  if (q) where.OR = [{ nameKa: ci(q) }, { nameEn: ci(q) }, { model: ci(q) }, { sku: ci(q) }];
+  if (categorySlug) {
+    const cat = await db.category.findUnique({ where: { slug: categorySlug }, select: { id: true } });
+    if (!cat) return NextResponse.json({ error: `კატეგორია "${categorySlug}" არ არსებობს` }, { status: 404 });
+    where.categoryId = { in: await categoryIdsWithDescendants(cat.id) };
+  }
 
   const [items, total] = await Promise.all([
     db.product.findMany({
+      where,
       include: {
         brand: { select: { name: true, slug: true } },
         category: { select: { nameKa: true, slug: true } },
@@ -28,7 +53,7 @@ export async function GET(req: Request) {
       skip: (page - 1) * limit,
       take: limit,
     }),
-    db.product.count(),
+    db.product.count({ where }),
   ]);
 
   return NextResponse.json({
