@@ -82,7 +82,14 @@ const productSchema = z.object({
   incomingDate: z.string().datetime().nullable().optional(),
   categorySlug: z.string().min(1),
   brandName: z.string().optional(),
-  images: z.array(z.string().url()).optional(),
+  // აბსოლუტური ბმული ან ჩვენივე ატვირთული ფაილი („/uploads/…“)
+  images: z
+    .array(
+      z
+        .string()
+        .refine((v) => /^https?:\/\//.test(v) || v.startsWith("/uploads/"), "ბმული ან /uploads/… უნდა იყოს")
+    )
+    .optional(),
   attributes: z.array(z.object({ name: z.string(), value: z.string() })).optional(),
   isActive: z.boolean().optional(),
   isNew: z.boolean().optional(),
@@ -148,7 +155,7 @@ export async function POST(req: Request) {
       incomingDate: item.incomingDate ? new Date(item.incomingDate) : null,
       categoryId: category.id,
       brandId,
-      isActive: item.isActive ?? true,
+      isActive: item.isActive ?? existing?.isActive ?? false,
       isNew: item.isNew ?? false,
     };
 
