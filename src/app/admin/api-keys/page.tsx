@@ -11,7 +11,10 @@ export default async function ApiKeysPage({
   searchParams: Promise<{ created?: string }>;
 }) {
   const { created } = await searchParams;
-  const keys = await db.apiKey.findMany({ orderBy: { createdAt: "desc" } });
+  const [keys, categories] = await Promise.all([
+    db.apiKey.findMany({ orderBy: { createdAt: "desc" } }),
+    db.category.findMany({ orderBy: { nameKa: "asc" }, select: { slug: true, nameKa: true, parentId: true } }),
+  ]);
 
   const base = process.env.NEXT_PUBLIC_SITE_URL ?? "https://yourdomain.ge";
 
@@ -44,6 +47,7 @@ export default async function ApiKeysPage({
                 <th className="p-3 font-medium">დასახელება</th>
                 <th className="p-3 font-medium">გასაღები</th>
                 <th className="p-3 font-medium">უფლებები</th>
+                <th className="p-3 font-medium">კატეგორია</th>
                 <th className="p-3 font-medium">ბოლო გამოყენება</th>
                 <th className="p-3" />
               </tr>
@@ -54,6 +58,15 @@ export default async function ApiKeysPage({
                   <td className="p-3 font-medium">{k.name}</td>
                   <td className="p-3 font-mono text-xs text-muted">{k.prefix}…</td>
                   <td className="p-3 text-xs">{k.scopes}</td>
+                  <td className="p-3 text-xs">
+                    {k.categorySlug ? (
+                      <span className="rounded bg-brand-50 px-1.5 py-0.5 text-brand-700">
+                        {categories.find((c) => c.slug === k.categorySlug)?.nameKa ?? k.categorySlug}
+                      </span>
+                    ) : (
+                      <span className="text-muted">მთელი კატალოგი</span>
+                    )}
+                  </td>
                   <td className="p-3 text-xs text-muted">
                     {k.lastUsedAt ? formatDate(k.lastUsedAt) : "არასდროს"}
                   </td>
@@ -108,6 +121,27 @@ export default async function ApiKeysPage({
               <option value="stock:read,stock:write">კითხვა + ჩაწერა</option>
               <option value="stock:read">მხოლოდ კითხვა</option>
             </select>
+          </label>
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-medium">კატეგორია</span>
+            <select
+              name="categorySlug"
+              defaultValue=""
+              className="w-full rounded-lg border border-line px-3 py-2.5 text-sm outline-none focus:border-brand-500"
+            >
+              <option value="">მთელი კატალოგი</option>
+              {categories
+                .filter((c) => !c.parentId)
+                .map((c) => (
+                  <option key={c.slug} value={c.slug}>
+                    {c.nameKa}
+                  </option>
+                ))}
+            </select>
+            <span className="mt-1 block text-xs text-muted">
+              შეზღუდული გასაღები მხოლოდ ამ კატეგორიას და მის ქვეკატეგორიებს ხედავს — გაჟონვისას
+              დანარჩენ კატალოგს ვერ შეეხება.
+            </span>
           </label>
           <button className="btn btn-primary w-full hover:bg-brand-600">შექმნა</button>
         </form>

@@ -12,7 +12,7 @@ export function generateApiKey() {
 }
 
 export type ApiAuthResult =
-  | { ok: true; keyId: string; keyName: string; scopes: string[] }
+  | { ok: true; keyId: string; keyName: string; scopes: string[]; categorySlug: string | null }
   | { ok: false; status: 401 | 403; error: string };
 
 /**
@@ -38,5 +38,5 @@ export async function authenticateApiKey(
     return { ok: false, status: 403, error: `საჭიროა უფლება: ${requiredScope}` };
 
   await db.apiKey.update({ where: { id: record.id }, data: { lastUsedAt: new Date() } });
-  return { ok: true, keyId: record.id, keyName: record.name, scopes };
+  return { ok: true, keyId: record.id, keyName: record.name, scopes, categorySlug: record.categorySlug };
 }

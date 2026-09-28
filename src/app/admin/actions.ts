@@ -218,9 +218,11 @@ export async function createApiKey(formData: FormData) {
   await requireAdmin();
   const name = str(formData, "name") || "უსახელო";
   const scopes = str(formData, "scopes") || "stock:read,stock:write";
+  // ცარიელი — მთელი კატალოგი; შევსებული — მხოლოდ ეს კატეგორია და ქვეკატეგორიები
+  const categorySlug = str(formData, "categorySlug") || null;
 
   const { raw, hash, prefix } = generateApiKey();
-  await db.apiKey.create({ data: { name, keyHash: hash, prefix, scopes } });
+  await db.apiKey.create({ data: { name, keyHash: hash, prefix, scopes, categorySlug } });
 
   // ღია გასაღები ერთხელ ჩანს — URL-ში გადავცემთ ჩვენებისთვის
   revalidatePath("/admin/api-keys");

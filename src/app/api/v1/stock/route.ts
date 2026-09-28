@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { authenticateApiKey } from "@/lib/api-auth";
 import { deriveStatus } from "@/lib/stock";
 import { StockStatus } from "@/lib/constants";
+import { scopeIds } from "@/lib/api-scope";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +21,11 @@ export async function GET(req: Request) {
   const limit = Math.min(1000, Math.max(1, Number(url.searchParams.get("limit")) || 200));
   const since = url.searchParams.get("updated_since");
 
-  const where = since ? { updatedAt: { gte: new Date(since) } } : {};
+  const allowed = await scopeIds(auth.categorySlug);
+  const where = {
+    ...(since ? { updatedAt: { gte: new Date(since) } } : {}),
+    ...(allowed ? { categoryId: { in: allowed } } : {}),
+  };
 
   const [items, total] = await Promise.all([
     db.product.findMany({

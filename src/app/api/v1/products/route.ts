@@ -7,6 +7,7 @@ import { StockStatus } from "@/lib/constants";
 import { categoryIdsWithDescendants } from "@/lib/catalog";
 import { ci } from "@/lib/search-mode";
 import type { Prisma } from "@prisma/client";
+import { scopeIds, inScope, OUT_OF_SCOPE } from "@/lib/api-scope";
 
 export const dynamic = "force-dynamic";
 
@@ -31,13 +32,17 @@ export async function GET(req: Request) {
   const q = url.searchParams.get("q")?.trim();
 
   const where: Prisma.ProductWhereInput = {};
+  // გასაღების არეალი — უფრო ვიწროც რომ იყოს, ვერ გასცდება
+  const allowed = await scopeIds(auth.categorySlug);
+  if (allowed) where.categoryId = { in: allowed };
   if (url.searchParams.get("active") === "1") where.isActive = true;
   if (since) where.updatedAt = { gte: new Date(since) };
   if (q) where.OR = [{ nameKa: ci(q) }, { nameEn: ci(q) }, { model: ci(q) }, { sku: ci(q) }];
   if (categorySlug) {
     const cat = await db.category.findUnique({ where: { slug: categorySlug }, select: { id: true } });
     if (!cat) return NextResponse.json({ error: `კატეგორია "${categorySlug}" არ არსებობს` }, { status: 404 });
-    where.categoryId = { in: await categoryIdsWithDescendants(cat.id) };
+    const asked = await categoryIdsWithDescendants(cat.id);
+    where.categoryId = { in: allowed ? asked.filter((id) => allowed.includes(id)) : asked };
   }
 
   const [items, total] = await Promise.all([
@@ -128,6 +133,10 @@ export async function POST(req: Request) {
     const category = await db.category.findUnique({ where: { slug: item.categorySlug } });
     if (!category) {
       failed.push({ sku: item.sku, reason: `კატეგორია "${item.categorySlug}" არ არსებობს` });
+      continue;
+    }
+    if (!(await inScope(auth.categorySlug, category.id))) {
+      failed.push({ sku: item.sku, reason: OUT_OF_SCOPE });
       continue;
     }
 

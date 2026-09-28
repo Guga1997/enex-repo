@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { authenticateApiKey } from "@/lib/api-auth";
 import { deriveStatus } from "@/lib/stock";
 import { StockStatus } from "@/lib/constants";
+import { inScope, OUT_OF_SCOPE } from "@/lib/api-scope";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +19,7 @@ export async function GET(req: Request, { params }: Ctx) {
   const product = await db.product.findUnique({
     where: { sku },
     select: {
+      categoryId: true,
       sku: true,
       nameKa: true,
       price: true,
@@ -31,7 +33,10 @@ export async function GET(req: Request, { params }: Ctx) {
   });
 
   if (!product) return NextResponse.json({ error: "პროდუქტი ვერ მოიძებნა" }, { status: 404 });
-  return NextResponse.json({ data: product });
+  if (!(await inScope(auth.categorySlug, product.categoryId)))
+    return NextResponse.json({ error: OUT_OF_SCOPE }, { status: 403 });
+  const { categoryId: _cat, ...data } = product;
+  return NextResponse.json({ data });
 }
 
 const patchSchema = z.object({
@@ -58,6 +63,8 @@ export async function PUT(req: Request, { params }: Ctx) {
   const { sku } = await params;
   const current = await db.product.findUnique({ where: { sku } });
   if (!current) return NextResponse.json({ error: "პროდუქტი ვერ მოიძებნა" }, { status: 404 });
+  if (!(await inScope(auth.categorySlug, current.categoryId)))
+    return NextResponse.json({ error: OUT_OF_SCOPE }, { status: 403 });
 
   let body: unknown;
   try {

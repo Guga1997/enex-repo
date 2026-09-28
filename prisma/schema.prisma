@@ -293,6 +293,8 @@ model ApiKey {
   keyHash    String    @unique
   prefix     String // ჩვენება ადმინში: sk_live_a1b2...
   scopes     String    @default("stock:read,stock:write")
+  /// თუ შევსებულია — გასაღები მხოლოდ ამ კატეგორიასა და მის ქვეკატეგორიებს ეხება
+  categorySlug String?
   isActive   Boolean   @default(true)
   lastUsedAt DateTime?
   createdAt  DateTime  @default(now())
