@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 import { DEFAULT_LOCALE, isLocale, type Locale } from "@/lib/i18n/config";
+import { CORS_HEADERS, isApiV1 } from "@/lib/cors";
 
 const PUBLIC_ADMIN_PATHS = ["/admin/login"];
 
@@ -17,6 +18,15 @@ const NEEDS_AUTH = (p: string) => p.startsWith("/admin") || p.startsWith("/accou
  */
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+
+  // API გარე სისტემებისთვისაა (კონფიგურატორის აპლიკაცია) — CORS ერთ ადგილას
+  if (isApiV1(pathname)) {
+    if (req.method === "OPTIONS") return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
+    const res = NextResponse.next();
+    for (const [k, v] of Object.entries(CORS_HEADERS)) res.headers.set(k, v);
+    return res;
+  }
+
   const seg = pathname.split("/")[1] ?? "";
   let locale: Locale = DEFAULT_LOCALE;
   let path = pathname;
@@ -60,5 +70,8 @@ function redirectToLogin(req: NextRequest, path: string, locale: Locale) {
 
 /** სტატიკა, ატვირთული ფაილები და API გვერდის ლოგიკას არ სჭირდება */
 export const config = {
-  matcher: ["/((?!api|_next|uploads|brand|favicon.ico|robots.txt|sitemap.xml|.*\\.[a-zA-Z0-9]+$).*)"],
+  matcher: [
+    "/api/v1/:path*",
+    "/((?!api|_next|uploads|brand|favicon.ico|robots.txt|sitemap.xml|.*\\.[a-zA-Z0-9]+$).*)",
+  ],
 };
