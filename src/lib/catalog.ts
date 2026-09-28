@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { db } from "./db";
 import { PAGE_SIZE } from "./constants";
+import { ci } from "./search-mode";
 
 export type SearchParams = { [k: string]: string | string[] | undefined };
 
@@ -120,10 +121,11 @@ export function buildWhere(
   if (q.q) {
     AND.push({
       OR: [
-        { nameKa: { contains: q.q } },
-        { nameEn: { contains: q.q } },
-        { model: { contains: q.q } },
-        { sku: { contains: q.q } },
+        { nameKa: ci(q.q) },
+        { nameEn: ci(q.q) },
+        { nameRu: ci(q.q) },
+        { model: ci(q.q) },
+        { sku: ci(q.q) },
       ],
     });
   }

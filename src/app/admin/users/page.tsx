@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { formatDate, gel } from "@/lib/format";
 import { setUserTier } from "../actions";
+import { ci } from "@/lib/search-mode";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "მომხმარებლები" };
@@ -19,10 +20,10 @@ export default async function UsersPage({
     where: term
       ? {
           OR: [
-            { name: { contains: term } },
-            { email: { contains: term } },
-            { phone: { contains: term } },
-            { taxId: { contains: term } },
+            { name: ci(term) },
+            { email: ci(term) },
+            { phone: ci(term) },
+            { taxId: ci(term) },
           ],
         }
       : undefined,

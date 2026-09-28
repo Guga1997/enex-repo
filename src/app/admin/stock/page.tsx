@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { STOCK_LABELS } from "@/lib/constants";
+import { ci } from "@/lib/search-mode";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "სტოკის ლოგი" };
@@ -12,7 +13,7 @@ export default async function StockLogPage({
   const { sku } = await searchParams;
 
   const logs = await db.stockSyncLog.findMany({
-    where: sku ? { sku: { contains: sku } } : {},
+    where: sku ? { sku: ci(sku) } : {},
     orderBy: { createdAt: "desc" },
     take: 200,
   });

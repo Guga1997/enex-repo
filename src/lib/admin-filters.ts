@@ -1,4 +1,5 @@
 import type { Prisma } from "@prisma/client";
+import { ci } from "./search-mode";
 
 /** ერთი ფილტრი სიისთვისაც და მასობრივი ქმედებისთვისაც — რომ არ დაშორდნენ */
 export function productFilter(f: {
@@ -8,7 +9,7 @@ export function productFilter(f: {
   const AND: Prisma.ProductWhereInput[] = [];
 
   if (f.q) AND.push({ OR: [
-    { nameKa: { contains: f.q } }, { sku: { contains: f.q } }, { model: { contains: f.q } },
+    { nameKa: ci(f.q) }, { nameEn: ci(f.q) }, { nameRu: ci(f.q) }, { sku: ci(f.q) }, { model: ci(f.q) },
   ] });
   if (f.category) AND.push({ categoryId: f.category });
 

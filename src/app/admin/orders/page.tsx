@@ -3,6 +3,7 @@ import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { gel, formatDate } from "@/lib/format";
 import { ORDER_STATUS_LABELS, PAYMENT_STATUS_LABELS } from "@/lib/constants";
+import { ci } from "@/lib/search-mode";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "შეკვეთები" };
@@ -21,10 +22,10 @@ export default async function AdminOrders({
   if (sp.status) where.status = sp.status;
   if (sp.q) {
     where.OR = [
-      { number: { contains: sp.q } },
-      { customerName: { contains: sp.q } },
-      { customerPhone: { contains: sp.q } },
-      { customerEmail: { contains: sp.q } },
+      { number: ci(sp.q) },
+      { customerName: ci(sp.q) },
+      { customerPhone: ci(sp.q) },
+      { customerEmail: ci(sp.q) },
     ];
   }
 
