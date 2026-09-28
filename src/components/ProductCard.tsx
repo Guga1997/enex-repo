@@ -52,7 +52,8 @@ export default async function ProductCard({ p, viewer }: { p: CardProduct; viewe
       href={`/product/${p.slug}`}
       className="card group flex flex-col overflow-hidden transition hover:border-brand-200 hover:shadow-md"
     >
-      <div className="relative aspect-square bg-white p-4">
+      {/* თეთრი ფილა მხოლოდ ფოტოსთვისაა (ფოტოები თეთრფონიანია); ხატულა ბარათის ფონზე რჩება */}
+      <div className={`relative aspect-square p-4 ${p.images[0] ? "bg-white" : "bg-surface"}`}>
         {p.images[0] ? (
           <Image
             src={p.images[0].url}
