@@ -24,6 +24,13 @@ async function requireAdmin() {
 
 const str = (fd: FormData, key: string) => String(fd.get(key) ?? "").trim();
 
+/**
+ * ველებს არასტანდარტული სახელები აქვს (staffEmail, staffName, staffPassword) —
+ * "email", "name" და "password" ბრაუზერის ავტოშევსებას თავის ველებად მიაჩნია
+ * და შენახული მონაცემების ჩამონათვალს სთავაზობს. აქ სხვისი ანგარიში იქმნება,
+ * არა შენი შესვლა, ამიტომ ეს სია არასდროს გამოგვადგება.
+ */
+
 const back = (error?: string, ok?: string) => {
   revalidatePath("/admin/staff");
   const q = new URLSearchParams();
@@ -37,10 +44,10 @@ const isRole = (r: string): r is Role => (ROLES as readonly string[]).includes(r
 export async function createStaff(formData: FormData) {
   await requireAdmin();
 
-  const email = str(formData, "email").toLowerCase();
-  const name = str(formData, "name");
+  const email = str(formData, "staffEmail").toLowerCase();
+  const name = str(formData, "staffName");
   const role = str(formData, "role");
-  const password = str(formData, "password");
+  const password = str(formData, "staffPassword");
 
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return back("email");
   if (!name) return back("name");
@@ -58,7 +65,7 @@ export async function updateStaff(formData: FormData) {
   const me = await requireAdmin();
 
   const id = str(formData, "id");
-  const name = str(formData, "name");
+  const name = str(formData, "staffName");
   const role = str(formData, "role");
   if (!id || !name || !isRole(role)) return back("role");
 
@@ -73,7 +80,7 @@ export async function setStaffPassword(formData: FormData) {
   await requireAdmin();
 
   const id = str(formData, "id");
-  const password = str(formData, "password");
+  const password = str(formData, "staffPassword");
   if (!id) return back("role");
   if (password.length < 10) return back("short");
 

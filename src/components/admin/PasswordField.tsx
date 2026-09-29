@@ -12,7 +12,7 @@ import { useState } from "react";
  * ჩასმა და კრახი ამ ველზე კრეფისას სწორედ იქიდან მოდის).
  */
 export default function PasswordField({
-  name = "password",
+  name = "staffPassword",
   label = "პაროლი",
   required = true,
 }: {

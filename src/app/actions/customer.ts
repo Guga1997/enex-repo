@@ -17,6 +17,8 @@ import {
   type RegisterInput,
 } from "@/lib/customer-auth";
 import { rateLimit, clientIp, retryText, LIMITS } from "@/lib/rate-limit";
+import { createSession, verifyLogin } from "@/lib/auth";
+import { homeFor } from "@/lib/workflow";
 
 const PENDING = "pending_user";
 const AFTER_LOGIN = "after_login";
@@ -174,6 +176,16 @@ export async function loginAction(_prev: FormState, formData: FormData): Promise
       }
       redirect("/verify");
     }
+
+    // თანამშრომელი საიტის ჩვეულებრივ „შესვლას“ აჭერს და არა /admin/login-ს —
+    // მისი სამუშაო ანგარიში მყიდველების ბაზაში არ არის, ამიტომ აქვე ვამოწმებთ
+    // და პირდაპირ მის სამუშაო სიაზე ვუშვებთ
+    const staff = await verifyLogin(login, password);
+    if (staff) {
+      await createSession(staff);
+      redirect(homeFor(staff.role));
+    }
+
     return { error: res.error };
   }
 

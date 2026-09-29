@@ -67,7 +67,7 @@ export default async function StaffPage({
           <label className="block">
             <span className="mb-1.5 block text-sm font-medium">ელფოსტა</span>
             <input
-              name="email"
+              name="staffEmail"
               type="email"
               required
               autoComplete="off"
@@ -79,7 +79,7 @@ export default async function StaffPage({
           <label className="block">
             <span className="mb-1.5 block text-sm font-medium">სახელი</span>
             <input
-              name="name"
+              name="staffName"
               required
               autoComplete="off"
               spellCheck={false}
@@ -131,7 +131,7 @@ export default async function StaffPage({
                     <label className="block flex-1">
                       <span className="mb-1 block text-xs text-muted">სახელი</span>
                       <input
-                        name="name"
+                        name="staffName"
                         defaultValue={a.name}
                         required
                         autoComplete="off"
