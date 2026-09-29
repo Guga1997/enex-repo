@@ -76,3 +76,25 @@ export const RESERVATION_MINUTES: Record<string, number> = {
 export const PAGE_SIZE = 24;
 export const DELIVERY_FEE_TBILISI = 0;
 export const FREE_DELIVERY_FROM = 200;
+
+/**
+ * სტატუსის ფერი სიაში — მოლოდინში ნარინჯისფერია, რომ თვალში ხვდებოდეს:
+ * სწორედ ის შეკვეთები საჭიროებს მოქმედებას.
+ */
+export const ORDER_STATUS_CLASS: Record<string, string> = {
+  PENDING: "text-amber-600",
+  PAID: "text-emerald-600",
+  PROCESSING: "text-brand-600",
+  SHIPPED: "text-brand-600",
+  DELIVERED: "text-emerald-600",
+  CANCELLED: "text-muted",
+  EXPIRED: "text-muted",
+  RETURNED: "text-rose-600",
+};
+
+export const PAYMENT_STATUS_CLASS: Record<string, string> = {
+  UNPAID: "text-muted",
+  PAID: "text-emerald-600",
+  FAILED: "text-rose-600",
+  REFUNDED: "text-muted",
+};

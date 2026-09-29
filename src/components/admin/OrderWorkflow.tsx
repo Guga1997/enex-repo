@@ -1,10 +1,10 @@
 import { formatDate } from "@/lib/format";
 import {
   ROLE_LABEL,
-  STEP_DEFS,
   canDo,
   canSee,
   isOpen,
+  stepsFor,
   type Role,
   type Step,
 } from "@/lib/workflow";
@@ -56,7 +56,7 @@ export default function OrderWorkflow({ orderId, role, steps, fulfillment, order
       </div>
 
       <ol className="space-y-3">
-        {STEP_DEFS.map((d) => {
+        {stepsFor(role).map((d) => {
           const record = byStep.get(d.step);
           const open = isOpen(d.step as Step, done);
           const mine = canDo(role, d.step as Step);

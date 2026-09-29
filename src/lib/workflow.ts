@@ -78,9 +78,9 @@ export const STEP_DEFS: StepDef[] = [
     step: "PICKUP_CONFIRMED",
     no: 8,
     title: "აღების ადგილზე მისვლა",
-    role: "DELIVERY",
+    role: "SALES",
     needs: ["DELIVERY_REQUEST"],
-    hint: "კურიერი ადასტურებს, რომ მომწოდებლის საწყობში მივიდა.",
+    hint: "გაყიდვები ადასტურებს, რომ კურიერი მომწოდებლის საწყობში მივიდა.",
   },
   {
     step: "WAYBILL",
@@ -94,9 +94,9 @@ export const STEP_DEFS: StepDef[] = [
     step: "DELIVERED",
     no: 10,
     title: "მომხმარებელთან მიტანა",
-    role: "DELIVERY",
+    role: "SALES",
     needs: ["WAYBILL"],
-    hint: "პროცესის დასასრული.",
+    hint: "გაყიდვები ადასტურებს მიტანას — პროცესის დასასრული.",
   },
 ];
 
@@ -104,6 +104,21 @@ export const stepDef = (step: Step) => STEP_DEFS.find((s) => s.step === step)!;
 
 /** როლი ასრულებს თუ არა ამ ნაბიჯს (ადმინი ყველაფერს) */
 export const canDo = (role: string, step: Step) => role === "ADMIN" || stepDef(step).role === role;
+
+/**
+ * რომელი ნაბიჯები არ უჩანს ვის. შესყიდვების საქმე ინვოისითა და გადარიცხვით
+ * მთავრდება — ზედნადები და მიტანა მას აღარ ეხება და სიას ტვირთავს.
+ */
+const STEPS_HIDDEN: Partial<Record<Role, Step[]>> = {
+  PURCHASING: ["WAYBILL", "DELIVERED"],
+};
+
+/** ნაბიჯი ჩანს თუ არა ამ როლის სიაში */
+export const showsStep = (role: string, step: Step) =>
+  !(STEPS_HIDDEN[role as Role] ?? []).includes(step);
+
+/** ამ როლისთვის დასანახი ნაბიჯები */
+export const stepsFor = (role: string) => STEP_DEFS.filter((d) => showsStep(role, d.step));
 
 /** ნაბიჯი ხელმისაწვდომია, თუ წინაპირობები დადასტურებულია */
 export const isOpen = (step: Step, done: Set<string>) =>

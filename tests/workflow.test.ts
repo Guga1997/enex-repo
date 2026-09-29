@@ -14,6 +14,7 @@ import {
   homeFor,
   isOpen,
   stepDef,
+  stepsFor,
   type Step,
 } from "../src/lib/workflow";
 
@@ -27,7 +28,20 @@ test("ნაბიჯების რიგი PDF-ის სქემას მ
   assert.equal(stepDef("PAYMENT_CONFIRMED").role, "ACCOUNTING");
   assert.equal(stepDef("SUPPLIER_INVOICE").role, "PURCHASING");
   assert.equal(stepDef("DELIVERY_REQUEST").role, "SALES");
-  assert.equal(stepDef("DELIVERED").role, "DELIVERY");
+  // 8 და 10 გაყიდვებს გადაეცა — კურიერი გარეშე სამსახურია, დადასტურება გაყიდვებზეა
+  assert.equal(stepDef("PICKUP_CONFIRMED").role, "SALES");
+  assert.equal(stepDef("WAYBILL").role, "ACCOUNTING");
+  assert.equal(stepDef("DELIVERED").role, "SALES");
+});
+
+test("შესყიდვებს ზედნადები და მიტანა არ უჩანს", () => {
+  assert.deepEqual(
+    stepsFor("PURCHASING").map((d) => d.no),
+    [2, 4, 5, 7, 8]
+  );
+  for (const r of ["SALES", "ACCOUNTING", "ADMIN", "DELIVERY"]) {
+    assert.deepEqual(stepsFor(r).map((d) => d.no), [2, 4, 5, 7, 8, 9, 10], r);
+  }
 });
 
 test("ნაბიჯს მხოლოდ თავისი განყოფილება ასრულებს, ადმინი — ყველას", () => {

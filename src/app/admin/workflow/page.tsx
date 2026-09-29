@@ -2,7 +2,16 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { formatDate, gel } from "@/lib/format";
-import { ROLE_LABEL, STEP_DEFS, canDo, canSee, currentStep, isOpen, type Role, type Step } from "@/lib/workflow";
+import {
+  ROLE_LABEL,
+  canDo,
+  canSee,
+  currentStep,
+  isOpen,
+  stepsFor,
+  type Role,
+  type Step,
+} from "@/lib/workflow";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "პროცესი" };
@@ -51,7 +60,7 @@ export default async function WorkflowPage() {
       <section className="card p-5">
         <h2 className="mb-3 font-semibold">ნაბიჯების რიგი</h2>
         <ol className="space-y-1.5 text-sm">
-          {STEP_DEFS.map((d) => (
+          {stepsFor(role).map((d) => (
             <li key={d.step} className="flex gap-2">
               <span className="w-6 shrink-0 text-muted">{d.no}.</span>
               <span className="flex-1">{d.title}</span>

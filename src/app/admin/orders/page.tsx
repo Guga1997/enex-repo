@@ -2,30 +2,51 @@ import Link from "next/link";
 import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { gel, formatDate } from "@/lib/format";
-import { ORDER_STATUS_LABELS, PAYMENT_STATUS_LABELS } from "@/lib/constants";
+import {
+  ORDER_STATUS_CLASS,
+  ORDER_STATUS_LABELS,
+  PAYMENT_STATUS_CLASS,
+  PAYMENT_STATUS_LABELS,
+} from "@/lib/constants";
 import { ci } from "@/lib/search-mode";
+import { dayLabel, dayRange, isDay, today } from "@/lib/day";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "შეკვეთები" };
 
 const PER_PAGE = 30;
+const field = "rounded-lg border border-line bg-surface px-3 py-2 text-sm outline-none focus:border-brand-500";
 
+/**
+ * შეკვეთების სია.
+ *
+ * ნაგულისხმევად მხოლოდ დღევანდელი შეკვეთები ჩანს — სამუშაო სია ყოველ დილას
+ * სუფთაა. სხვა დღეები კალენდრით იხსნება, ძებნა კი ყოველთვის მთელ ისტორიაში
+ * მუშაობს: ნომრის ან ტელეფონის ცოდნისას თარიღის გახსენება არ უნდა დაგჭირდეს.
+ */
 export default async function AdminOrders({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; status?: string; page?: string }>;
+  searchParams: Promise<{ q?: string; status?: string; page?: string; from?: string; to?: string }>;
 }) {
   const sp = await searchParams;
   const page = Math.max(1, Number(sp.page) || 1);
+  const q = sp.q?.trim();
+
+  const from = isDay(sp.from) ? sp.from : today();
+  const to = isDay(sp.to) && sp.to >= from ? sp.to : from;
+  // ძებნისას თარიღი არ გვზღუდავს — თორემ ძველ შეკვეთას ვერასდროს იპოვი
+  const byDay = !q;
 
   const where: Prisma.OrderWhereInput = {};
   if (sp.status) where.status = sp.status;
-  if (sp.q) {
+  if (byDay) where.createdAt = dayRange(from, to);
+  if (q) {
     where.OR = [
-      { number: ci(sp.q) },
-      { customerName: ci(sp.q) },
-      { customerPhone: ci(sp.q) },
-      { customerEmail: ci(sp.q) },
+      { number: ci(q) },
+      { customerName: ci(q) },
+      { customerPhone: ci(q) },
+      { customerEmail: ci(q) },
     ];
   }
 
@@ -41,31 +62,50 @@ export default async function AdminOrders({
   ]);
 
   const pages = Math.max(1, Math.ceil(total / PER_PAGE));
+  const period = from === to ? dayLabel(from) : `${dayLabel(from)} — ${dayLabel(to)}`;
 
   return (
     <div className="space-y-5">
-      <h1 className="text-2xl font-bold">
-        შეკვეთები <span className="text-base font-normal text-muted">({total})</span>
-      </h1>
+      <div>
+        <h1 className="text-2xl font-bold">
+          შეკვეთები <span className="text-base font-normal text-muted">({total})</span>
+        </h1>
+        <p className="mt-1 text-sm text-muted">
+          {q ? "ძებნის შედეგი მთელ ისტორიაში" : from === today() && to === from ? `დღეს — ${period}` : period}
+        </p>
+      </div>
 
-      <form className="card flex flex-wrap gap-3 p-4">
-        <input
-          name="q"
-          defaultValue={sp.q ?? ""}
-          placeholder="ნომერი, სახელი, ტელეფონი ან ელფოსტა"
-          className="min-w-56 flex-1 rounded-lg border border-line px-3 py-2 text-sm outline-none focus:border-brand-500"
-        />
-        <select
-          name="status"
-          defaultValue={sp.status ?? ""}
-          className="rounded-lg border border-line px-3 py-2 text-sm outline-none focus:border-brand-500"
-        >
-          <option value="">ყველა სტატუსი</option>
-          {Object.entries(ORDER_STATUS_LABELS).map(([k, v]) => (
-            <option key={k} value={k}>{v}</option>
-          ))}
-        </select>
-        <button className="btn btn-outline">ფილტრი</button>
+      <form className="card flex flex-wrap items-end gap-3 p-4">
+        <label className="block">
+          <span className="mb-1 block text-xs text-muted">თარიღიდან</span>
+          <input type="date" name="from" defaultValue={from} max={today()} className={field} />
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-xs text-muted">თარიღამდე</span>
+          <input type="date" name="to" defaultValue={to} max={today()} className={field} />
+        </label>
+        <label className="block min-w-56 flex-1">
+          <span className="mb-1 block text-xs text-muted">ძებნა (ყველა თარიღში)</span>
+          <input
+            name="q"
+            defaultValue={q ?? ""}
+            placeholder="ნომერი, სახელი, ტელეფონი ან ელფოსტა"
+            className={`w-full ${field}`}
+          />
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-xs text-muted">სტატუსი</span>
+          <select name="status" defaultValue={sp.status ?? ""} className={field}>
+            <option value="">ყველა</option>
+            {Object.entries(ORDER_STATUS_LABELS).map(([k, v]) => (
+              <option key={k} value={k}>{v}</option>
+            ))}
+          </select>
+        </label>
+        <button className="btn btn-outline">ჩვენება</button>
+        <Link href="/admin/orders" className="btn btn-outline">
+          დღეს
+        </Link>
       </form>
 
       <div className="card overflow-x-auto">
@@ -95,17 +135,13 @@ export default async function AdminOrders({
                 </td>
                 <td className="p-3 text-muted">{formatDate(o.createdAt)}</td>
                 <td className="p-3 text-muted">{o._count.items}</td>
-                <td className="p-3">{ORDER_STATUS_LABELS[o.status] ?? o.status}</td>
                 <td className="p-3">
-                  <span
-                    className={
-                      o.paymentStatus === "PAID"
-                        ? "text-emerald-600"
-                        : o.paymentStatus === "FAILED"
-                          ? "text-rose-600"
-                          : "text-muted"
-                    }
-                  >
+                  <span className={ORDER_STATUS_CLASS[o.status] ?? ""}>
+                    {ORDER_STATUS_LABELS[o.status] ?? o.status}
+                  </span>
+                </td>
+                <td className="p-3">
+                  <span className={PAYMENT_STATUS_CLASS[o.paymentStatus] ?? "text-muted"}>
                     {PAYMENT_STATUS_LABELS[o.paymentStatus] ?? o.paymentStatus}
                   </span>
                 </td>
@@ -114,7 +150,9 @@ export default async function AdminOrders({
             ))}
             {orders.length === 0 && (
               <tr>
-                <td colSpan={7} className="p-10 text-center text-muted">შეკვეთა ვერ მოიძებნა.</td>
+                <td colSpan={7} className="p-10 text-center text-muted">
+                  {q ? "შეკვეთა ვერ მოიძებნა." : `${period} — შეკვეთა არ არის. სხვა დღე კალენდრიდან აირჩიე.`}
+                </td>
               </tr>
             )}
           </tbody>
