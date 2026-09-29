@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 import { DEFAULT_LOCALE, isLocale, type Locale } from "@/lib/i18n/config";
 import { CORS_HEADERS, isApiV1 } from "@/lib/cors";
+import { canOpen, homeFor } from "@/lib/workflow";
 
 const PUBLIC_ADMIN_PATHS = ["/admin/login"];
 
@@ -43,10 +44,22 @@ export async function middleware(req: NextRequest) {
     const token = req.cookies.get(cookieFor(path))?.value;
     if (!token) return redirectToLogin(req, path, locale);
     try {
-      await jwtVerify(
+      const { payload } = await jwtVerify(
         token,
         new TextEncoder().encode(process.env.AUTH_SECRET || "dev-only-insecure-secret-change-me!!")
       );
+      // განყოფილების თანამშრომელი ადმინის დანარჩენ გვერდებზე ვერ შედის —
+      // მისამართის ხელით აკრეფაც აქვე ჩერდება, არა მარტო მენიუში დამალვით
+      if (path.startsWith("/admin")) {
+        const role = String(payload.role ?? "ADMIN");
+        if (!canOpen(role, path)) {
+          const url = req.nextUrl.clone();
+          const home = homeFor(role);
+          url.pathname = locale === DEFAULT_LOCALE ? home : `/${locale}${home}`;
+          url.search = "";
+          return NextResponse.redirect(url);
+        }
+      }
     } catch {
       return redirectToLogin(req, path, locale);
     }

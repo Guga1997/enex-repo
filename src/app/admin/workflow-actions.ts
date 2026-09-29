@@ -31,6 +31,7 @@ async function complete(orderId: string, step: Step, note: string | null, by: { 
     data: { orderId, step, note: note?.trim() || null, adminId: by.id, byName: by.name },
   });
   revalidatePath(`/admin/orders/${orderId}`);
+  revalidatePath(`/admin/workflow/${orderId}`);
   revalidatePath("/admin/workflow");
   revalidatePath("/admin/orders");
 }

@@ -33,6 +33,9 @@ export default async function AdminOrderDetail({
   ]);
   if (!order) notFound();
 
+  const role = session?.role ?? "ADMIN";
+  const isAdmin = role === "ADMIN";
+
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -45,7 +48,7 @@ export default async function AdminOrderDetail({
 
       <OrderWorkflow
         orderId={order.id}
-        role={session?.role ?? "ADMIN"}
+        role={role}
         steps={order.steps}
         fulfillment={order.fulfillment}
         order={{
@@ -162,6 +165,7 @@ export default async function AdminOrderDetail({
         </div>
 
         <div className="space-y-5">
+          {isAdmin && (
           <form action={updateOrderStatus} className="card space-y-4 p-5">
             <input type="hidden" name="id" value={order.id} />
             <h2 className="font-semibold">სტატუსის მართვა</h2>
@@ -197,6 +201,7 @@ export default async function AdminOrderDetail({
 
             <button className="btn btn-primary w-full hover:bg-brand-600">შენახვა</button>
           </form>
+          )}
 
           <section className="card space-y-3 p-5 text-sm">
             <h2 className="font-semibold">გადახდა</h2>

@@ -4,7 +4,18 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { STEP_DEFS, canDo, canSee, currentStep, isOpen, stepDef, type Step } from "../src/lib/workflow";
+import {
+  STEP_DEFS,
+  allowedNav,
+  canDo,
+  canOpen,
+  canSee,
+  currentStep,
+  homeFor,
+  isOpen,
+  stepDef,
+  type Step,
+} from "../src/lib/workflow";
 
 const done = (...steps: Step[]) => new Set<string>(steps);
 
@@ -69,4 +80,49 @@ test("ყველა ნაბიჯი თავის რიგზე იხ�
     acc.add(d.step);
   }
   assert.equal(currentStep(acc), null);
+});
+
+/* --------------------------- ადმინ პანელზე წვდომა --------------------------- */
+
+test("განყოფილების თანამშრომელი კატალოგსა და მიმწოდებლებს ვერ ხედავს", () => {
+  for (const r of ["SALES", "PURCHASING", "ACCOUNTING", "DELIVERY"]) {
+    assert.equal(canOpen(r, "/admin/products"), false, r);
+    assert.equal(canOpen(r, "/admin/suppliers"), false, r);
+    assert.equal(canOpen(r, "/admin/api-keys"), false, r);
+    assert.equal(canOpen(r, "/admin/staff"), false, `${r} — ანგარიშებს მხოლოდ ადმინი მართავს`);
+    assert.equal(canOpen(r, "/admin"), false, `${r} — მიმოხილვა ადმინისაა`);
+  }
+});
+
+test("ყველა თანამშრომელს პროცესი და საკუთარი ანგარიში უჩანს", () => {
+  for (const r of ["SALES", "PURCHASING", "ACCOUNTING", "DELIVERY"]) {
+    assert.equal(canOpen(r, "/admin/workflow"), true, r);
+    assert.equal(canOpen(r, "/admin/account"), true, r);
+  }
+});
+
+test("შეკვეთების სია მიწოდებას არ ეკუთვნის", () => {
+  assert.equal(canOpen("SALES", "/admin/orders"), true);
+  assert.equal(canOpen("ACCOUNTING", "/admin/orders/abc123"), true, "ქვემისამართიც");
+  assert.equal(canOpen("DELIVERY", "/admin/orders"), false);
+});
+
+test("ადმინი ყველგან შედის, უცნობი როლიც ადმინად ითვლება", () => {
+  for (const path of ["/admin", "/admin/products", "/admin/staff", "/admin/api-keys"]) {
+    assert.equal(canOpen("ADMIN", path), true, path);
+    assert.equal(canOpen("რაღაც", path), true, path);
+  }
+});
+
+test("მენიუ და მთავარი ეკრანი როლს მიჰყვება", () => {
+  assert.equal(allowedNav("SALES", "/admin/products"), false);
+  assert.equal(allowedNav("ADMIN", "/admin/products"), true);
+  assert.equal(allowedNav("DELIVERY", "/admin/account"), false, "ანგარიში მენიუში არ არის, მისამართით კი იხსნება");
+  assert.equal(homeFor("ADMIN"), "/admin");
+  assert.equal(homeFor("DELIVERY"), "/admin/workflow");
+});
+
+test("პრეფიქსი მთლიან სეგმენტს ემთხვევა, არა მის ნაწილს", () => {
+  assert.equal(canOpen("SALES", "/admin/workflow-secrets"), false);
+  assert.equal(canOpen("SALES", "/admin/orders-export"), false);
 });

@@ -17,6 +17,8 @@ model Admin {
   /// ADMIN — ყველაფერი; დანარჩენი შეკვეთის პროცესის განყოფილებებია:
   /// SALES (გაყიდვები) | PURCHASING (შესყიდვები) | ACCOUNTING (ბუღალტერია) | DELIVERY (მიწოდება)
   role         String   @default("ADMIN")
+  /// გათიშულ ანგარიშს შესვლა არ შეუძლია — წაშლის ნაცვლად, რომ ისტორია დარჩეს
+  active       Boolean  @default(true)
   createdAt    DateTime @default(now())
 
   steps OrderStep[]

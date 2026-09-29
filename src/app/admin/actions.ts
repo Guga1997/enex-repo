@@ -11,10 +11,15 @@ import { slugify } from "@/lib/format";
 import { generateApiKey } from "@/lib/api-auth";
 import { StockStatus } from "@/lib/constants";
 
-/** ყველა action-ის წინაპირობა — middleware იცავს როუტს, ეს იცავს თვით ქმედებას */
+/**
+ * ყველა action-ის წინაპირობა — middleware იცავს როუტს, ეს იცავს თვით ქმედებას.
+ * განყოფილების თანამშრომელს კატალოგისა და შეკვეთის ხელით ცვლილება არ ევალება —
+ * მისი მოქმედებები workflow-actions.ts-შია და იქ თავისი შემოწმება აქვს.
+ */
 async function requireAdmin() {
   const session = await getSession();
   if (!session) redirect("/admin/login");
+  if (session.role !== "ADMIN") redirect("/admin/workflow");
   return session;
 }
 

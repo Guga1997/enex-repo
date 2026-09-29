@@ -147,3 +147,42 @@ export function currentStep(done: Set<string>): StepDef | null {
 }
 
 export const isFinished = (done: Set<string>) => done.has("DELIVERED");
+
+/* --------------------- ადმინ პანელი — ვის რომელი გვერდი უჩანს -------------------- */
+
+/**
+ * განყოფილების თანამშრომელს კატალოგი, მიმწოდებლები და გასაღებები არ სჭირდება —
+ * მისი სამუშაო შეკვეთის პროცესია. ADMIN ყველაფერს ხედავს. ერთი სია ემსახურება
+ * როგორც გვერდით მენიუს, ისე მისამართის შემოწმებას middleware-ში.
+ */
+export const NAV_BY_ROLE: Record<Role, string[]> = {
+  ADMIN: ["*"],
+  SALES: ["/admin/workflow", "/admin/orders"],
+  PURCHASING: ["/admin/workflow", "/admin/orders"],
+  ACCOUNTING: ["/admin/workflow", "/admin/orders"],
+  DELIVERY: ["/admin/workflow"],
+};
+
+/** შესვლა და საკუთარი ანგარიში — ყველას */
+const ALWAYS = ["/admin/login", "/admin/account"];
+
+const under = (path: string, prefix: string) => path === prefix || path.startsWith(prefix + "/");
+
+function navFor(role: string): string[] {
+  return NAV_BY_ROLE[(role as Role) in NAV_BY_ROLE ? (role as Role) : "ADMIN"];
+}
+
+/** მენიუს პუნქტი უჩანს თუ არა */
+export function allowedNav(role: string, href: string): boolean {
+  const list = navFor(role);
+  return list.includes("*") || list.some((p) => under(href, p));
+}
+
+/** მისამართის გახსნა შეუძლია თუ არა — ამას middleware ამოწმებს */
+export function canOpen(role: string, path: string): boolean {
+  if (ALWAYS.some((p) => under(path, p))) return true;
+  return allowedNav(role, path);
+}
+
+/** განყოფილების მთავარი ეკრანი */
+export const homeFor = (role: string) => (role === "ADMIN" ? "/admin" : "/admin/workflow");

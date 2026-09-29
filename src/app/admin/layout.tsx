@@ -2,11 +2,13 @@ import Link from "next/link";
 import { getSession, destroySession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import ThemeToggle from "@/components/ThemeToggle";
+import { ROLE_LABEL, allowedNav, type Role } from "@/lib/workflow";
 
 export const metadata = { title: { default: "ადმინ პანელი", template: "%s | ადმინ პანელი" } };
 
 const NAV = [
   { href: "/admin", label: "მიმოხილვა" },
+  { href: "/admin/staff", label: "თანამშრომლები" },
   { href: "/admin/products", label: "პროდუქტები" },
   { href: "/admin/categories", label: "კატეგორიები" },
   { href: "/admin/banners", label: "ბანერები" },
@@ -24,6 +26,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   // login გვერდი — layout-ის გარეშე
   if (!session) return <>{children}</>;
 
+  // განყოფილების თანამშრომელს მხოლოდ თავისი ეკრანები უჩანს
+  const nav = NAV.filter((n) => allowedNav(session.role, n.href));
+
   async function logout() {
     "use server";
     await destroySession();
@@ -39,7 +44,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </Link>
         </div>
         <nav className="space-y-1 p-3">
-          {NAV.map((n) => (
+          {nav.map((n) => (
             <Link
               key={n.href}
               href={n.href}
@@ -59,7 +64,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-14 items-center justify-between border-b border-line bg-surface px-5">
           <nav className="flex gap-1 overflow-x-auto lg:hidden">
-            {NAV.map((n) => (
+            {nav.map((n) => (
               <Link key={n.href} href={n.href} className="whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs font-medium hover:bg-canvas">
                 {n.label}
               </Link>
@@ -67,7 +72,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </nav>
           <div className="ml-auto flex items-center gap-3 text-sm">
             <ThemeToggle />
-            <Link href="/admin/account" className="text-muted hover:text-ink hover:underline">{session.name}</Link>
+            <Link href="/admin/account" className="text-muted hover:text-ink hover:underline">
+              {session.name}
+              <span className="ml-1.5 rounded bg-canvas px-1.5 py-0.5 text-[11px]">
+                {ROLE_LABEL[(session.role as Role) in ROLE_LABEL ? (session.role as Role) : "ADMIN"]}
+              </span>
+            </Link>
             <form action={logout}>
               <button className="rounded-lg border border-line px-3 py-1.5 text-xs font-medium hover:bg-canvas">
                 გასვლა

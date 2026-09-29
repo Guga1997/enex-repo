@@ -15,7 +15,7 @@ export async function hashPassword(pw: string) {
 
 export async function verifyLogin(email: string, password: string): Promise<Session | null> {
   const admin = await db.admin.findUnique({ where: { email: email.toLowerCase().trim() } });
-  if (!admin) return null;
+  if (!admin || !admin.active) return null;
   const ok = await bcrypt.compare(password, admin.passwordHash);
   if (!ok) return null;
   return { id: admin.id, email: admin.email, name: admin.name, role: admin.role };
