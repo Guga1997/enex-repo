@@ -14,8 +14,59 @@ model Admin {
   email        String   @unique
   passwordHash String
   name         String
-  role         String   @default("ADMIN") // ADMIN | MANAGER
+  /// ADMIN — ყველაფერი; დანარჩენი შეკვეთის პროცესის განყოფილებებია:
+  /// SALES (გაყიდვები) | PURCHASING (შესყიდვები) | ACCOUNTING (ბუღალტერია) | DELIVERY (მიწოდება)
+  role         String   @default("ADMIN")
   createdAt    DateTime @default(now())
+
+  steps OrderStep[]
+}
+
+/// შეკვეთის მუშა პროცესი — ერთი ჩანაწერი შეკვეთაზე, ეტაპების მონაცემებით.
+/// თავად „ვინ და როდის დაადასტურა“ OrderStep-ში იწერება.
+model OrderFulfillment {
+  id      String @id @default(cuid())
+  orderId String @unique
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  /// 4 — შესყიდვები: მომწოდებლის ინვოისი და საიდან უნდა წამოვიდეს საქონელი
+  supplierName    String?
+  supplierInvoice String?
+  pickupAddress   String?
+  pickupAt        DateTime?
+
+  /// 7 — გაყიდვები: მიწოდების განაცხადი
+  weightKg     Float?
+  dimensions   String?
+  deliveryNote String?
+
+  /// 9 — ბუღალტერია: ზედნადები
+  waybillNumber String?
+  waybillUrl    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/// პროცესის ნაბიჯის დადასტურება — ვინ, როდის, რა შენიშვნით
+model OrderStep {
+  id      String @id @default(cuid())
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  /// PAYMENT_CONFIRMED | SUPPLIER_INVOICE | SUPPLIER_PAID | DELIVERY_REQUEST | PICKUP_CONFIRMED | WAYBILL | DELIVERED
+  step String
+  note String?
+
+  adminId String?
+  admin   Admin?  @relation(fields: [adminId], references: [id], onDelete: SetNull)
+  /// ვინ დაადასტურა — სახელი იწერება, რომ ანგარიშის წაშლის შემდეგაც დარჩეს
+  byName  String?
+
+  createdAt DateTime @default(now())
+
+  @@unique([orderId, step])
+  @@index([orderId])
 }
 
 /// კატეგორია — თვითრეფერენციული ხე (მთავარი კატეგორია → ქვეკატეგორია)
@@ -41,13 +92,13 @@ model Category {
 
 /// მთავარი გვერდის სარეკლამო სლაიდი — სურათი და ბმული (ბრენდი, კატეგორია, პროდუქტი…)
 model Banner {
-  id        String  @id @default(cuid())
+  id        String   @id @default(cuid())
   title     String
   subtitle  String?
   image     String // /uploads/… ან სრული URL
   href      String // /catalog?brand=bluetti, /catalog/svichebi …
-  sortOrder Int     @default(0)
-  isActive  Boolean @default(true)
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
 }
 
@@ -252,6 +303,10 @@ model Order {
   invoiceNumber String?   @unique
   invoiceSentAt DateTime?
 
+  /// მუშა პროცესი — განყოფილებების ნაბიჯები
+  fulfillment OrderFulfillment?
+  steps       OrderStep[]
+
   /// დაბრუნება — კაბინეტში ცალკე სექციაა
   returnedAt   DateTime?
   returnReason String?
@@ -288,16 +343,16 @@ model OrderItem {
 
 /// გარე სისტემის (ORIS/1C/...) წვდომის გასაღები სტოკის API-სთვის
 model ApiKey {
-  id         String    @id @default(cuid())
-  name       String
-  keyHash    String    @unique
-  prefix     String // ჩვენება ადმინში: sk_live_a1b2...
-  scopes     String    @default("stock:read,stock:write")
+  id           String    @id @default(cuid())
+  name         String
+  keyHash      String    @unique
+  prefix       String // ჩვენება ადმინში: sk_live_a1b2...
+  scopes       String    @default("stock:read,stock:write")
   /// თუ შევსებულია — გასაღები მხოლოდ ამ კატეგორიასა და მის ქვეკატეგორიებს ეხება
   categorySlug String?
-  isActive   Boolean   @default(true)
-  lastUsedAt DateTime?
-  createdAt  DateTime  @default(now())
+  isActive     Boolean   @default(true)
+  lastUsedAt   DateTime?
+  createdAt    DateTime  @default(now())
 }
 
 /// სტოკის სინქრონიზაციის ლოგი — ვინ, როდის, რა შეცვალა
@@ -337,9 +392,9 @@ model Supplier {
   /// საცალო ფასის ბაზა: COST — თვითღირებულება (+%), LIST — მიმწოდებლის საცალო ფასი (−%)
   retailBase   String @default("COST")
   /// პროცენტი ბაზაზე — უარყოფითიც შეიძლება
-  markupRetail Float @default(30)
+  markupRetail Float  @default(30)
   /// სადილერო ფასი ყოველთვის თვითღირებულებაზე — %-ში
-  markupDealer Float @default(15)
+  markupDealer Float  @default(15)
 
   /// ავტომატური სინქის ინტერვალი წუთებში; 0 — მხოლოდ ხელით
   syncEveryMin   Int       @default(0)
@@ -350,7 +405,7 @@ model Supplier {
 
   supplies     ProductSupply[]
   pricingRules SupplierPricingRule[]
-  syncLogs SupplierSyncLog[]
+  syncLogs     SupplierSyncLog[]
 }
 
 /// ერთი მიმწოდებლის შემოთავაზება ერთ პროდუქტზე.

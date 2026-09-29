@@ -8,6 +8,8 @@ import {
   PAYMENT_STATUS_LABELS,
 } from "@/lib/constants";
 import { setItemSerials, updateOrderStatus } from "../../actions";
+import { getSession } from "@/lib/auth";
+import OrderWorkflow from "@/components/admin/OrderWorkflow";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "შეკვეთის დეტალები" };
@@ -18,7 +20,17 @@ export default async function AdminOrderDetail({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const order = await db.order.findUnique({ where: { id }, include: { items: true } });
+  const [order, session] = await Promise.all([
+    db.order.findUnique({
+      where: { id },
+      include: {
+        items: true,
+        fulfillment: true,
+        steps: { orderBy: { createdAt: "asc" } },
+      },
+    }),
+    getSession(),
+  ]);
   if (!order) notFound();
 
   return (
@@ -30,6 +42,19 @@ export default async function AdminOrderDetail({
           </Link>
           <h1 className="text-2xl font-bold">{order.number}</h1>
         </div>
+
+      <OrderWorkflow
+        orderId={order.id}
+        role={session?.role ?? "ADMIN"}
+        steps={order.steps}
+        fulfillment={order.fulfillment}
+        order={{
+          deliveryCity: order.deliveryCity,
+          deliveryAddress: order.deliveryAddress,
+          customerName: order.customerName,
+          customerPhone: order.customerPhone,
+        }}
+      />
         <div className="text-right text-sm text-muted">{formatDate(order.createdAt)}</div>
       </div>
 
