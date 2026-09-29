@@ -243,6 +243,8 @@ export async function syncSupplier(supplierId: string): Promise<SyncResult> {
   let failed = 0;
   const touched = new Set<string>();
   const created_ids: string[] = [];
+  // არსებულ პროდუქტებს დამატებული ფოტოები — ისინიც ჩვენს დისკზე უნდა გადმოვიდეს
+  const filledImages: string[] = [];
 
   try {
     const cfg: SupplierConfig = {
@@ -334,6 +336,14 @@ export async function syncSupplier(supplierId: string): Promise<SyncResult> {
               data: item.attributes.map((a, i) => ({ productId: pid, name: a.name, value: attrValue(a.value), sortOrder: i })),
             });
           }
+          // ფოტოც: თუ პროდუქტს ერთიც არ აქვს, მიმწოდებლისას ვიღებთ. ხელით
+          // ატვირთულს არ ვეხებით — ამიტომ მხოლოდ ცარიელზე.
+          if (item.images?.length && !(await db.productImage.count({ where: { productId: pid } }))) {
+            await db.productImage.createMany({
+              data: item.images.map((url, i) => ({ productId: pid, url, sortOrder: i })),
+            });
+            filledImages.push(pid);
+          }
           await db.product.update({
             where: { id: productId },
             data: {
@@ -380,9 +390,10 @@ export async function syncSupplier(supplierId: string): Promise<SyncResult> {
 
     // ახალი პროდუქტების სურათები და დოკუმენტები მაშინვე ჩვენს დისკზე —
     // მიმწოდებელი hotlink-ს არ უშვებს. ჩავარდნა სინქს არ აჩერებს.
-    if (created_ids.length) {
+    const mediaIds = [...new Set([...created_ids, ...filledImages])];
+    if (mediaIds.length) {
       try {
-        await localizeMedia({ productIds: created_ids });
+        await localizeMedia({ productIds: mediaIds });
       } catch (e) {
         console.error("მედიის ჩამოტვირთვა ჩავარდა", e);
       }

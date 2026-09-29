@@ -6,6 +6,7 @@ import { STOCK_LABELS } from "@/lib/constants";
 import { productFilter } from "@/lib/admin-filters";
 import { bulkSetActive, bulkSetActiveByFilter, deleteProduct, toggleProductActive } from "../actions";
 import SelectAll from "@/components/admin/SelectAll";
+import ProductPlaceholder from "@/components/ProductPlaceholder";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "პროდუქტები" };
@@ -146,9 +147,17 @@ export default async function AdminProducts({ searchParams }: { searchParams: Pr
                   </td>
                   <td className="p-3">
                     <div className="flex items-center gap-3">
-                      <div className="relative size-10 shrink-0 rounded border border-line bg-white">
-                        {p.images[0] && (
+                      {/* ფოტოს გარეშე თეთრი კვადრატი მუქ რეჟიმში გატეხილ სურათს ჰგავს — ხატულა სჯობს */}
+                      <div
+                        className={`relative size-10 shrink-0 overflow-hidden rounded border border-line ${
+                          p.images[0] ? "bg-white" : "bg-canvas"
+                        }`}
+                        title={p.images[0] ? "" : "ფოტო არ არის"}
+                      >
+                        {p.images[0] ? (
                           <Image src={p.images[0].url} alt="" fill sizes="40px" className="object-contain p-1" />
+                        ) : (
+                          <ProductPlaceholder category={p.category.nameKa} className="[&>svg]:size-6" />
                         )}
                       </div>
                       <div className="min-w-0">
