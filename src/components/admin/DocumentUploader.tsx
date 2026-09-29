@@ -63,7 +63,7 @@ export default function DocumentUploader({
               const f = e.target.files?.[0];
               if (f) void upload(f);
             }}
-            className="w-full text-sm file:mr-3 file:rounded-lg file:border file:border-line file:bg-white file:px-3 file:py-1.5 file:text-sm"
+            className="w-full text-sm file:mr-3 file:rounded-lg file:border file:border-line file:bg-surface file:px-3 file:py-1.5 file:text-sm"
           />
           {busy && <span className="mt-1 block text-xs text-muted">იტვირთება…</span>}
           {url && !busy && (

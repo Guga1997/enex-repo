@@ -226,7 +226,7 @@ export default async function AdminProducts({ searchParams }: { searchParams: Pr
 
         {/* მონიშნულებზე ქმედება — სიის ქვემოთ, რომ ხელი არ შეუშალოს */}
         {items.length > 0 && (
-          <div className="sticky bottom-3 mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-line bg-white p-3 shadow-lg">
+          <div className="sticky bottom-3 mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-line bg-surface p-3 shadow-lg">
             <span className="text-sm text-muted">მონიშნული:</span>
             <button name="active" value="1" className="btn btn-primary hover:bg-brand-600">
               გამოქვეყნება

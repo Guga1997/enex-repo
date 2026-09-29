@@ -33,7 +33,7 @@ export default async function ApiKeysPage({
           <p className="mt-1 text-sm text-emerald-700">
             დააკოპირე ახლავე — ეს ერთადერთი შემთხვევაა, როცა ის ჩანს.
           </p>
-          <code className="mt-3 block break-all rounded-lg bg-white p-3 font-mono text-sm">
+          <code className="mt-3 block break-all rounded-lg bg-surface p-3 font-mono text-sm">
             {created}
           </code>
         </div>

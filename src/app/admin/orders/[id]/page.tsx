@@ -89,7 +89,7 @@ export default async function AdminOrderDetail({
                           )}
                         </label>
                         <div className="flex items-end">
-                          <button className="rounded-lg border border-line bg-white px-3 py-1.5 text-xs font-medium hover:bg-canvas">
+                          <button className="rounded-lg border border-line bg-surface px-3 py-1.5 text-xs font-medium hover:bg-canvas">
                             შენახვა
                           </button>
                         </div>

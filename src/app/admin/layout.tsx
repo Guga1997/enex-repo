@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getSession, destroySession } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export const metadata = { title: { default: "ადმინ პანელი", template: "%s | ადმინ პანელი" } };
 
@@ -30,7 +31,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="flex min-h-screen">
-      <aside className="hidden w-56 shrink-0 border-r border-line bg-white lg:block">
+      <aside className="hidden w-56 shrink-0 border-r border-line bg-surface lg:block">
         <div className="border-b border-line p-5">
           <Link href="/admin" className="text-lg font-bold text-brand-600">
             ადმინ პანელი
@@ -55,7 +56,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-14 items-center justify-between border-b border-line bg-white px-5">
+        <header className="flex h-14 items-center justify-between border-b border-line bg-surface px-5">
           <nav className="flex gap-1 overflow-x-auto lg:hidden">
             {NAV.map((n) => (
               <Link key={n.href} href={n.href} className="whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs font-medium hover:bg-canvas">
@@ -64,6 +65,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             ))}
           </nav>
           <div className="ml-auto flex items-center gap-3 text-sm">
+            <ThemeToggle />
             <Link href="/admin/account" className="text-muted hover:text-ink hover:underline">{session.name}</Link>
             <form action={logout}>
               <button className="rounded-lg border border-line px-3 py-1.5 text-xs font-medium hover:bg-canvas">
