@@ -3,6 +3,7 @@ import { slugify } from "../format";
 import { localizeMedia } from "../media";
 import { genericRest } from "./generic-rest";
 import { intellcom } from "./intellcom";
+import { muk } from "./muk";
 import { spreadsheet } from "./spreadsheet";
 import { computePrices, Pricer, repriceProduct } from "./pricing";
 import type { SupplierAdapter, SupplierConfig, SupplierItem } from "./types";
@@ -14,6 +15,7 @@ export type { SupplierItem, SupplierConfig, SupplierAdapter } from "./types";
 const ADAPTERS: Record<string, SupplierAdapter> = {
   GENERIC_REST: genericRest,
   INTELLCOM: intellcom,
+  MUK: muk,
   SPREADSHEET: spreadsheet,
 };
 
