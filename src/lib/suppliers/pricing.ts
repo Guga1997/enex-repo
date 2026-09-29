@@ -90,6 +90,7 @@ export async function repriceProduct(productId: string, pricer?: Pricer): Promis
     select: {
       price: true,
       dealerPrice: true,
+      cost: true,
       priceLocked: true,
       categoryId: true,
       supplies: { select: { supplierId: true, cost: true, listPrice: true } },
@@ -108,7 +109,10 @@ export async function repriceProduct(productId: string, pricer?: Pricer): Promis
 
   const next = computePrices(rule, cheapest.cost, cheapest.listPrice);
   if (next.price <= 0) return "skipped";
-  if (next.price === product.price && next.dealerPrice === product.dealerPrice) return "skipped";
+  // თვითღირებულებაც უნდა შეესაბამებოდეს იმ მიმწოდებელს, რომლითაც ფასი დაითვალა —
+  // თორემ ბოლოს დასინქრონებული კომპანიის cost რჩება და „ფასი < თვითღირებულება“ ჩანს
+  const sameCost = product.cost === cheapest.cost;
+  if (next.price === product.price && next.dealerPrice === product.dealerPrice && sameCost) return "skipped";
 
   await db.product.update({
     where: { id: productId },
