@@ -15,7 +15,7 @@ import type { SupplierAdapter, SupplierConfig, SupplierItem } from "./types";
  *     "BLUETTI": { "brand": "Bluetti", "category": ["ენერგო უზრუნველყოფა", "პორტატული ელსადგურები"],
  *                  "columns": { "sku": 0, "name": 1, "cost": 2, "qty": 3 } },
  *     "DELTA":   { "brand": "Delta Electronics", "category": ["ენერგო უზრუნველყოფა"],
- *                  "columns": { "sku": 0, "name": 1, "cost": 2 }, "sectionRows": true, "rate": 1 },
+ *                  "columns": { "sku": 0, "name": 1, "cost": 2, "description": 3 }, "sectionRows": true, "rate": 1 },
  *     "Perkins": { "brand": "ZEN", "category": ["…", "დიზელის გენერატორები", "Perkins ძრავით"],
  *                  "skipRows": 2, "columns": { "sku": 0, "cost": 2 },
  *                  "currency": "EUR",                          — ლარში ეროვნული ბანკის დღიური კურსით
@@ -33,7 +33,7 @@ import type { SupplierAdapter, SupplierConfig, SupplierItem } from "./types";
 type SheetSpec = {
   brand?: string;
   category?: string[];
-  columns: { sku: number; name?: number; cost?: number; qty?: number; model?: number };
+  columns: { sku: number; name?: number; cost?: number; qty?: number; model?: number; description?: number };
   sectionRows?: boolean;
   rate?: number;
   currency?: string;
@@ -140,9 +140,12 @@ export const spreadsheet: SupplierAdapter = {
               .filter((a) => a.value && !/^\s*(kVA|kW)?\s*$/.test(a.value))
           : undefined;
 
+        const description = spec.columns.description !== undefined ? cell(row, spec.columns.description) : "";
+
         items.push({
           supplierSku: sku,
           name,
+          description: description || null,
           model,
           brand: spec.brand ?? null,
           categoryPath: rule ? rule.category : [...(spec.category ?? []), ...(section ? [section] : [])],
