@@ -66,11 +66,26 @@ export default async function StaffPage({
         <div className="grid gap-4 sm:grid-cols-3">
           <label className="block">
             <span className="mb-1.5 block text-sm font-medium">ელფოსტა</span>
-            <input name="email" type="email" required className={field} placeholder="sales@enex.ge" />
+            <input
+              name="email"
+              type="email"
+              required
+              autoComplete="off"
+              spellCheck={false}
+              className={field}
+              placeholder="sales@enex.ge"
+            />
           </label>
           <label className="block">
             <span className="mb-1.5 block text-sm font-medium">სახელი</span>
-            <input name="name" required className={field} placeholder="ნინო ბერიძე" />
+            <input
+              name="name"
+              required
+              autoComplete="off"
+              spellCheck={false}
+              className={field}
+              placeholder="ნინო ბერიძე"
+            />
           </label>
           <label className="block">
             <span className="mb-1.5 block text-sm font-medium">განყოფილება</span>
@@ -115,7 +130,14 @@ export default async function StaffPage({
                     <input type="hidden" name="id" value={a.id} />
                     <label className="block flex-1">
                       <span className="mb-1 block text-xs text-muted">სახელი</span>
-                      <input name="name" defaultValue={a.name} required className={field} />
+                      <input
+                        name="name"
+                        defaultValue={a.name}
+                        required
+                        autoComplete="off"
+                        spellCheck={false}
+                        className={field}
+                      />
                     </label>
                     <label className="block flex-1">
                       <span className="mb-1 block text-xs text-muted">განყოფილება</span>

@@ -3,10 +3,13 @@
 import { useState } from "react";
 
 /**
- * პაროლის ველი „შექმნის" ღილაკით.
+ * თანამშრომლის პაროლის დაყენება — „შექმნა" ღილაკით.
  *
- * პაროლს ბრაუზერი ქმნის და ველშივე ჩანს — ასე თანამშრომელს გადასაცემი პაროლი
- * თვალწინ გაქვს, სერვერზე კი მხოლოდ დაშიფრული მიდის.
+ * ეს არ არის შესვლის ველი: აქ სხვისი პაროლი იწერება და თვალით უნდა ნახო, სანამ
+ * გადასცემ. ამიტომ ველი ჩვეულებრივი ტექსტია და დამალვა CSS-ით ხდება — გვერდზე
+ * `type="password"` საერთოდ არ არის, რომ ბრაუზერის პაროლების შემნახველმა და
+ * ავტოშევსებამ ამ ფორმას არ მიხედოს (შენახვის შეთავაზება, უცხო მონაცემების
+ * ჩასმა და კრახი ამ ველზე კრეფისას სწორედ იქიდან მოდის).
  */
 export default function PasswordField({
   name = "password",
@@ -18,7 +21,7 @@ export default function PasswordField({
   required?: boolean;
 }) {
   const [value, setValue] = useState("");
-  const [shown, setShown] = useState(false);
+  const [shown, setShown] = useState(true);
 
   function generate() {
     const abc = "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -36,11 +39,18 @@ export default function PasswordField({
           name={name}
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          type={shown ? "text" : "password"}
+          type="text"
           required={required}
           minLength={10}
-          autoComplete="new-password"
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck={false}
+          data-lpignore="true"
+          data-1p-ignore=""
+          data-form-type="other"
           placeholder="მინიმუმ 10 სიმბოლო"
+          style={shown ? undefined : ({ WebkitTextSecurity: "disc" } as React.CSSProperties)}
           className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm outline-none focus:border-brand-500"
         />
         <button type="button" onClick={() => setShown(!shown)} className="btn btn-outline px-3 text-xs">
