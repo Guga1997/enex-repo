@@ -125,3 +125,55 @@ test("MUK: შეცდომის პასუხი გასაგებ შ
 
   await assert.rejects(() => muk.fetchItems(cfg), /IP:1\.2\.3\.4/);
 });
+
+/* ------------- ნაშთის ორი ხაფანგი, რომელიც ნამდვილ ნუსხაში დაგვხვდა ------------ */
+
+/** პატარა ნუსხა ხელით — ნამდვილი XML-ის ზუსტი შაბლონით */
+function stubXml(products: string) {
+  globalThis.fetch = (async (url: string | URL) => {
+    if (String(url).endsWith("/CURRENCY")) {
+      return new Response(`<CURRENCY><VALUE DATE="29.09.26">${RATE}</VALUE></CURRENCY>`, { status: 200 });
+    }
+    return new Response(`<?xml version="1.0" encoding="utf-8"?><PRICE>${products}</PRICE>`, { status: 200 });
+  }) as typeof fetch;
+}
+
+const product = (sku: string, qty: string, status = "In Stock") => `
+  <Product id="1">
+    <VENDOR_PART_NUMBER>${sku}</VENDOR_PART_NUMBER>
+    <NAME>APC Easy UPS On-Line SRV RM 3000VA</NAME>
+    <PRICE_RETAIL>100.00</PRICE_RETAIL>
+    <PRICE_DILER>80.00</PRICE_DILER>
+    <CATEGORY>UPS</CATEGORY>
+    <KOD2>On-line UPS</KOD2>
+    <QUANTITY>${qty}</QUANTITY>
+    <STATUS>${status}</STATUS>
+  </Product>`;
+
+test("MUK: „>20“ ნაშთი ოციაა და არა ნული", async () => {
+  stubXml(product("SRV3KRIRK-E", "&gt;20"));
+  const [item] = await muk.fetchItems(cfg);
+  assert.equal(item.qty, 20, "„>20“ ნულად ჩაითვალა — პროდუქტი საიტზე გაქრებოდა");
+  assert.equal(item.status, "IN_STOCK");
+});
+
+test("MUK: ერთი კოდის რამდენიმე ჩანაწერი ჯამდება", async () => {
+  stubXml(product("SRV3KRIRK-E", "20") + product("SRV3KRIRK-E", "1") + product("SRV3KRIRK-E", "&gt;20"));
+  const items = await muk.fetchItems(cfg);
+  assert.equal(items.length, 1, "დუბლი ცალკე პოზიციად დარჩა");
+  assert.equal(items[0].qty, 41, "ბოლო ჩანაწერმა წინა გადააფარა");
+});
+
+test("MUK: ნაშთიანი პარტია სჭარბობს ნულოვანს", async () => {
+  stubXml(product("210-BPSQ", "0", "Reserve") + product("210-BPSQ", "2") + product("210-BPSQ", "0", "Reserve"));
+  const [item] = await muk.fetchItems(cfg);
+  assert.equal(item.qty, 2);
+  assert.equal(item.status, "IN_STOCK", "ბოლო ნულოვანმა პარტიამ პროდუქტი გათიშა");
+});
+
+test("MUK: სტატუსების რიგი ჯამისას ინარჩუნებს უკეთესს", async () => {
+  stubXml(product("AP9544", "0", "Available upon request") + product("AP9544", "0", "Coming Soon"));
+  const [item] = await muk.fetchItems(cfg);
+  assert.equal(item.qty, 0);
+  assert.equal(item.status, "IN_TRANSIT", "მოსული პარტია მოთხოვნით შეკვეთას სჯობს");
+});

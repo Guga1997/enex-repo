@@ -34,6 +34,16 @@ const num = (v: unknown): number | null => {
 };
 const list = (v: unknown): unknown[] => (Array.isArray(v) ? v : v === undefined || v === null ? [] : [v]);
 
+/**
+ * ნაშთი ყოველთვის სუფთა რიცხვი არ არის: დიდ მარაგზე MUK „>20“-ს წერს.
+ * Number(">20") = NaN, ანუ ნული — და პროდუქტი საიტზე უსაფუძვლოდ ითიშებოდა.
+ * ციფრებს ვიღებთ: „>20“ → 20 (სულ ცოტა ამდენი აქვს).
+ */
+function qtyOf(v: unknown): number {
+  const m = text(v).match(/\d+/);
+  return m ? Math.max(0, Number(m[0])) : 0;
+}
+
 /** „In Stock“ / „Coming Soon“ / „Available upon request“ / „Reserve“ */
 function statusOf(status: string, qty: number): string {
   const s = status.toLowerCase();
@@ -41,6 +51,37 @@ function statusOf(status: string, qty: number): string {
   if (s.includes("request")) return "PREORDER";
   if (s.includes("reserve")) return "OUT_OF_STOCK";
   return qty > 0 ? "IN_STOCK" : "OUT_OF_STOCK";
+}
+
+/** რომელი სტატუსი სჯობს, როცა ერთი კოდი რამდენჯერმეა */
+const RANK: Record<string, number> = { IN_STOCK: 3, IN_TRANSIT: 2, PREORDER: 1, OUT_OF_STOCK: 0 };
+
+/**
+ * ერთი და იგივე კოდი ნუსხაში რამდენჯერმე გვხვდება — ცალკე ჩანაწერით თითო
+ * პარტიაზე. ჯამი უნდა შევკრიბოთ: სხვაგვარად ბოლო ჩანაწერი აბათილებს წინას და
+ * საიტზე 20 ცალის ნაცვლად 1 ან 0 ჩანს.
+ */
+function mergeDuplicates(items: SupplierItem[]): SupplierItem[] {
+  const by = new Map<string, SupplierItem>();
+  for (const it of items) {
+    const prev = by.get(it.supplierSku);
+    if (!prev) {
+      by.set(it.supplierSku, it);
+      continue;
+    }
+    prev.qty += it.qty;
+    if ((RANK[it.status ?? ""] ?? 0) > (RANK[prev.status ?? ""] ?? 0)) prev.status = it.status;
+    prev.cost ??= it.cost;
+    prev.listPrice ??= it.listPrice;
+    prev.description ||= it.description;
+    if ((it.images?.length ?? 0) > (prev.images?.length ?? 0)) prev.images = it.images;
+    if ((it.attributes?.length ?? 0) > (prev.attributes?.length ?? 0)) prev.attributes = it.attributes;
+  }
+  // ჯამის შემდეგ ნაშთიანი პოზიცია მარაგშია, თუნდაც ბოლო ჩანაწერი ნულოვანი იყოს
+  for (const it of by.values()) {
+    if (it.qty > 0 && it.status === "OUT_OF_STOCK") it.status = "IN_STOCK";
+  }
+  return [...by.values()];
 }
 
 const parser = new XMLParser({
@@ -97,7 +138,7 @@ export const muk: SupplierAdapter = {
       const category = text(p.CATEGORY);
       if (skip.has(category)) continue;
 
-      const qty = Math.max(0, num(p.QUANTITY) ?? 0);
+      const qty = qtyOf(p.QUANTITY);
       const dealer = num(p.PRICE_DILER);
       const retail = num(p.PRICE_RETAIL);
 
@@ -137,6 +178,6 @@ export const muk: SupplierAdapter = {
       });
     }
 
-    return items;
+    return mergeDuplicates(items);
   },
 };

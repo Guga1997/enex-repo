@@ -383,6 +383,23 @@ export async function syncSupplier(supplierId: string): Promise<SyncResult> {
       }
     }
 
+    // ნუსხიდან გამქრალი პოზიცია მარაგად აღარ ითვლება — მიმწოდებელმა მოხსნა.
+    // დაცვა: თუ პასუხი მოულოდნელად მოკლეა (გაწყვეტილი ფაილი, ნაწილობრივი
+    // ნუსხა), არაფერს ვანულებთ — თორემ ერთი ავარია მთელ კატალოგს ჩააქრობდა.
+    const seen = new Set(items.map((i) => i.supplierSku));
+    const existing = await db.productSupply.findMany({
+      where: { supplierId: supplier.id },
+      select: { id: true, supplierSku: true, qty: true, productId: true },
+    });
+    const gone = existing.filter((s) => !seen.has(s.supplierSku) && s.qty > 0);
+    if (gone.length && items.length >= existing.length * 0.5) {
+      await db.productSupply.updateMany({
+        where: { id: { in: gone.map((g) => g.id) } },
+        data: { qty: 0, status: "OUT_OF_STOCK" },
+      });
+      for (const g of gone) touched.add(g.productId);
+    }
+
     for (const id of touched) {
       await rollupStock(id);
       await repriceProduct(id, pricer);
