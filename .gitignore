@@ -18,3 +18,4 @@ public/uploads/*
 tsconfig.tsbuildinfo
 data/pricelists/
 data/fx.json
+data/uncategorized.csv

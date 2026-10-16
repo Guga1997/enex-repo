@@ -1,0 +1,64 @@
+{
+  "_": "MUK-ის ინგლისური კატეგორია → ჩვენი კატეგორიის გზა. გასაღები 'CATEGORY/KOD2' კონკრეტულია და უპირატესია 'CATEGORY'-ზე. ეს ფაილი MUK-ის fieldMap-ში ჯდება (scripts/apply-category-map.ts).",
+
+  "Laptop/Dell Pro": ["კომპიუტერები და ლეპტოპები", "ლეპტოპები"],
+  "Laptop/Dell Pro Plus": ["კომპიუტერები და ლეპტოპები", "ლეპტოპები"],
+  "Laptop/Dell": ["კომპიუტერები და ლეპტოპები", "ლეპტოპები"],
+  "Laptop/DELL Latitude": ["კომპიუტერები და ლეპტოპები", "ლეპტოპები"],
+  "Laptop/Laptops DELL XPS": ["კომპიუტერები და ლეპტოპები", "ლეპტოპები"],
+  "Laptop/IdeaPad": ["კომპიუტერები და ლეპტოპები", "ლეპტოპები"],
+  "Laptop/Lenovo Legion": ["კომპიუტერები და ლეპტოპები", "ლეპტოპები"],
+  "Laptop/Lenovo LOQ": ["კომპიუტერები და ლეპტოპები", "ლეპტოპები"],
+  "Laptop/Lenovo V-Series": ["კომპიუტერები და ლეპტოპები", "ლეპტოპები"],
+  "Laptop/Laptops Lenovo ThinkPad": ["კომპიუტერები და ლეპტოპები", "ლეპტოპები"],
+  "Laptop/Accessories": ["კომპიუტერები და ლეპტოპები", "ლეპტოპის აქსესუარები"],
+  "Laptop/Docking Station": ["კომპიუტერები და ლეპტოპები", "დოკ-სადგურები"],
+  "Laptop/Bags and backpacks": ["კომპიუტერები და ლეპტოპები", "ჩანთები და ზურგჩანთები"],
+
+  "Personal computer/PC Dell Pro Tower": ["კომპიუტერები და ლეპტოპები", "დესკტოპ კომპიუტერები"],
+  "Personal computer/PC Dell Pro Slim": ["კომპიუტერები და ლეპტოპები", "დესკტოპ კომპიუტერები"],
+  "Personal computer/PC Dell Pro Micro": ["კომპიუტერები და ლეპტოპები", "დესკტოპ კომპიუტერები"],
+  "Personal computer/Lenovo ThinkCentre": ["კომპიუტერები და ლეპტოპები", "დესკტოპ კომპიუტერები"],
+  "Personal computer/Monoblock All In One": ["კომპიუტერები და ლეპტოპები", "მონობლოკები (All-in-One)"],
+  "Personal computer/Accessories": ["კომპიუტერები და ლეპტოპები", "კომპიუტერის აქსესუარები"],
+  "Personal computer/Memory module": ["კომპიუტერის კომპონენტები", "ოპერატიული მეხსიერება"],
+  "Personal computer/SSD": ["კომპიუტერის კომპონენტები", "დისკები (კომპიუტერისთვის)"],
+  "Graphic station/Dell Pro Max": ["კომპიუტერები და ლეპტოპები", "სამუშაო სადგურები"],
+
+  "Tablet": ["კომპიუტერები და ლეპტოპები", "ტაბლეტები"],
+  "Tablet/Accessories for tablet": ["კომპიუტერები და ლეპტოპები", "ტაბლეტის აქსესუარები"],
+
+  "Peripherals/Headphones": ["პერიფერია", "ყურსასმენები და გარნიტურა"],
+  "Peripherals/Keyboard and Mouse": ["პერიფერია", "კლავიატურა და მაუსი"],
+  "Peripherals/Speakerphone": ["პერიფერია", "სპიკერფონები"],
+  "Peripherals/Video conferencing system": ["პერიფერია", "ვიდეოკონფერენცია"],
+  "Peripherals/Webcam": ["პერიფერია", "ვებკამერები"],
+  "Peripherals/Accessories": ["პერიფერია", "პერიფერიის აქსესუარები"],
+  "Peripherals/USB drive": ["მონაცემთა შენახვა", "USB მეხსიერება"],
+
+  "Network equipment/Power Supply Module": ["LAN & WAN", "ქსელის კვების ბლოკები"],
+  "Network equipment/Power unit": ["LAN & WAN", "ქსელის კვების ბლოკები"],
+  "Network equipment/Components of the SCS category 5e UTP": ["LAN & WAN", "LAN კომპონენტები"],
+  "Network equipment/Components of the SCS category 5e FTP": ["LAN & WAN", "LAN კომპონენტები"],
+  "Network equipment/Components of SCS of category 6 UTP": ["LAN & WAN", "LAN კომპონენტები"],
+  "Network equipment/Components of the SCS category 6 FTP": ["LAN & WAN", "LAN კომპონენტები"],
+  "Network equipment/Components of the SCS category 6A FTP": ["LAN & WAN", "LAN კომპონენტები"],
+  "Network equipment/SCS (nabirn. patch panels)": ["LAN & WAN", "LAN კომპონენტები"],
+  "Network equipment/Components of SKS (optical)": ["ოპტიკური ქსელი", "ოპტიკური კომპონენტები"],
+  "Network equipment/Accessories": ["LAN & WAN", "ქსელის აქსესუარები"],
+  "Network equipment/Accessories/accessories": ["LAN & WAN", "ქსელის აქსესუარები"],
+  "Network equipment/Controller": ["LAN & WAN", "კონტროლერები"],
+  "Network equipment/Software": ["LAN & WAN", "ქსელის პროგრამული უზრუნველყოფა"],
+  "Network equipment/Video conferencing system": ["პერიფერია", "ვიდეოკონფერენცია"],
+  "Network equipment/Convergent communication devices": ["LAN & WAN", "ქსელის აქსესუარები"],
+
+  "Software/Security": ["პროგრამული უზრუნველყოფა", "ანტივირუსი და უსაფრთხოება"],
+
+  "Charging Station/Accessories": ["ენერგო უზრუნველყოფა", "პორტატული ელსადგურის აქსესუარები"],
+  "Charging Station/Additional battery": ["ენერგო უზრუნველყოფა", "დამატებითი აკუმულატორები"],
+
+  "Air-conditioning system/Industrial": ["კლიმატური სისტემები", "ინდუსტრიული კონდიციონერები"],
+
+  "Information display systems/Projectors": ["აუდიო-ვიდეო", "პროექტორები"],
+  "Information display systems/Interactive Whiteboard": ["აუდიო-ვიდეო", "ინტერაქტიული დაფები"]
+}
