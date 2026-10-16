@@ -67,13 +67,18 @@ const MIN = 3;
 const touches = (word: string, variant: string) =>
   word.length >= MIN && variant.length >= MIN && (word.startsWith(variant) || variant.startsWith(word));
 
-/** სიტყვის სინონიმები (თვითონ სიტყვის გარეშე) */
+/**
+ * სიტყვის სინონიმები — ჯგუფის ფუძის ჩათვლით.
+ *
+ * ფუძე აუცილებლად უნდა დაემატოს: „ყურსასმენი“ ვერ პოულობს კატეგორიას
+ * „ყურსასმენები“, „ყურსასმენ“ კი ორივეს პოულობს.
+ */
 export function synonyms(word: string): string[] {
   const w = word.toLowerCase();
   const out = new Set<string>();
   for (const group of GROUPS) {
     if (!group.some((v) => touches(w, v))) continue;
-    for (const v of group) if (!touches(w, v)) out.add(v);
+    for (const v of group) if (v !== w) out.add(v);
   }
   return [...out];
 }

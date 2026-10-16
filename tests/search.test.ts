@@ -54,6 +54,9 @@ test("სინონიმები ორივე მიმართულე
   assert.ok(synonyms("ლეპტოპებს").includes("notebook"), "ბრუნვაც უნდა დაიჭიროს");
   assert.ok(synonyms("laptop").some((s) => s.startsWith("ლეპტოპ")), "laptop → ლეპტოპ");
   assert.ok(synonyms("ყურსასმენები").includes("headset"));
+  // ფუძე თვითონაც ვარიანტია — კატეგორია „ყურსასმენები“ მხოლოდ ასე მოიძებნება
+  assert.ok(synonyms("ყურსასმენი").includes("ყურსასმენ"), "ფუძე აკლია");
+  assert.ok(synonyms("ლეპტოპი").includes("ლეპტოპ"));
   assert.ok(synonyms("მაუსი").includes("mouse"));
   assert.deepEqual(synonyms("dell"), [], "ბრენდს სინონიმი არ უნდა ჰქონდეს");
   assert.deepEqual(synonyms("ა"), [], "ერთასოიანი არაფერს უნდა გააფართოოს");
