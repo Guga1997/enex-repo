@@ -2,6 +2,7 @@ import type { Prisma } from "@prisma/client";
 import { db } from "./db";
 import { PAGE_SIZE } from "./constants";
 import { ci } from "./search-mode";
+import { searchTerms } from "./search-terms";
 
 export type SearchParams = { [k: string]: string | string[] | undefined };
 
@@ -119,15 +120,23 @@ export function buildWhere(
   if (q.isNew) AND.push({ isNew: true });
 
   if (q.q) {
-    AND.push({
-      OR: [
-        { nameKa: ci(q.q) },
-        { nameEn: ci(q.q) },
-        { nameRu: ci(q.q) },
-        { model: ci(q.q) },
-        { sku: ci(q.q) },
-      ],
-    });
+    // თითოეული სიტყვა ცალკე უნდა დაემთხვეს („dell ლეპტოპი“ ორივეს ეძებს), სიტყვა
+    // კი ნებისმიერ ველს — სინონიმების ჩათვლით, რადგან დასახელებები ინგლისურია,
+    // მყიდველი კი ქართულად წერს. კატეგორიისა და ბრენდის სახელიც ეძებს:
+    // „ყურსასმენები“ კატეგორიაში ჩაჯდომით პოულობს, თუნდაც სახელში არ ეწეროს.
+    for (const { variants } of searchTerms(q.q)) {
+      AND.push({
+        OR: variants.flatMap((v) => [
+          { nameKa: ci(v) },
+          { nameEn: ci(v) },
+          { nameRu: ci(v) },
+          { model: ci(v) },
+          { sku: ci(v) },
+          { category: { nameKa: ci(v) } },
+          { brand: { name: ci(v) } },
+        ]),
+      });
+    }
   }
 
   if (skip !== "attrs") {
