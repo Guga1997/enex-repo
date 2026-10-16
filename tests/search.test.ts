@@ -58,6 +58,7 @@ test("სინონიმები ორივე მიმართულე
   assert.ok(synonyms("ყურსასმენი").includes("ყურსასმენ"), "ფუძე აკლია");
   assert.ok(synonyms("ლეპტოპი").includes("ლეპტოპ"));
   assert.ok(synonyms("მაუსი").includes("mouse"));
+  assert.ok(synonyms("ხანძრის").includes("სახანძრ"), "„ხანძრის“ ვერ პოულობდა „სახანძროს“");
   assert.deepEqual(synonyms("dell"), [], "ბრენდს სინონიმი არ უნდა ჰქონდეს");
   assert.deepEqual(synonyms("ა"), [], "ერთასოიანი არაფერს უნდა გააფართოოს");
 });
