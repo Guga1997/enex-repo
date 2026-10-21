@@ -148,15 +148,17 @@ export default async function SuppliersPage({
                           type="number"
                           step="0.1"
                           defaultValue={s.markupRetail}
-                          title={
-                            s.retailBase === "MARGIN"
-                              ? "მოგების რამდენი % დავუთმოთ"
-                              : s.retailBase === "LIST"
-                                ? "% მიმწოდებლის საცალოზე"
-                                : "% თვითღირებულებაზე"
-                          }
                           className="w-16 rounded-lg border border-line bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand-500"
                         />
+                        {/* ციფრის მნიშვნელობა რეჟიმზეა დამოკიდებული — უნდა ჩანდეს
+                            აქვე და არა მინიშნებაში, თორემ „5“ სულ სხვა ფასს აწერს */}
+                        <span className="whitespace-nowrap text-[11px] text-muted">
+                          {s.retailBase === "MARGIN"
+                            ? "% მოგებიდან"
+                            : s.retailBase === "LIST"
+                              ? "% მის საცალოზე"
+                              : "% თვითღირებულებაზე"}
+                        </span>
                         <button
                           className="rounded-lg border border-line px-2.5 py-1.5 text-xs font-medium hover:bg-canvas"
                           title="ველში მითითებულ პროცენტს შეინახავს და ფასებს თავიდან დაითვლის; ჩაკეტილი რჩება"

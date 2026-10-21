@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { db } from "@/lib/db";
 import { gel } from "@/lib/format";
+import { effectivePrice } from "@/lib/pricing";
 import { STOCK_LABELS } from "@/lib/constants";
 import { productFilter } from "@/lib/admin-filters";
 import { bulkSetActive, bulkSetActiveByFilter, deleteProduct, toggleProductActive } from "../actions";
@@ -185,8 +186,13 @@ export default async function AdminProducts({ searchParams }: { searchParams: Pr
                   </td>
                   <td className="p-3">
                     <div className="font-medium">{gel(p.price)}</div>
-                    {p.dealerPrice && (
-                      <div className="text-xs text-muted">დილ. {gel(p.dealerPrice)}</div>
+                    {/* პარტნიორის ფასი მოგების წილით ითვლება — ძველი dealerPrice სვეტი
+                        თვითღირებულებაზე პროცენტს ეყრდნობოდა და საცალოს ემთხვეოდა */}
+                    {p.cost != null && p.cost > 0 && (
+                      <div className="text-xs text-muted">
+                        დილერი {gel(effectivePrice(p, { priceTier: "DEALER", discountPercent: 0 }).value)} ·
+                        ქოსთი {gel(p.cost)}
+                      </div>
                     )}
                   </td>
                   <td className="p-3">
