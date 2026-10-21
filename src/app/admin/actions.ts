@@ -272,10 +272,13 @@ export async function saveSupplier(formData: FormData) {
     authType: String(formData.get("authType") ?? "BEARER"),
     authHeader: String(formData.get("authHeader") ?? "").trim() || null,
     fieldMap: String(formData.get("fieldMap") ?? "").trim() || null,
-    retailBase: formData.get("retailBase") === "LIST" ? "LIST" : "COST",
+    retailBase: ["LIST", "MARGIN"].includes(String(formData.get("retailBase")))
+      ? String(formData.get("retailBase"))
+      : "COST",
     markupRetail: Number(formData.get("markupRetail") ?? 30),
     markupDealer: Number(formData.get("markupDealer") ?? 15),
     supplierDiscount: Math.min(90, Math.max(0, Number(formData.get("supplierDiscount")) || 0)),
+    minMargin: Math.min(500, Math.max(0, Number(formData.get("minMargin")) || 0)),
     // 0 = მხოლოდ ხელით; უარყოფითი და არარიცხვი ნულად
     syncEveryMin: Math.max(0, Math.floor(Number(formData.get("syncEveryMin")) || 0)),
     isActive: formData.get("isActive") === "on",
@@ -312,8 +315,15 @@ export async function saveSupplier(formData: FormData) {
 /** ფასების გადათვლა მიმწოდებლის მიმდინარე წესით — ჩაკეტილი ფასები რჩება */
 export async function repriceSupplierAction(formData: FormData) {
   await requireAdmin();
+  const id = String(formData.get("id") ?? "");
+  // პროცენტი იქვე იცვლება — ჯერ ვინახავთ, მერე ვთვლით, რომ ღილაკმა უკვე
+  // ახალი ციფრით იმუშაოს და ცალკე „შენახვა“ არ დასჭირდეს
+  const raw = formData.get("markupRetail");
+  if (raw !== null && String(raw).trim() !== "" && Number.isFinite(Number(raw))) {
+    await db.supplier.update({ where: { id }, data: { markupRetail: Number(raw) } });
+  }
   const { repriceSupplier } = await import("@/lib/suppliers/pricing");
-  await repriceSupplier(String(formData.get("id") ?? ""));
+  await repriceSupplier(id);
   revalidatePath("/admin/suppliers");
   revalidatePath("/admin/products");
 }
@@ -358,7 +368,9 @@ export async function savePricingRule(formData: FormData) {
   const categoryId = String(formData.get("categoryId") ?? "");
   if (!supplierId || !categoryId) return;
   const data = {
-    retailBase: formData.get("retailBase") === "LIST" ? "LIST" : "COST",
+    retailBase: ["LIST", "MARGIN"].includes(String(formData.get("retailBase")))
+      ? String(formData.get("retailBase"))
+      : "COST",
     markupRetail: Number(formData.get("markupRetail")) || 0,
     markupDealer: Number(formData.get("markupDealer")) || 0,
   };

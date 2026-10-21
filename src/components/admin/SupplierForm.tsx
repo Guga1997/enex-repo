@@ -17,6 +17,7 @@ export type SupplierDraft = {
   markupRetail: number;
   markupDealer: number;
   supplierDiscount: number;
+  minMargin: number;
   syncEveryMin: number;
   isActive: boolean;
   hasSecret: boolean;
@@ -196,21 +197,30 @@ export default function SupplierForm({
           >
             <option value="COST">თვითღირებულებიდან (+%)</option>
             <option value="LIST">მიმწოდებლის საცალოდან (−%)</option>
+            <option value="MARGIN">მოგების წილით (მის საცალოს მინუს მოგების %)</option>
           </select>
         </label>
         <label className="block">
           <span className="mb-1.5 block text-sm font-medium">
-            {retailBase === "LIST" ? "საცალო: % მიმწოდებლის საცალოზე" : "საცალო: % თვითღირებულებაზე"}
+            {retailBase === "MARGIN"
+              ? "საცალო: მოგების რამდენი % დავუთმოთ"
+              : retailBase === "LIST"
+                ? "საცალო: % მიმწოდებლის საცალოზე"
+                : "საცალო: % თვითღირებულებაზე"}
           </span>
           <input
             name="markupRetail"
             type="number"
             step="0.1"
-            defaultValue={supplier?.markupRetail ?? (retailBase === "LIST" ? -5 : 30)}
+            defaultValue={supplier?.markupRetail ?? (retailBase === "LIST" ? -5 : retailBase === "MARGIN" ? 5 : 30)}
             className={field}
           />
           <span className="mt-1 block text-xs text-muted">
-            {retailBase === "LIST" ? "მინუსი = მასზე იაფად: −5 → მისი 100₾ ჩვენთან 95₾" : "30 → 100₾ თვითღირებულება, 130₾ ფასი"}
+            {retailBase === "MARGIN"
+              ? "სჭირდება ორივე ფასი API-დან. 5 → მისი საცალო 100₾, ჩვენი თვითღირებულება 80₾, მოგება 20₾ → ფასი 99₾"
+              : retailBase === "LIST"
+                ? "მინუსი = მასზე იაფად: −5 → მისი 100₾ ჩვენთან 95₾"
+                : "30 → 100₾ თვითღირებულება, 130₾ ფასი"}
           </span>
         </label>
         <label className="block">
@@ -240,6 +250,22 @@ export default function SupplierForm({
             ფასდაკლების მინიმუმი: 10 → მისი 100₾ სინამდვილეში 90₾ გვიჯდება. საცალო ფასს
             არ ცვლის — მხოლოდ ნამდვილ მოგებას აჩვენებს, რომელზეც პარტნიორების ფასდაკლება
             ითვლება. თუ სადილეროსაც და საცალოსაც იძლევა, ეს ველი უგულებელყოფილია.
+          </span>
+        </label>
+        <label className="block">
+          <span className="mb-1.5 block text-sm font-medium">მინიმალური მოგება: %</span>
+          <input
+            name="minMargin"
+            type="number"
+            step="0.1"
+            min="0"
+            max="500"
+            defaultValue={supplier?.minMargin ?? 0}
+            className={field}
+          />
+          <span className="mt-1 block text-xs text-muted">
+            იატაკი ყველა წესის თავზე — ფასი თვითღირებულებაზე ამ პროცენტით მაინც მაღლა
+            დგება. თვითღირებულებად გაყიდვა დასაშვები არ არის.
           </span>
         </label>
       </div>

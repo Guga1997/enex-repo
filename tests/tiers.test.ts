@@ -94,8 +94,8 @@ test("დაბალმარჟიანზე ფასდაკლება�
 test("ერთფასიანი მიმწოდებლის ფასდაკლება მოგებად ჩანს, საცალოს კი არ ცვლის", () => {
   const rule = { retailBase: "COST", markupRetail: 15, markupDealer: 5 };
 
-  const without = computePrices(rule, 100, null, 0);
-  const with10 = computePrices(rule, 100, null, 10);
+  const without = computePrices(rule, 100, null, { supplierDiscount: 0, minMargin: 0 });
+  const with10 = computePrices(rule, 100, null, { supplierDiscount: 10, minMargin: 0 });
 
   assert.equal(without.price, with10.price, "საცალო იმავე ადგილას რჩება");
   assert.equal(with10.price, 115);
@@ -130,7 +130,49 @@ test("ორფასიან მიმწოდებელს ფასდა
   assert.equal(realCost(748, 10, 700), 673.2, "საცალო სადილეროზე დაბლა — არასწორი მონაცემი");
 
   const rule = { retailBase: "LIST", markupRetail: 0, markupDealer: 5 };
-  const both = computePrices(rule, 748, 853, 10);
+  const both = computePrices(rule, 748, 853, { supplierDiscount: 10, minMargin: 0 });
   assert.equal(both.cost, 748, "ორფასიანზე თვითღირებულება ხელუხლებელია");
   assert.equal(both.price, 853);
+});
+
+/* ───────────────── საცალო მოგების წილით (MARGIN) ───────────────── */
+
+const MARGIN = { retailBase: "MARGIN", markupRetail: 5, markupDealer: 0 };
+const terms = (supplierDiscount = 0, minMargin = 0) => ({ supplierDiscount, minMargin });
+
+test("საცალო = მისი საცალო − მოგების 5%", () => {
+  // ინტელკომი: ქოსთი 748, მისი საცალო 853, მოგება 105
+  const r = computePrices(MARGIN, 748, 853, terms());
+  assert.equal(r.price, 847.75, "853 − 0.05×105");
+  assert.equal(r.cost, 748);
+  assert.equal(Math.round((r.price - 748) * 100) / 100, 99.75, "მოგების 95% ჩვენთან");
+});
+
+test("ფასი ყოველთვის მიმწოდებლის საცალოზე დაბლაა", () => {
+  for (const [cost, list] of [[748, 853], [10, 11], [1000, 1001], [95, 100]]) {
+    const r = computePrices(MARGIN, cost, list, terms());
+    assert.ok(r.price < list, `${cost}/${list}: ${r.price} >= ${list}`);
+    assert.ok(r.price > cost, `${cost}/${list}: თვითღირებულებაზე დაბლა ჩამოვიდა`);
+  }
+});
+
+test("თხელმარჟიანზე ფასი თვითღირებულებას არ უახლოვდება საშიშად", () => {
+  // მოგება სულ 1₾; 5% = 5 თეთრი, ანუ ზარალის რისკი არ არსებობს
+  const r = computePrices(MARGIN, 100, 101, terms());
+  assert.equal(r.price, 100.95);
+  assert.ok(r.price > 100);
+});
+
+test("ორი ფასის გარეშე MARGIN ჩვეულებრივ ფასდადებაზე ბრუნდება", () => {
+  const r = computePrices(MARGIN, 100, null, terms());
+  assert.equal(r.price, 105, "საცალო არ მოგვცა — 100 × 1.05");
+});
+
+test("მინიმალური მოგება ყველა წესის თავზე დგას", () => {
+  const zero = { retailBase: "COST", markupRetail: 0, markupDealer: 0 };
+  assert.equal(computePrices(zero, 100, null, terms()).price, 100, "იატაკის გარეშე — თვითღირებულება");
+  assert.equal(computePrices(zero, 100, null, terms(0, 10)).price, 110, "10% იატაკი აწევს");
+  // MARGIN-საც ეხება
+  const thin = computePrices(MARGIN, 100, 101, terms(0, 10));
+  assert.equal(thin.price, 110, "იატაკი მოგების წილსაც სჯობს");
 });

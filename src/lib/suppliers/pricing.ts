@@ -24,6 +24,10 @@ import { db } from "../db";
 
 export type PricingRule = { retailBase: string; markupRetail: number; markupDealer: number };
 
+/** მიმწოდებლის კომერციული პირობები — სეგმენტს არ მიჰყვება */
+export type SupplierTerms = { supplierDiscount: number; minMargin: number };
+const NO_TERMS: SupplierTerms = { supplierDiscount: 0, minMargin: 0 };
+
 /** გამოგზავნილი ფასიდან ნამდვილი თვითღირებულება */
 export function realCost(
   quoted: number | null | undefined,
@@ -45,17 +49,31 @@ export function computePrices(
   rule: PricingRule,
   cost: number | null | undefined,
   listPrice: number | null | undefined,
-  discountPercent = 0
+  terms: SupplierTerms = NO_TERMS
 ): { price: number; dealerPrice: number | null; cost: number | null } {
   const quoted = cost && cost > 0 ? cost : null;
-  // საცალო გამოგზავნილ ფასს მიჰყვება — ფასდაკლების აღიარებამ ფასი არ უნდა ჩამოწიოს
-  const base = rule.retailBase === "LIST" && listPrice && listPrice > 0 ? listPrice : quoted;
-  const c = realCost(quoted, discountPercent, listPrice);
+  const list = listPrice && listPrice > 0 ? listPrice : null;
+  const c = realCost(quoted, terms.supplierDiscount, listPrice);
   const dealerPrice = c ? round2(c * (1 + rule.markupDealer / 100)) : null;
-  let price = base ? round2(base * (1 + rule.markupRetail / 100)) : 0;
+
+  let price = 0;
+  if (rule.retailBase === "MARGIN" && list !== null && c !== null && list > c) {
+    // მოგების წილი: მისი საცალო მინუს მოგების N%. ანუ ყოველთვის მასზე იაფად,
+    // ხოლო რამდენად — ეს თვითონ პროდუქტის მოგებაზეა დამოკიდებული და არა
+    // ფიქსირებულ პროცენტზე, რომელიც თხელმარჟიანს ზარალში ჩააგდებდა.
+    price = round2(list - (rule.markupRetail / 100) * (list - c));
+  } else {
+    // საცალო გამოგზავნილ ფასს მიჰყვება — ფასდაკლების აღიარებამ ფასი არ უნდა ჩამოწიოს
+    const base = rule.retailBase === "LIST" && list !== null ? list : quoted;
+    price = base ? round2(base * (1 + rule.markupRetail / 100)) : 0;
+  }
+
   // საცალო სადილეროზე დაბლა არასდროს — LIST-ბაზაზე მიმწოდებელმა საცალო რომ არ მოგვცეს,
   // −5% თვითღირებულებას დაედებოდა და წაგებაზე გავყიდდით
   if (dealerPrice !== null && price < dealerPrice) price = dealerPrice;
+  // თვითღირებულებად გაყიდვა დაუშვებელია — იატაკი ყველა წესის თავზეა
+  if (c !== null && terms.minMargin > 0) price = Math.max(price, round2(c * (1 + terms.minMargin / 100)));
+
   return { price, dealerPrice, cost: c };
 }
 
@@ -68,12 +86,17 @@ export class Pricer {
     private parents: Map<string, string | null>,
     private rules: Map<string, PricingRule>, // `${supplierId}:${categoryId}`
     private defaults: Map<string, PricingRule>, // supplierId
-    private discounts: Map<string, number> // supplierId → %
+    private terms: Map<string, SupplierTerms> // supplierId
   ) {}
 
-  /** მიმწოდებლის ფასში უკვე ჩადებული ფასდაკლება — კომერციული პირობაა, სეგმენტს არ მიჰყვება */
+  /** მიმწოდებლის კომერციული პირობები — სეგმენტს არ მიჰყვება */
+  termsFor(supplierId: string): SupplierTerms {
+    return this.terms.get(supplierId) ?? NO_TERMS;
+  }
+
+  /** მიმწოდებლის ფასში უკვე ჩადებული ფასდაკლება */
   discountFor(supplierId: string): number {
-    return this.discounts.get(supplierId) ?? 0;
+    return this.termsFor(supplierId).supplierDiscount;
   }
 
   static async load(): Promise<Pricer> {
@@ -81,14 +104,17 @@ export class Pricer {
       db.category.findMany({ select: { id: true, parentId: true } }),
       db.supplierPricingRule.findMany(),
       db.supplier.findMany({
-        select: { id: true, retailBase: true, markupRetail: true, markupDealer: true, supplierDiscount: true },
+        select: {
+          id: true, retailBase: true, markupRetail: true, markupDealer: true,
+          supplierDiscount: true, minMargin: true,
+        },
       }),
     ]);
     return new Pricer(
       new Map(cats.map((c) => [c.id, c.parentId])),
       new Map(rules.map((r) => [`${r.supplierId}:${r.categoryId}`, r])),
       new Map(suppliers.map((s) => [s.id, s])),
-      new Map(suppliers.map((s) => [s.id, s.supplierDiscount]))
+      new Map(suppliers.map((s) => [s.id, { supplierDiscount: s.supplierDiscount, minMargin: s.minMargin }]))
     );
   }
 
@@ -148,7 +174,7 @@ export async function repriceProduct(productId: string, pricer?: Pricer): Promis
   const rule = p.ruleFor(cheapest.supplierId, product.categoryId);
   if (!rule) return "skipped";
 
-  const next = computePrices(rule, cheapest.cost, cheapest.listPrice, p.discountFor(cheapest.supplierId));
+  const next = computePrices(rule, cheapest.cost, cheapest.listPrice, p.termsFor(cheapest.supplierId));
   if (next.price <= 0) return "skipped";
   // თვითღირებულებაც უნდა შეესაბამებოდეს იმ მიმწოდებელს, რომლითაც ფასი დაითვალა —
   // თორემ ბოლოს დასინქრონებული კომპანიის cost რჩება და „ფასი < თვითღირებულება“ ჩანს

@@ -79,8 +79,14 @@ export default async function SuppliersPage({
                   <td className="p-3 text-xs">{s.adapter}</td>
                   <td className="p-3">{s._count.supplies}</td>
                   <td className="p-3 text-xs">
-                    საცალო {s.markupRetail >= 0 ? "+" : ""}{s.markupRetail}%{" "}
-                    {s.retailBase === "LIST" ? "მის საცალოზე" : "თვითღ."}
+                    {s.retailBase === "MARGIN" ? (
+                      <>საცალო — მოგების {s.markupRetail}% დათმობით</>
+                    ) : (
+                      <>
+                        საცალო {s.markupRetail >= 0 ? "+" : ""}{s.markupRetail}%{" "}
+                        {s.retailBase === "LIST" ? "მის საცალოზე" : "თვითღ."}
+                      </>
+                    )}
                     <br />
                     სადილერო +{s.markupDealer}% თვითღ.
                     <br />
@@ -134,11 +140,26 @@ export default async function SuppliersPage({
                       >
                         სეგმენტების ფასები
                       </a>
-                      <form action={repriceSupplierAction}>
+                      {/* პროცენტი აქვე იცვლება — ციფრის მოსარგებად რედაქტირებაში შესვლა არ სჭირდება */}
+                      <form action={repriceSupplierAction} className="flex items-center gap-1">
                         <input type="hidden" name="id" value={s.id} />
+                        <input
+                          name="markupRetail"
+                          type="number"
+                          step="0.1"
+                          defaultValue={s.markupRetail}
+                          title={
+                            s.retailBase === "MARGIN"
+                              ? "მოგების რამდენი % დავუთმოთ"
+                              : s.retailBase === "LIST"
+                                ? "% მიმწოდებლის საცალოზე"
+                                : "% თვითღირებულებაზე"
+                          }
+                          className="w-16 rounded-lg border border-line bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand-500"
+                        />
                         <button
                           className="rounded-lg border border-line px-2.5 py-1.5 text-xs font-medium hover:bg-canvas"
-                          title="არსებულ პროდუქტებზე ფასები თავიდან — მიმდინარე პროცენტებით; ჩაკეტილი რჩება"
+                          title="ველში მითითებულ პროცენტს შეინახავს და ფასებს თავიდან დაითვლის; ჩაკეტილი რჩება"
                         >
                           ფასების გადათვლა
                         </button>
@@ -181,6 +202,7 @@ export default async function SuppliersPage({
                 markupRetail: editing.markupRetail,
                 markupDealer: editing.markupDealer,
                 supplierDiscount: editing.supplierDiscount,
+                minMargin: editing.minMargin,
                 syncEveryMin: editing.syncEveryMin,
                 isActive: editing.isActive,
                 hasSecret: Boolean(editing.secret),
