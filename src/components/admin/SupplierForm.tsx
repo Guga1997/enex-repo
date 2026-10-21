@@ -225,7 +225,7 @@ export default function SupplierForm({
           <span className="mt-1 block text-xs text-muted">15 → მისი 100₾ სადილერო ჩვენთან 115₾</span>
         </label>
         <label className="block">
-          <span className="mb-1.5 block text-sm font-medium">მისი ფასი უკვე შეიცავს ფასდაკლებას: %</span>
+          <span className="mb-1.5 block text-sm font-medium">ერთფასიან პოზიციაზე ფასდაკლება: %</span>
           <input
             name="supplierDiscount"
             type="number"
@@ -236,9 +236,10 @@ export default function SupplierForm({
             className={field}
           />
           <span className="mt-1 block text-xs text-muted">
-            ცვალებადი ფასდაკლების <b>მინიმუმი</b>. 10 → მისი 100₾ სინამდვილეში 90₾ გვიჯდება.
-            საცალო ფასს არ ცვლის — მხოლოდ ნამდვილ მოგებას აჩვენებს, რომელზეც პარტნიორების
-            ფასდაკლება ითვლება.
+            მუშაობს <b>მხოლოდ მაშინ, როცა მიმწოდებელი ერთ ფასს აგზავნის</b>. ცვალებადი
+            ფასდაკლების მინიმუმი: 10 → მისი 100₾ სინამდვილეში 90₾ გვიჯდება. საცალო ფასს
+            არ ცვლის — მხოლოდ ნამდვილ მოგებას აჩვენებს, რომელზეც პარტნიორების ფასდაკლება
+            ითვლება. თუ სადილეროსაც და საცალოსაც იძლევა, ეს ველი უგულებელყოფილია.
           </span>
         </label>
       </div>

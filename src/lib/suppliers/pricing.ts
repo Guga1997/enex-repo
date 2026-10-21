@@ -3,10 +3,13 @@ import { db } from "../db";
 /**
  * ფასწარმოქმნა მიმწოდებლის მონაცემებიდან.
  *
- *   ზოგი მიმწოდებელი ერთ ფასს აგზავნის, რომელშიც ჩვენი ფასდაკლება უკვე დევს
+ *   ზოგი მიმწოდებელი **ერთ** ფასს აგზავნის, რომელშიც ჩვენი ფასდაკლება უკვე დევს
  *   (რომსატი — ცვალებადი, მაგრამ არანაკლებ 10%). supplierDiscount სწორედ ამას
  *   ითვალისწინებს: ნამდვილი თვითღირებულება გამოგზავნილ ფასზე დაბლაა, საცალო კი
  *   იმავე ადგილას რჩება — ანუ მოგება ჩანს ისეთი, როგორიც სინამდვილეშია.
+ *
+ *   ორ ფასს თუ იძლევა (ინტელკომი: სადილერო + საცალო), ვარაუდი ზედმეტია —
+ *   სადილერო უკვე ჩვენი თვითღირებულებაა და ფასდაკლება არ ედება.
  *
  *   თვითღირებულება = გამოგზავნილი ფასი × (1 − supplierDiscount%)
  *   სადილერო = თვითღირებულება × (1 + markupDealer%)         — ყოველთვის მასზე მაღლა
@@ -22,8 +25,16 @@ import { db } from "../db";
 export type PricingRule = { retailBase: string; markupRetail: number; markupDealer: number };
 
 /** გამოგზავნილი ფასიდან ნამდვილი თვითღირებულება */
-export function realCost(quoted: number | null | undefined, discountPercent = 0): number | null {
+export function realCost(
+  quoted: number | null | undefined,
+  discountPercent = 0,
+  listPrice?: number | null
+): number | null {
   if (!quoted || quoted <= 0) return null;
+  // ორფასიანი მიმწოდებელი სადილეროსაც და საცალოსაც გვაძლევს — სადილერო უკვე
+  // ჩვენი თვითღირებულებაა და ვარაუდი ზედმეტია. ფასდაკლება მხოლოდ მაშინ ედება,
+  // როცა ერთი ფასი მოვიდა და არ ვიცით, რამდენი დევს მასში ჩვენთვის.
+  if (listPrice != null && listPrice > quoted) return Math.round(quoted * 100) / 100;
   const d = Math.min(Math.max(discountPercent, 0), 90) / 100;
   return Math.round(quoted * (1 - d) * 100) / 100;
 }
@@ -39,7 +50,7 @@ export function computePrices(
   const quoted = cost && cost > 0 ? cost : null;
   // საცალო გამოგზავნილ ფასს მიჰყვება — ფასდაკლების აღიარებამ ფასი არ უნდა ჩამოწიოს
   const base = rule.retailBase === "LIST" && listPrice && listPrice > 0 ? listPrice : quoted;
-  const c = realCost(quoted, discountPercent);
+  const c = realCost(quoted, discountPercent, listPrice);
   const dealerPrice = c ? round2(c * (1 + rule.markupDealer / 100)) : null;
   let price = base ? round2(base * (1 + rule.markupRetail / 100)) : 0;
   // საცალო სადილეროზე დაბლა არასდროს — LIST-ბაზაზე მიმწოდებელმა საცალო რომ არ მოგვცეს,
@@ -130,7 +141,7 @@ export async function repriceProduct(productId: string, pricer?: Pricer): Promis
   // გამოგზავნილი ფასით ვერ შევადარებთ
   const priced = product.supplies
     .filter((s) => s.cost && s.cost > 0)
-    .map((s) => ({ ...s, real: realCost(s.cost, p.discountFor(s.supplierId))! }));
+    .map((s) => ({ ...s, real: realCost(s.cost, p.discountFor(s.supplierId), s.listPrice)! }));
   if (!priced.length) return "skipped";
   const cheapest = priced.reduce((a, b) => (b.real < a.real ? b : a));
 
