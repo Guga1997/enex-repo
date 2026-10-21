@@ -319,9 +319,11 @@ export async function repriceSupplierAction(formData: FormData) {
   // პროცენტი იქვე იცვლება — ჯერ ვინახავთ, მერე ვთვლით, რომ ღილაკმა უკვე
   // ახალი ციფრით იმუშაოს და ცალკე „შენახვა“ არ დასჭირდეს
   const raw = formData.get("markupRetail");
-  if (raw !== null && String(raw).trim() !== "" && Number.isFinite(Number(raw))) {
-    await db.supplier.update({ where: { id }, data: { markupRetail: Number(raw) } });
-  }
+  const base = String(formData.get("retailBase") ?? "");
+  const data: { markupRetail?: number; retailBase?: string } = {};
+  if (raw !== null && String(raw).trim() !== "" && Number.isFinite(Number(raw))) data.markupRetail = Number(raw);
+  if (["COST", "LIST", "MARGIN"].includes(base)) data.retailBase = base;
+  if (Object.keys(data).length) await db.supplier.update({ where: { id }, data });
   const { repriceSupplier } = await import("@/lib/suppliers/pricing");
   await repriceSupplier(id);
   revalidatePath("/admin/suppliers");
