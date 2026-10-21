@@ -3,6 +3,12 @@ import { db } from "../db";
 /**
  * ფასწარმოქმნა მიმწოდებლის მონაცემებიდან.
  *
+ *   ზოგი მიმწოდებელი ერთ ფასს აგზავნის, რომელშიც ჩვენი ფასდაკლება უკვე დევს
+ *   (რომსატი — ცვალებადი, მაგრამ არანაკლებ 10%). supplierDiscount სწორედ ამას
+ *   ითვალისწინებს: ნამდვილი თვითღირებულება გამოგზავნილ ფასზე დაბლაა, საცალო კი
+ *   იმავე ადგილას რჩება — ანუ მოგება ჩანს ისეთი, როგორიც სინამდვილეშია.
+ *
+ *   თვითღირებულება = გამოგზავნილი ფასი × (1 − supplierDiscount%)
  *   სადილერო = თვითღირებულება × (1 + markupDealer%)         — ყოველთვის მასზე მაღლა
  *   საცალო   = ბაზა × (1 + markupRetail%), სადაც ბაზა:
  *              COST — თვითღირებულება (ჩვეულებრივი ფასდადება, +30)
@@ -15,21 +21,31 @@ import { db } from "../db";
 
 export type PricingRule = { retailBase: string; markupRetail: number; markupDealer: number };
 
+/** გამოგზავნილი ფასიდან ნამდვილი თვითღირებულება */
+export function realCost(quoted: number | null | undefined, discountPercent = 0): number | null {
+  if (!quoted || quoted <= 0) return null;
+  const d = Math.min(Math.max(discountPercent, 0), 90) / 100;
+  return Math.round(quoted * (1 - d) * 100) / 100;
+}
+
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
 export function computePrices(
   rule: PricingRule,
   cost: number | null | undefined,
-  listPrice: number | null | undefined
-): { price: number; dealerPrice: number | null } {
-  const c = cost && cost > 0 ? cost : null;
-  const base = rule.retailBase === "LIST" && listPrice && listPrice > 0 ? listPrice : c;
+  listPrice: number | null | undefined,
+  discountPercent = 0
+): { price: number; dealerPrice: number | null; cost: number | null } {
+  const quoted = cost && cost > 0 ? cost : null;
+  // საცალო გამოგზავნილ ფასს მიჰყვება — ფასდაკლების აღიარებამ ფასი არ უნდა ჩამოწიოს
+  const base = rule.retailBase === "LIST" && listPrice && listPrice > 0 ? listPrice : quoted;
+  const c = realCost(quoted, discountPercent);
   const dealerPrice = c ? round2(c * (1 + rule.markupDealer / 100)) : null;
   let price = base ? round2(base * (1 + rule.markupRetail / 100)) : 0;
   // საცალო სადილეროზე დაბლა არასდროს — LIST-ბაზაზე მიმწოდებელმა საცალო რომ არ მოგვცეს,
   // −5% თვითღირებულებას დაედებოდა და წაგებაზე გავყიდდით
   if (dealerPrice !== null && price < dealerPrice) price = dealerPrice;
-  return { price, dealerPrice };
+  return { price, dealerPrice, cost: c };
 }
 
 /**
@@ -40,19 +56,28 @@ export class Pricer {
   private constructor(
     private parents: Map<string, string | null>,
     private rules: Map<string, PricingRule>, // `${supplierId}:${categoryId}`
-    private defaults: Map<string, PricingRule> // supplierId
+    private defaults: Map<string, PricingRule>, // supplierId
+    private discounts: Map<string, number> // supplierId → %
   ) {}
+
+  /** მიმწოდებლის ფასში უკვე ჩადებული ფასდაკლება — კომერციული პირობაა, სეგმენტს არ მიჰყვება */
+  discountFor(supplierId: string): number {
+    return this.discounts.get(supplierId) ?? 0;
+  }
 
   static async load(): Promise<Pricer> {
     const [cats, rules, suppliers] = await Promise.all([
       db.category.findMany({ select: { id: true, parentId: true } }),
       db.supplierPricingRule.findMany(),
-      db.supplier.findMany({ select: { id: true, retailBase: true, markupRetail: true, markupDealer: true } }),
+      db.supplier.findMany({
+        select: { id: true, retailBase: true, markupRetail: true, markupDealer: true, supplierDiscount: true },
+      }),
     ]);
     return new Pricer(
       new Map(cats.map((c) => [c.id, c.parentId])),
       new Map(rules.map((r) => [`${r.supplierId}:${r.categoryId}`, r])),
-      new Map(suppliers.map((s) => [s.id, s]))
+      new Map(suppliers.map((s) => [s.id, s])),
+      new Map(suppliers.map((s) => [s.id, s.supplierDiscount]))
     );
   }
 
@@ -99,24 +124,29 @@ export async function repriceProduct(productId: string, pricer?: Pricer): Promis
   if (!product) return "skipped";
   if (product.priceLocked) return "locked";
 
-  const priced = product.supplies.filter((s) => s.cost && s.cost > 0);
-  if (!priced.length) return "skipped";
-  const cheapest = priced.reduce((a, b) => (b.cost! < a.cost! ? b : a));
-
   const p = pricer ?? (await Pricer.load());
+
+  // შედარება ნამდვილ თვითღირებულებაზე — მიმწოდებელს, რომელიც ფასდაკლებას გვაძლევს,
+  // გამოგზავნილი ფასით ვერ შევადარებთ
+  const priced = product.supplies
+    .filter((s) => s.cost && s.cost > 0)
+    .map((s) => ({ ...s, real: realCost(s.cost, p.discountFor(s.supplierId))! }));
+  if (!priced.length) return "skipped";
+  const cheapest = priced.reduce((a, b) => (b.real < a.real ? b : a));
+
   const rule = p.ruleFor(cheapest.supplierId, product.categoryId);
   if (!rule) return "skipped";
 
-  const next = computePrices(rule, cheapest.cost, cheapest.listPrice);
+  const next = computePrices(rule, cheapest.cost, cheapest.listPrice, p.discountFor(cheapest.supplierId));
   if (next.price <= 0) return "skipped";
   // თვითღირებულებაც უნდა შეესაბამებოდეს იმ მიმწოდებელს, რომლითაც ფასი დაითვალა —
   // თორემ ბოლოს დასინქრონებული კომპანიის cost რჩება და „ფასი < თვითღირებულება“ ჩანს
-  const sameCost = product.cost === cheapest.cost;
+  const sameCost = product.cost === next.cost;
   if (next.price === product.price && next.dealerPrice === product.dealerPrice && sameCost) return "skipped";
 
   await db.product.update({
     where: { id: productId },
-    data: { price: next.price, dealerPrice: next.dealerPrice, cost: cheapest.cost },
+    data: { price: next.price, dealerPrice: next.dealerPrice, cost: next.cost },
   });
   return "updated";
 }

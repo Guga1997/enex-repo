@@ -275,6 +275,7 @@ export async function saveSupplier(formData: FormData) {
     retailBase: formData.get("retailBase") === "LIST" ? "LIST" : "COST",
     markupRetail: Number(formData.get("markupRetail") ?? 30),
     markupDealer: Number(formData.get("markupDealer") ?? 15),
+    supplierDiscount: Math.min(90, Math.max(0, Number(formData.get("supplierDiscount")) || 0)),
     // 0 = მხოლოდ ხელით; უარყოფითი და არარიცხვი ნულად
     syncEveryMin: Math.max(0, Math.floor(Number(formData.get("syncEveryMin")) || 0)),
     isActive: formData.get("isActive") === "on",

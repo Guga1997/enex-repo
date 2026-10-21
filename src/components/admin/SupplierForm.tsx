@@ -16,6 +16,7 @@ export type SupplierDraft = {
   retailBase: string;
   markupRetail: number;
   markupDealer: number;
+  supplierDiscount: number;
   syncEveryMin: number;
   isActive: boolean;
   hasSecret: boolean;
@@ -222,6 +223,23 @@ export default function SupplierForm({
             className={field}
           />
           <span className="mt-1 block text-xs text-muted">15 → მისი 100₾ სადილერო ჩვენთან 115₾</span>
+        </label>
+        <label className="block">
+          <span className="mb-1.5 block text-sm font-medium">მისი ფასი უკვე შეიცავს ფასდაკლებას: %</span>
+          <input
+            name="supplierDiscount"
+            type="number"
+            step="0.1"
+            min="0"
+            max="90"
+            defaultValue={supplier?.supplierDiscount ?? 0}
+            className={field}
+          />
+          <span className="mt-1 block text-xs text-muted">
+            ცვალებადი ფასდაკლების <b>მინიმუმი</b>. 10 → მისი 100₾ სინამდვილეში 90₾ გვიჯდება.
+            საცალო ფასს არ ცვლის — მხოლოდ ნამდვილ მოგებას აჩვენებს, რომელზეც პარტნიორების
+            ფასდაკლება ითვლება.
+          </span>
         </label>
       </div>
 

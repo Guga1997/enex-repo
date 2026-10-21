@@ -12,6 +12,7 @@ import {
   ourMargin,
   tierShare,
 } from "../src/lib/pricing";
+import { computePrices, realCost } from "../src/lib/suppliers/pricing";
 
 /** საცალო 100, თვითღირებულება 60 → მოგება 40 */
 const P = { price: 100, cost: 60 };
@@ -86,4 +87,37 @@ test("დაბალმარჟიანზე ფასდაკლება�
   const thin = { price: 100, cost: 95 }; // მოგება 5
   assert.equal(effectivePrice(thin, buyer("PLATINUM")).value, 98, "40%-იც კი მხოლოდ 2₾-ია");
   assert.ok(ourMargin(thin, buyer("PLATINUM"))! >= 3);
+});
+
+/* ------- მიმწოდებლის ფასში ჩადებული ფასდაკლება (რომსატი: მინიმუმ 10%) ------- */
+
+test("ერთფასიანი მიმწოდებლის ფასდაკლება მოგებად ჩანს, საცალოს კი არ ცვლის", () => {
+  const rule = { retailBase: "COST", markupRetail: 15, markupDealer: 5 };
+
+  const without = computePrices(rule, 100, null, 0);
+  const with10 = computePrices(rule, 100, null, 10);
+
+  assert.equal(without.price, with10.price, "საცალო იმავე ადგილას რჩება");
+  assert.equal(with10.price, 115);
+  assert.equal(without.cost, 100);
+  assert.equal(with10.cost, 90, "ნამდვილი თვითღირებულება 10%-ით დაბლაა");
+
+  // მოგება 15₾-დან 25₾-მდე იზრდება — სწორედ ამაზე ითვლება პარტნიორის ფასი
+  const buyer = { priceTier: "PLATINUM", discountPercent: 0 };
+  assert.equal(effectivePrice({ price: 115, cost: without.cost }, buyer).value, 109);
+  assert.equal(effectivePrice({ price: 115, cost: with10.cost }, buyer).value, 105);
+});
+
+test("ფასდაკლება 0–90%-ის ფარგლებშია", () => {
+  assert.equal(realCost(100, 0), 100);
+  assert.equal(realCost(100, 10), 90);
+  assert.equal(realCost(100, -5), 100, "უარყოფითი ნულად ითვლება");
+  assert.equal(realCost(100, 200), 10, "90%-ზე მეტი არ გადის");
+  assert.equal(realCost(null, 10), null);
+  assert.equal(realCost(0, 10), null);
+});
+
+test("ყველაზე იაფი მიმწოდებელი ნამდვილი თვითღირებულებით ირჩევა", () => {
+  // ა: 100₾ ფასდაკლების გარეშე; ბ: 105₾ მაგრამ 10% ფასდაკლებით = 94.5₾
+  assert.ok(realCost(105, 10)! < realCost(100, 0)!, "ბ უფრო იაფია, თუმცა ფასი მაღალი უწერია");
 });

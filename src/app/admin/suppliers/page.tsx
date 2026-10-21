@@ -180,6 +180,7 @@ export default async function SuppliersPage({
                 retailBase: editing.retailBase,
                 markupRetail: editing.markupRetail,
                 markupDealer: editing.markupDealer,
+                supplierDiscount: editing.supplierDiscount,
                 syncEveryMin: editing.syncEveryMin,
                 isActive: editing.isActive,
                 hasSecret: Boolean(editing.secret),
