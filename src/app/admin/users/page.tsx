@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { formatDate, gel } from "@/lib/format";
 import { setUserTier } from "../actions";
 import { ci } from "@/lib/search-mode";
+import { TIERS } from "@/lib/pricing";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "მომხმარებლები" };
@@ -119,8 +120,12 @@ export default async function UsersPage({
                     <form action={setUserTier} className="flex flex-wrap items-center gap-1.5">
                       <input type="hidden" name="id" value={u.id} />
                       <select name="priceTier" defaultValue={u.priceTier} className={field}>
-                        <option value="RETAIL">საცალო</option>
-                        <option value="DEALER">სადილერო</option>
+                        {TIERS.map((t) => (
+                          <option key={t.code} value={t.code}>
+                            {t.label}
+                            {t.share > 0 ? " — მოგების " + Math.round(t.share * 100) + "%" : ""}
+                          </option>
+                        ))}
                       </select>
                       <input
                         name="discountPercent"
