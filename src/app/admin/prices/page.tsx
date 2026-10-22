@@ -81,6 +81,7 @@ export default async function PricesPage({
               markupRetail: s.markupRetail,
               supplierDiscount: s.supplierDiscount,
               minMargin: s.minMargin,
+              noListMarkup: s.noListMarkup,
             }}
             stats={stats.get(s.id) ?? { products: 0, withList: 0, sample: null }}
           />

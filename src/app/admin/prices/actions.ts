@@ -61,6 +61,8 @@ export async function saveSupplierPricing(formData: FormData) {
       markupRetail: pct,
       supplierDiscount: Math.min(90, Math.max(0, num(formData, "supplierDiscount") ?? 0)),
       minMargin: Math.min(500, Math.max(0, num(formData, "minMargin") ?? 0)),
+      // ველი მხოლოდ „მოგების წილით“ / „მის საცალოზე“ რეჟიმში იგზავნება
+      ...(formData.has("noListMarkup") ? { noListMarkup: num(formData, "noListMarkup") } : {}),
     },
   });
 

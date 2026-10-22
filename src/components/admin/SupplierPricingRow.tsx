@@ -16,6 +16,7 @@ type Supplier = {
   markupRetail: number;
   supplierDiscount: number;
   minMargin: number;
+  noListMarkup: number | null;
 };
 
 type Stats = {
@@ -36,13 +37,15 @@ const input =
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
 /** იგივე ფორმულა, რაც სერვერზე — მხოლოდ მაგალითის საჩვენებლად */
-function preview(base: string, pct: number, discount: number, minMargin: number, s: Stats["sample"]) {
+function preview(base: string, pct: number, discount: number, minMargin: number, noList: number, s: Stats["sample"]) {
   if (!s) return null;
   const twoPrices = s.list != null && s.list > s.cost;
   const cost = twoPrices ? s.cost : r2(s.cost * (1 - Math.min(Math.max(discount, 0), 90) / 100));
   let price: number;
   if (base === "MARGIN" && twoPrices) price = r2(s.list! - (pct / 100) * (s.list! - cost));
-  else price = r2((base === "LIST" && twoPrices ? s.list! : s.cost) * (1 + pct / 100));
+  else if (base === "LIST" && twoPrices) price = r2(s.list! * (1 + pct / 100));
+  else if (base === "COST") price = r2(s.cost * (1 + pct / 100));
+  else price = r2(s.cost * (1 + noList / 100));
   price = Math.max(price, r2(cost * (1 + Math.max(minMargin, 0) / 100)));
   return { cost, list: twoPrices ? s.list : null, price };
 }
@@ -52,12 +55,15 @@ export default function SupplierPricingRow({ supplier, stats }: { supplier: Supp
   const [pct, setPct] = useState(String(supplier.markupRetail));
   const [discount, setDiscount] = useState(String(supplier.supplierDiscount));
   const [floor, setFloor] = useState(String(supplier.minMargin));
+  const [noList, setNoList] = useState(String(supplier.noListMarkup ?? supplier.markupRetail));
 
-  const ex = preview(base, Number(pct) || 0, Number(discount) || 0, Number(floor) || 0, stats.sample);
-  const marginWithoutList = base === "MARGIN" && stats.withList < stats.products;
+  const ex = preview(base, Number(pct) || 0, Number(discount) || 0, Number(floor) || 0, Number(noList) || 0, stats.sample);
+  // ამ რეჟიმებში მიმწოდებლის საცალოს გარეშე პოზიციებს ცალკე ფასდადება სჭირდება
+  const needsNoList = base !== "COST";
+  const withoutList = stats.products - stats.withList;
 
   return (
-    <form action={saveSupplierPricing} className="grid gap-3 border-b border-line p-4 last:border-0 lg:grid-cols-[1.2fr_1fr_0.8fr_0.8fr_auto] lg:items-end">
+    <form action={saveSupplierPricing} className="grid gap-3 border-b border-line p-4 last:border-0 lg:grid-cols-[1.1fr_1fr_0.75fr_0.75fr_0.75fr_auto] lg:items-end">
       <input type="hidden" name="id" value={supplier.id} />
 
       <div>
@@ -93,9 +99,23 @@ export default function SupplierPricingRow({ supplier, stats }: { supplier: Supp
         <input name="minMargin" value={floor} onChange={(e) => setFloor(e.target.value)} inputMode="decimal" className={input} />
       </label>
 
+      <label className="block">
+        <span className="mb-1 block text-xs text-muted" title="პოზიცია, რომელსაც მიმწოდებელი საცალოს არ აწვდის">
+          საცალოს გარეშე: % ქოსთზე
+        </span>
+        <input
+          name="noListMarkup"
+          value={needsNoList ? noList : "—"}
+          onChange={(e) => setNoList(e.target.value)}
+          disabled={!needsNoList}
+          inputMode="decimal"
+          className={`${input} disabled:opacity-40`}
+        />
+      </label>
+
       <button className="btn btn-primary whitespace-nowrap px-4 py-2 text-sm">შენახვა და გადათვლა</button>
 
-      <div className="text-xs text-muted lg:col-span-5">
+      <div className="text-xs text-muted lg:col-span-6">
         {ex ? (
           <>
             მაგალითი: ქოსთი <b>{ex.cost.toFixed(2)}₾</b>
@@ -105,9 +125,9 @@ export default function SupplierPricingRow({ supplier, stats }: { supplier: Supp
         ) : (
           "მაგალითისთვის პროდუქტი არ არის"
         )}
-        {marginWithoutList && (
-          <span className="ml-2 text-amber-600">
-            · {stats.products - stats.withList} პოზიციას მისი საცალო არ აქვს — იქ {pct}% თვითღირებულებაზე დაედება
+        {needsNoList && withoutList > 0 && (
+          <span className="ml-2">
+            · {withoutList} პოზიციას მისი საცალო არ აქვს — იქ <b>{noList}%</b> თვითღირებულებაზე დაედება
           </span>
         )}
       </div>

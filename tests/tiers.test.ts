@@ -222,3 +222,16 @@ test("მოგების წილით ფასი მიმწოდე�
   assert.ok(r.price < 429.89, `ფასი ${r.price} მის საცალოზე მაღალია`);
   assert.equal(r.price, 429.75);
 });
+
+test("საცალოს გარეშე პოზიციას ცალკე ფასდადება აქვს — მოგების წილს არ ეხება", () => {
+  const rule = { retailBase: "MARGIN", markupRetail: 5, markupDealer: 0 };
+  const terms = { supplierDiscount: 0, minMargin: 0, noListMarkup: 10 };
+  // ორი ფასი — მოგების 5%
+  assert.equal(computePrices(rule, 800, 1000, terms).price, 990);
+  // მისი საცალო არ მოვიდა — ქოსთი + 10%
+  assert.equal(computePrices(rule, 800, null, terms).price, 880);
+  // ცარიელი ველი — ძველებურად markupRetail
+  assert.equal(computePrices(rule, 800, null, { ...terms, noListMarkup: null }).price, 840);
+  // COST რეჟიმს არ ეხება
+  assert.equal(computePrices({ ...rule, retailBase: "COST" }, 800, null, terms).price, 840);
+});

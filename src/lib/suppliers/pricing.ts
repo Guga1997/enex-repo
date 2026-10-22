@@ -25,8 +25,12 @@ import { db } from "../db";
 export type PricingRule = { retailBase: string; markupRetail: number; markupDealer: number };
 
 /** მიმწოდებლის კომერციული პირობები — სეგმენტს არ მიჰყვება */
-export type SupplierTerms = { supplierDiscount: number; minMargin: number };
-const NO_TERMS: SupplierTerms = { supplierDiscount: 0, minMargin: 0 };
+/**
+ * noListMarkup — „მოგების წილით“ / „მის საცალოზე“ რეჟიმში იმ პოზიციის ფასდადება
+ * (% თვითღირებულებაზე), რომელსაც მიმწოდებელი საცალოს არ აწვდის. null → markupRetail.
+ */
+export type SupplierTerms = { supplierDiscount: number; minMargin: number; noListMarkup?: number | null };
+const NO_TERMS: SupplierTerms = { supplierDiscount: 0, minMargin: 0, noListMarkup: null };
 
 /** გამოგზავნილი ფასიდან ნამდვილი თვითღირებულება */
 export function realCost(
@@ -63,10 +67,16 @@ export function computePrices(
     // ხოლო რამდენად — ეს თვითონ პროდუქტის მოგებაზეა დამოკიდებული და არა
     // ფიქსირებულ პროცენტზე, რომელიც თხელმარჟიანს ზარალში ჩააგდებდა.
     price = round2(list - (rule.markupRetail / 100) * (list - c));
-  } else {
+  } else if (rule.retailBase === "LIST" && list !== null) {
+    price = round2(list * (1 + rule.markupRetail / 100));
+  } else if (rule.retailBase === "COST") {
     // საცალო გამოგზავნილ ფასს მიჰყვება — ფასდაკლების აღიარებამ ფასი არ უნდა ჩამოწიოს
-    const base = rule.retailBase === "LIST" && list !== null ? list : quoted;
-    price = base ? round2(base * (1 + rule.markupRetail / 100)) : 0;
+    price = quoted ? round2(quoted * (1 + rule.markupRetail / 100)) : 0;
+  } else {
+    // „მოგების წილით“ / „მის საცალოზე“, მაგრამ მიმწოდებელმა საცალო არ მოგვცა —
+    // მოგების წილის ციფრი აქ აზრს კარგავს, ამიტომ ცალკე ფასდადებაა
+    const pct = terms.noListMarkup ?? rule.markupRetail;
+    price = quoted ? round2(quoted * (1 + pct / 100)) : 0;
   }
 
   // იატაკი ერთია და ყველა რეჟიმს ეხება: თვითღირებულებაზე დაბლა არასდროს,
@@ -107,7 +117,7 @@ export class Pricer {
       db.supplier.findMany({
         select: {
           id: true, retailBase: true, markupRetail: true, markupDealer: true,
-          supplierDiscount: true, minMargin: true,
+          supplierDiscount: true, minMargin: true, noListMarkup: true,
         },
       }),
     ]);
@@ -115,7 +125,7 @@ export class Pricer {
       new Map(cats.map((c) => [c.id, c.parentId])),
       new Map(rules.map((r) => [`${r.supplierId}:${r.categoryId}`, r])),
       new Map(suppliers.map((s) => [s.id, s])),
-      new Map(suppliers.map((s) => [s.id, { supplierDiscount: s.supplierDiscount, minMargin: s.minMargin }]))
+      new Map(suppliers.map((s) => [s.id, { supplierDiscount: s.supplierDiscount, minMargin: s.minMargin, noListMarkup: s.noListMarkup }]))
     );
   }
 
