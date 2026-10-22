@@ -153,6 +153,7 @@ export async function repriceProduct(productId: string, pricer?: Pricer): Promis
       price: true,
       dealerPrice: true,
       cost: true,
+      listPrice: true,
       priceLocked: true,
       categoryId: true,
       supplies: { select: { supplierId: true, cost: true, listPrice: true } },
@@ -179,11 +180,25 @@ export async function repriceProduct(productId: string, pricer?: Pricer): Promis
   // თვითღირებულებაც უნდა შეესაბამებოდეს იმ მიმწოდებელს, რომლითაც ფასი დაითვალა —
   // თორემ ბოლოს დასინქრონებული კომპანიის cost რჩება და „ფასი < თვითღირებულება“ ჩანს
   const sameCost = product.cost === next.cost;
-  if (next.price === product.price && next.dealerPrice === product.dealerPrice && sameCost) return "skipped";
+
+  // მიმწოდებლის საცალო მხოლოდ „მოგების წილით“ დაფასებულზე ინახება — სწორედ ის
+  // არის პარტნიორების საფეხურების ბაზა. სხვა რეჟიმში საფეხური ჩვენი საცალოდან ითვლება.
+  const list =
+    rule.retailBase === "MARGIN" && cheapest.listPrice && next.cost && cheapest.listPrice > next.cost
+      ? cheapest.listPrice
+      : null;
+
+  if (
+    next.price === product.price &&
+    next.dealerPrice === product.dealerPrice &&
+    sameCost &&
+    list === product.listPrice
+  )
+    return "skipped";
 
   await db.product.update({
     where: { id: productId },
-    data: { price: next.price, dealerPrice: next.dealerPrice, cost: next.cost },
+    data: { price: next.price, dealerPrice: next.dealerPrice, cost: next.cost, listPrice: list },
   });
   return "updated";
 }

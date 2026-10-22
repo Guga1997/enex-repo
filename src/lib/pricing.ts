@@ -47,6 +47,8 @@ export type PricedProduct = {
   oldPrice?: number | null;
   /** თვითღირებულება — მხოლოდ სერვერზე; კლიენტამდე არასდროს მიდის */
   cost?: number | null;
+  /** მიმწოდებლის საცალო — თუ არსებობს, საფეხურები მისგან ითვლება */
+  listPrice?: number | null;
 };
 
 export type EffectivePrice = {
@@ -68,10 +70,25 @@ const round = (n: number) => Math.round(n * 100) / 100;
  * მოგების წილით დათვლილი ფასი. თვითღირებულების გარეშე ვერ ითვლება —
  * ასეთ შემთხვევაში null ბრუნდება და ძველი წესები მოქმედებს.
  */
-function marginPrice(retail: number, cost: number | null | undefined, share: number): number | null {
+/**
+ * საფეხურების ბაზა. მიმწოდებელი თუ საცალოსაც გვაძლევს, ყველა საფეხური — ჩვენი
+ * საცალოს ჩათვლით — **მისი** საცალოდან და **მისი** მოგებიდან ითვლება:
+ *
+ *   M = მისი საცალო − ქოსთი
+ *   საცალო 5%, დილერი 10%, ვერცხლი 20%, ოქრო 30%, პლატინა 40% — ყველა M-იდან
+ *
+ * ასე საფეხურები ერთმანეთზე არ ეწყობა: დილერი ზუსტად M-ის 10%-ს იღებს და არა
+ * ჩვენი საცალოს მოგების 10%-ს. სხვა შემთხვევაში ბაზა ჩვენი საცალოა.
+ */
+function baseOf(p: PricedProduct): number {
+  const list = p.listPrice != null && p.listPrice > 0 ? p.listPrice : null;
+  return list !== null && p.cost != null && list > p.cost ? list : p.price;
+}
+
+function marginPrice(base: number, cost: number | null | undefined, share: number): number | null {
   if (cost == null || !(cost > 0) || share <= 0) return null;
-  const margin = Math.max(0, retail - cost); // ზარალიან პროდუქტზე ფასდაკლება არ ედება
-  return retail - share * margin;
+  const margin = Math.max(0, base - cost); // ზარალიან პროდუქტზე ფასდაკლება არ ედება
+  return base - share * margin;
 }
 
 export function effectivePrice(p: PricedProduct, viewer: Viewer): EffectivePrice {
@@ -81,8 +98,9 @@ export function effectivePrice(p: PricedProduct, viewer: Viewer): EffectivePrice
   const partner = share > 0;
 
   let value = retail;
+  const base = baseOf(p);
 
-  const byMargin = marginPrice(retail, p.cost, share);
+  const byMargin = marginPrice(base, p.cost, share);
   if (byMargin !== null) {
     value = byMargin;
   } else if (partner && p.dealerPrice != null && p.dealerPrice > 0) {
@@ -96,8 +114,12 @@ export function effectivePrice(p: PricedProduct, viewer: Viewer): EffectivePrice
   }
 
   // მოგების 60% ყოველთვის ჩვენსკენ — ინდივიდუალური პროცენტიც ამას ემორჩილება
-  const floor = marginPrice(retail, p.cost, MAX_PARTNER_SHARE);
+  const floor = marginPrice(base, p.cost, MAX_PARTNER_SHARE);
   if (floor !== null) value = Math.max(value, floor);
+
+  // პარტნიორი საცალოზე ძვირს არასდროს იხდის — მაგალითად, თუ ჩვენი საცალო
+  // ხელით დაბლა ჩამოიწია და საფეხურის ფორმულამ მასზე მაღალი გამოიყვანა
+  value = Math.min(value, retail);
 
   value = Math.max(0, round(value));
   const saved = Math.max(0, round(retail - value));

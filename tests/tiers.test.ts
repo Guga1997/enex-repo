@@ -176,3 +176,42 @@ test("მინიმალური მოგება ყველა წე�
   const thin = computePrices(MARGIN, 100, 101, terms(0, 10));
   assert.equal(thin.price, 110, "იატაკი მოგების წილსაც სჯობს");
 });
+
+/* ───────── ყველა საფეხური ერთი ბაზიდან: მიმწოდებლის საცალო და მისი მოგება ───────── */
+
+test("საფეხურები მიმწოდებლის საცალოდან ითვლება და ერთმანეთზე არ ეწყობა", () => {
+  // მისი საცალო 1000, ქოსთი 800 → M = 200
+  const retail = computePrices({ retailBase: "MARGIN", markupRetail: 5, markupDealer: 0 }, 800, 1000);
+  assert.equal(retail.price, 990, "საცალო = 1000 − 5%×200");
+
+  const P = { price: retail.price, cost: 800, listPrice: 1000 };
+  const at = (t: string) => effectivePrice(P, { priceTier: t, discountPercent: 0 }).value;
+
+  assert.equal(at("RETAIL"), 990);
+  assert.equal(at("DEALER"), 980, "1000 − 10%×200 — და არა 990-დან");
+  assert.equal(at("SILVER"), 960);
+  assert.equal(at("GOLD"), 940);
+  assert.equal(at("PLATINUM"), 920);
+
+  // 60% მრჩება — მიმწოდებლის მოგებიდან
+  assert.equal(ourMargin(P, { priceTier: "PLATINUM", discountPercent: 0 }), 120, "200-ის 60%");
+});
+
+test("MUK-ის ნამდვილი რიცხვები", () => {
+  const r = computePrices({ retailBase: "MARGIN", markupRetail: 5, markupDealer: 0 }, 662.41, 697.55);
+  assert.equal(r.price, 695.79);
+  const P = { price: r.price, cost: 662.41, listPrice: 697.55 };
+  assert.equal(effectivePrice(P, { priceTier: "DEALER", discountPercent: 0 }).value, 694.04);
+  assert.equal(effectivePrice(P, { priceTier: "PLATINUM", discountPercent: 0 }).value, 683.49);
+});
+
+test("მიმწოდებლის საცალოს გარეშე ბაზა ჩვენი საცალოა — ძველი ქცევა", () => {
+  const P = { price: 100, cost: 60 };
+  assert.equal(effectivePrice(P, { priceTier: "DEALER", discountPercent: 0 }).value, 96);
+});
+
+test("პარტნიორი საცალოზე ძვირს არასდროს იხდის", () => {
+  // საცალო ხელით ჩამოწეულია ქოსთამდე ახლოს — საფეხურის ფორმულა მასზე მაღლა გამოვიდოდა
+  const P = { price: 805, cost: 800, listPrice: 1000 };
+  assert.equal(effectivePrice(P, { priceTier: "DEALER", discountPercent: 0 }).value, 805);
+});
