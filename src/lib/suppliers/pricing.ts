@@ -57,7 +57,8 @@ export function computePrices(
   const dealerPrice = c ? round2(c * (1 + rule.markupDealer / 100)) : null;
 
   let price = 0;
-  if (rule.retailBase === "MARGIN" && list !== null && c !== null && list > c) {
+  const byMargin = rule.retailBase === "MARGIN" && list !== null && c !== null && list > c;
+  if (byMargin) {
     // მოგების წილი: მისი საცალო მინუს მოგების N%. ანუ ყოველთვის მასზე იაფად,
     // ხოლო რამდენად — ეს თვითონ პროდუქტის მოგებაზეა დამოკიდებული და არა
     // ფიქსირებულ პროცენტზე, რომელიც თხელმარჟიანს ზარალში ჩააგდებდა.
@@ -69,8 +70,11 @@ export function computePrices(
   }
 
   // საცალო სადილეროზე დაბლა არასდროს — LIST-ბაზაზე მიმწოდებელმა საცალო რომ არ მოგვცეს,
-  // −5% თვითღირებულებას დაედებოდა და წაგებაზე გავყიდდით
-  if (dealerPrice !== null && price < dealerPrice) price = dealerPrice;
+  // −5% თვითღირებულებას დაედებოდა და წაგებაზე გავყიდდით.
+  // „მოგების წილით“ რეჟიმში ეს იატაკი არ მოქმედებს: ფასი იქ ისედაც ქოსთზე მაღლაა,
+  // ქოსთი × (1 + markupDealer) კი ფასს მიმწოდებლის საცალოზე ზემოთ აწევდა —
+  // ზუსტად ის, რაც არ შეიძლება.
+  if (!byMargin && dealerPrice !== null && price < dealerPrice) price = dealerPrice;
   // თვითღირებულებად გაყიდვა დაუშვებელია — იატაკი ყველა წესის თავზეა
   if (c !== null && terms.minMargin > 0) price = Math.max(price, round2(c * (1 + terms.minMargin / 100)));
 

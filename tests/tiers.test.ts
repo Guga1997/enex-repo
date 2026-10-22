@@ -215,3 +215,10 @@ test("პარტნიორი საცალოზე ძვირს ა�
   const P = { price: 805, cost: 800, listPrice: 1000 };
   assert.equal(effectivePrice(P, { priceTier: "DEALER", discountPercent: 0 }).value, 805);
 });
+
+test("მოგების წილით ფასი მიმწოდებლის საცალოს ზემოთ არასდროს ადის — თუნდაც markupDealer იყოს", () => {
+  // GWN7672L: ქოსთი 427.18, მისი 429.89. markupDealer 5 ძველ იატაკს 448.54-ზე წევდა.
+  const r = computePrices({ retailBase: "MARGIN", markupRetail: 5, markupDealer: 5 }, 427.18, 429.89);
+  assert.ok(r.price < 429.89, `ფასი ${r.price} მის საცალოზე მაღალია`);
+  assert.equal(r.price, 429.75);
+});
