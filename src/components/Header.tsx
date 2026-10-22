@@ -75,7 +75,11 @@ export default async function Header() {
               <NavSegment name={nameOf(segment, locale)} slug={segment.slug} />
 
               {segment.children.length > 0 && (
-                <div className="invisible absolute left-0 right-0 top-full z-50 border-b border-line bg-surface opacity-0 shadow-xl transition group-hover:visible group-hover:opacity-100">
+                /* ზოლს სქროლბარი აქვს და ჩამონათვალამდე 15px მკვდარი ზოლი რჩება.
+                   მაუსი რომ მას გადაკვეთს, hover წყდება და მენიუ ქრება — ამიტომ
+                   ორი რამ: დახურვა ოდნავ ყოვნდება და ზემოთ უხილავი „ხიდია“,
+                   რომელიც სწორედ ამ ზოლს ფარავს. */
+                <div className="invisible absolute left-0 right-0 top-full z-50 border-b border-line bg-surface opacity-0 shadow-xl transition-[opacity,visibility] delay-200 duration-150 before:absolute before:inset-x-0 before:-top-5 before:h-5 before:content-[''] group-hover:visible group-hover:opacity-100 group-hover:delay-0">
                   <div className="container-x grid gap-x-8 gap-y-6 py-6 sm:grid-cols-2 lg:grid-cols-4">
                     {segment.children.map((group) => (
                       <div key={group.id}>
