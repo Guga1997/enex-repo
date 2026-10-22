@@ -23,6 +23,11 @@ export default async function LoginPage({
       <main className="container-x py-10">
         <div className="mx-auto max-w-sm space-y-4">
           <LoginForm next={next} />
+          <p className="text-center text-sm">
+            <Link href="/forgot" className="text-muted hover:text-brand-600 hover:underline">
+              {t("პაროლი დაგავიწყდა?")}
+            </Link>
+          </p>
           <p className="text-center text-sm text-muted">
             ანგარიში არ გაქვს?{" "}
             <Link href={next ? `/register?next=${encodeURIComponent(next)}` : "/register"} className="font-medium text-brand-600 hover:underline">

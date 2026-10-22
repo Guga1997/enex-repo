@@ -206,3 +206,81 @@ export async function verifyCustomerLogin(login: string, password: string) {
     return { ok: false as const, error: "ანგარიში დადასტურებული არ არის", userId: user.id };
   return { ok: true as const, user };
 }
+
+/* ────────────────────── პაროლის აღდგენა ────────────────────── */
+
+/**
+ * აღდგენის კოდი იმავე ცხრილშია, ცალკე არხით — ასე რეგისტრაციის დადასტურებას
+ * არ ერევა და მისი ვადის, ცდებისა და ერთჯერადობის წესები უკვე მზადაა.
+ *
+ * ანგარიშის არსებობას არსად ვამხელთ: ფორმა ყოველთვის ერთსა და იმავეს პასუხობს.
+ * წინააღმდეგ შემთხვევაში ეს გვერდი ელფოსტების შესამოწმებელ ხელსაწყოდ იქცევა.
+ */
+const RESET = "RESET";
+
+export async function findUserByLogin(login: string) {
+  const value = login.toLowerCase().trim();
+  const phone = normalizeGeoPhone(login);
+  return db.user.findFirst({
+    where: { OR: [{ email: value }, ...(phone ? [{ phone }] : [])] },
+  });
+}
+
+export async function issueResetCode(userId: string) {
+  const user = await db.user.findUnique({ where: { id: userId } });
+  if (!user) return { ok: false as const };
+
+  await db.verificationCode.updateMany({
+    where: { userId, channel: RESET, consumedAt: null },
+    data: { consumedAt: new Date() },
+  });
+
+  const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
+  await db.verificationCode.create({
+    data: {
+      userId,
+      channel: RESET,
+      codeHash: await bcrypt.hash(code, 10),
+      expiresAt: new Date(Date.now() + CODE_TTL_MIN * 60_000),
+    },
+  });
+
+  // ორივე არხით — მომხმარებელს ერთ-ერთთან წვდომა მაინც ექნება
+  await Promise.allSettled([
+    sendEmail({
+      to: user.email,
+      subject: `პაროლის აღდგენის კოდი: ${code}`,
+      html: `<p>გამარჯობა, ${user.name}.</p>
+             <p>პაროლის აღსადგენი კოდია <b style="font-size:20px">${code}</b>.</p>
+             <p>კოდი ${CODE_TTL_MIN} წუთის განმავლობაშია ძალაში.</p>
+             <p style="color:#666">თუ პაროლის აღდგენა შენ არ მოგითხოვია, უბრალოდ იგნორირება გაუკეთე — პაროლი არ შეცვლილა.</p>`,
+    }),
+    sendSms(user.phone, `Enex: პაროლის აღდგენის კოდი ${code}. ძალაშია ${CODE_TTL_MIN} წუთი.`),
+  ]);
+
+  return { ok: true as const };
+}
+
+/** კოდის შემოწმება და ახალი პაროლი — ერთ ნაბიჯად, რომ კოდი შუაში არ დაიკარგოს */
+export async function resetPassword(userId: string, code: string, password: string) {
+  const row = await db.verificationCode.findFirst({
+    where: { userId, channel: RESET, consumedAt: null },
+    orderBy: { createdAt: "desc" },
+  });
+  if (!row) return { ok: false as const, error: "კოდი არ არის მოთხოვნილი — გამოითხოვე ახალი" };
+  if (row.expiresAt < new Date()) return { ok: false as const, error: "კოდს ვადა გაუვიდა — გამოითხოვე ახალი" };
+  if (row.attempts >= MAX_ATTEMPTS)
+    return { ok: false as const, error: "ცდების ლიმიტი ამოიწურა — გამოითხოვე ახალი კოდი" };
+
+  if (!(await bcrypt.compare(code.trim(), row.codeHash))) {
+    await db.verificationCode.update({ where: { id: row.id }, data: { attempts: { increment: 1 } } });
+    return { ok: false as const, error: "კოდი არასწორია" };
+  }
+
+  await db.verificationCode.update({ where: { id: row.id }, data: { consumedAt: new Date() } });
+  const user = await db.user.update({
+    where: { id: userId },
+    data: { passwordHash: await bcrypt.hash(password, 10) },
+  });
+  return { ok: true as const, user };
+}

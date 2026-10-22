@@ -14,6 +14,9 @@ import {
   issueCode,
   registerUser,
   verifyCustomerLogin,
+  findUserByLogin,
+  issueResetCode,
+  resetPassword,
   type RegisterInput,
 } from "@/lib/customer-auth";
 import { rateLimit, clientIp, retryText, LIMITS } from "@/lib/rate-limit";
@@ -269,4 +272,70 @@ export async function changePasswordAction(_prev: FormState, formData: FormData)
     data: { passwordHash: await bcrypt.hash(next, 10) },
   });
   return { ok: "პაროლი შეიცვალა" };
+}
+
+/* ─────────────────────── პაროლის აღდგენა ─────────────────────── */
+
+const RESETTING = "resetting_user";
+
+export async function getResettingUserId(): Promise<string | null> {
+  return (await cookies()).get(RESETTING)?.value ?? null;
+}
+
+/**
+ * კოდის გამოთხოვა. პასუხი ყოველთვის ერთი და იგივეა — არსებობს ანგარიში თუ არა,
+ * გვერდი ამას არ ამხელს, თორემ ელფოსტების შესამოწმებელ ხელსაწყოდ იქცევა.
+ */
+export async function requestResetAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  const login = String(formData.get("login") ?? "").trim();
+  if (!login) return { error: "მიუთითე ელფოსტა ან ტელეფონის ნომერი" };
+
+  const ip = await clientIp();
+  const byIp = rateLimit(`reset-ip:${ip}`, LIMITS.resetPerIp.limit, LIMITS.resetPerIp.windowMs);
+  const byAcc = rateLimit(`reset-acc:${login.toLowerCase()}`, LIMITS.resetPerAccount.limit, LIMITS.resetPerAccount.windowMs);
+  if (!byIp.ok || !byAcc.ok) {
+    const sec = Math.max(byIp.ok ? 0 : byIp.retryAfterSec, byAcc.ok ? 0 : byAcc.retryAfterSec);
+    return { error: `ძალიან ბევრი მოთხოვნა — ${retryText(sec)}` };
+  }
+
+  const user = await findUserByLogin(login);
+  if (user && user.isActive) {
+    await issueResetCode(user.id);
+    (await cookies()).set(RESETTING, user.id, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: PENDING_TTL,
+    });
+  }
+  redirect("/reset");
+}
+
+export async function resetPasswordAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  const userId = await getResettingUserId();
+  if (!userId) return { error: "კოდი არ არის მოთხოვნილი — დაიწყე თავიდან" };
+
+  const code = String(formData.get("code") ?? "").trim();
+  const password = String(formData.get("password") ?? "");
+  const repeat = String(formData.get("password2") ?? "");
+  if (password.length < 8) return { error: "პაროლი მინიმუმ 8 სიმბოლო უნდა იყოს", field: "password" };
+  if (password !== repeat) return { error: "პაროლები არ ემთხვევა", field: "password2" };
+
+  const res = await resetPassword(userId, code, password);
+  if (!res.ok) return { error: res.error, field: "code" };
+
+  (await cookies()).delete(RESETTING);
+
+  // დადასტურებულ ანგარიშს მაშინვე შევუშვებთ; დაუდასტურებელი ჯერ ვერიფიკაციაზე მიდის
+  if (isVerified(res.user)) {
+    await createCustomerSession({
+      id: res.user.id,
+      email: res.user.email,
+      name: res.user.name,
+      priceTier: res.user.priceTier,
+    });
+    redirect("/account");
+  }
+  redirect("/login");
 }

@@ -70,6 +70,9 @@ export const LIMITS = {
   /** შესვლის მცდელობები — პაროლის გამოცნობის წინააღმდეგ */
   loginPerIp: { limit: 20, windowMs: 15 * 60_000 },
   loginPerAccount: { limit: 8, windowMs: 15 * 60_000 },
+  /** პაროლის აღდგენა — ყოველი მოთხოვნა ერთი წერილი და ერთი SMS-ია */
+  resetPerIp: { limit: 5, windowMs: 60 * 60_000 },
+  resetPerAccount: { limit: 3, windowMs: 60 * 60_000 },
   /** შეკვეთა — რეზერვაცია ნაშთს იკავებს, ბოტს არ უნდა შეეძლოს მისი დაბლოკვა */
   orderPerUser: { limit: 5, windowMs: 10 * 60_000 },
   orderPerIp: { limit: 20, windowMs: 60 * 60_000 },
