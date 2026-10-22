@@ -504,3 +504,10 @@ model Favorite {
   @@unique([userId, productId])
   @@index([userId])
 }
+
+/// საიტის პარამეტრები — key/value. ამჟამად: პარტნიორების საფეხურების წილები.
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}

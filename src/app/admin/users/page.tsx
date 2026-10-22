@@ -123,20 +123,9 @@ export default async function UsersPage({
                         {TIERS.map((t) => (
                           <option key={t.code} value={t.code}>
                             {t.label}
-                            {t.share > 0 ? " — მოგების " + Math.round(t.share * 100) + "%" : ""}
                           </option>
                         ))}
                       </select>
-                      <input
-                        name="discountPercent"
-                        type="number"
-                        step="0.5"
-                        min="0"
-                        max="90"
-                        defaultValue={u.discountPercent}
-                        title="დამატებითი ფასდაკლება %"
-                        className={`${field} w-16`}
-                      />
                       <label className="flex items-center gap-1 text-xs" title="აქტიური ანგარიში">
                         <input
                           type="checkbox"

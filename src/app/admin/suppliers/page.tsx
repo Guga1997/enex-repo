@@ -4,7 +4,6 @@ import { adapterNames } from "@/lib/suppliers";
 import {
   deleteSupplier,
   runSupplierSync,
-  repriceSupplierAction,
   saveSupplier,
   testSupplier,
 } from "../actions";
@@ -55,7 +54,7 @@ export default async function SuppliersPage({
               <th className="p-3 font-medium">კომპანია</th>
               <th className="p-3 font-medium">ადაპტერი</th>
               <th className="p-3 font-medium">პოზიცია</th>
-              <th className="p-3 font-medium">ფასდადება</th>
+              <th className="p-3 font-medium">სინქი</th>
               <th className="p-3 font-medium">ბოლო სინქი</th>
               <th className="p-3" />
             </tr>
@@ -79,17 +78,6 @@ export default async function SuppliersPage({
                   <td className="p-3 text-xs">{s.adapter}</td>
                   <td className="p-3">{s._count.supplies}</td>
                   <td className="p-3 text-xs">
-                    {s.retailBase === "MARGIN" ? (
-                      <>საცალო — მოგების {s.markupRetail}% დათმობით</>
-                    ) : (
-                      <>
-                        საცალო {s.markupRetail >= 0 ? "+" : ""}{s.markupRetail}%{" "}
-                        {s.retailBase === "LIST" ? "მის საცალოზე" : "თვითღ."}
-                      </>
-                    )}
-                    <br />
-                    სადილერო +{s.markupDealer}% თვითღ.
-                    <br />
                     <span className="text-muted">
                       {s.syncEveryMin > 0 ? `სინქი ყოველ ${s.syncEveryMin} წთ` : "სინქი ხელით"}
                     </span>
@@ -135,39 +123,11 @@ export default async function SuppliersPage({
                         </button>
                       </form>
                       <a
-                        href={`/admin/suppliers/${s.id}/pricing`}
+                        href="/admin/prices"
                         className="rounded-lg border border-line px-2.5 py-1.5 text-xs font-medium hover:bg-canvas"
                       >
-                        სეგმენტების ფასები
+                        ფასები →
                       </a>
-                      {/* პროცენტი აქვე იცვლება — ციფრის მოსარგებად რედაქტირებაში შესვლა არ სჭირდება */}
-                      <form action={repriceSupplierAction} className="flex items-center gap-1">
-                        <input type="hidden" name="id" value={s.id} />
-                        <input
-                          name="markupRetail"
-                          type="number"
-                          step="0.1"
-                          defaultValue={s.markupRetail}
-                          className="w-14 rounded-lg border border-line bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand-500"
-                        />
-                        {/* ციფრის მნიშვნელობა რეჟიმზეა დამოკიდებული — რეჟიმი აქვე
-                            უნდა აირჩეოდეს, თორემ „5“ სულ სხვა ფასს აწერს */}
-                        <select
-                          name="retailBase"
-                          defaultValue={s.retailBase}
-                          className="rounded-lg border border-line bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand-500"
-                        >
-                          <option value="MARGIN">% მოგებიდან</option>
-                          <option value="LIST">% მის საცალოზე</option>
-                          <option value="COST">% თვითღირებულებაზე</option>
-                        </select>
-                        <button
-                          className="rounded-lg border border-line px-2.5 py-1.5 text-xs font-medium hover:bg-canvas"
-                          title="ველში მითითებულ პროცენტს შეინახავს და ფასებს თავიდან დაითვლის; ჩაკეტილი რჩება"
-                        >
-                          ფასების გადათვლა
-                        </button>
-                      </form>
                       <a
                         href={`/admin/suppliers?edit=${s.id}`}
                         className="rounded-lg border border-line px-2.5 py-1.5 text-xs font-medium hover:bg-canvas"
@@ -202,11 +162,6 @@ export default async function SuppliersPage({
                 authType: editing.authType,
                 authHeader: editing.authHeader,
                 fieldMap: editing.fieldMap,
-                retailBase: editing.retailBase,
-                markupRetail: editing.markupRetail,
-                markupDealer: editing.markupDealer,
-                supplierDiscount: editing.supplierDiscount,
-                minMargin: editing.minMargin,
                 syncEveryMin: editing.syncEveryMin,
                 isActive: editing.isActive,
                 hasSecret: Boolean(editing.secret),

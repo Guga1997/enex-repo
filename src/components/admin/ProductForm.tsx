@@ -111,40 +111,22 @@ export default function ProductForm({
         <div className="space-y-5">
           <section className="card space-y-4 p-5">
             <h2 className="font-semibold">ფასი</h2>
-            <Field name="price" label="ფასი (₾)" type="number" step="0.01" required defaultValue={product?.price} />
-            <Field
-              name="dealerPrice"
-              label="სადილერო ფასი (₾)"
-              type="number"
-              step="0.01"
-              defaultValue={product?.dealerPrice ?? ""}
-              hint="ხედავს მხოლოდ DEALER დონის მომხმარებელი"
-            />
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                name="priceLocked"
-                defaultChecked={product?.priceLocked ?? false}
-                className="size-4 accent-brand-500"
-              />
-              ფასი ჩაკეტილია — მიმწოდებლის სინქმა/გადათვლამ არ შეცვალოს
-            </label>
-            <Field
-              name="oldPrice"
-              label="ძველი ფასი (₾)"
-              type="number"
-              step="0.01"
-              defaultValue={product?.oldPrice ?? ""}
-              hint="შევსების შემთხვევაში ჩნდება ფასდაკლების ნიშანი"
-            />
-            <Field
-              name="cost"
-              label="თვითღირებულება (₾)"
-              type="number"
-              step="0.01"
-              defaultValue={product?.cost ?? ""}
-              hint="მხოლოდ შიდა გამოყენებისთვის"
-            />
+            {/* ფასი აქ აღარ იწერება — მხოლოდ „პროდუქციის ფასებში“, რომ ერთი
+                და იგივე რიცხვი ორ ადგილას არ იცვლებოდეს */}
+            {product ? (
+              <p className="text-sm">
+                <span className="text-2xl font-bold tabular-nums">{product.price.toFixed(2)}₾</span>
+                {product.priceLocked && <span className="ml-2 text-xs text-muted">ხელით</span>}
+              </p>
+            ) : (
+              <p className="text-sm text-muted">შენახვის შემდეგ ფასს „პროდუქციის ფასებში“ დაუწერ.</p>
+            )}
+            <a
+              href={`/admin/prices/products${product ? `?q=${encodeURIComponent(product.sku)}` : ""}`}
+              className="inline-block text-sm font-medium text-brand-600 hover:underline"
+            >
+              ფასის შეცვლა →
+            </a>
           </section>
 
           <section className="card space-y-4 p-5">

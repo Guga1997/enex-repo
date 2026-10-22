@@ -65,9 +65,8 @@ export async function saveProduct(formData: FormData) {
     nameEn: str(formData, "nameEn") || null,
     model: str(formData, "model") || null,
     descriptionKa: str(formData, "descriptionKa") || null,
-    price: Number(str(formData, "price") || 0),
-    oldPrice: numOrNull(formData, "oldPrice"),
-    cost: numOrNull(formData, "cost"),
+    // ფასი, ძველი ფასი და თვითღირებულება აქ არ იწერება — მხოლოდ
+    // „პროდუქციის ფასებიდან“. ფორმაში ველები აღარ არის.
     stockQty,
     stockStatus: str(formData, "stockStatus") || StockStatus.IN_STOCK,
     incomingDate: incoming ? new Date(incoming) : null,
@@ -80,15 +79,11 @@ export async function saveProduct(formData: FormData) {
     sortOrder: Number(str(formData, "sortOrder") || 0),
   };
 
-  // ხელით შეცვლილი ფასი იკეტება — სინქმა და გადათვლამ აღარ გადააწეროს
-  const before = id ? await db.product.findUnique({ where: { id }, select: { price: true, dealerPrice: true } }) : null;
-  const dealerPrice = numOrNull(formData, "dealerPrice");
-  const priceLocked = formData.get("priceLocked") === "on" ||
-    (before ? before.price !== data.price || before.dealerPrice !== dealerPrice : false);
-
+  // ახალი პროდუქტი ფასის გარეშე იქმნება (0 — კატალოგში არ ჩანს), ფასს კი
+  // შენახვისთანავე „პროდუქციის ფასებში“ დაუწერს
   const product = id
-    ? await db.product.update({ where: { id }, data: { ...data, dealerPrice, priceLocked } })
-    : await db.product.create({ data: { ...data, dealerPrice, priceLocked, sku, slug: `${slugify(nameKa)}-${sku}` } });
+    ? await db.product.update({ where: { id }, data })
+    : await db.product.create({ data: { ...data, price: 0, sku, slug: `${slugify(nameKa)}-${sku}` } });
 
   // სურათები — მძიმით/ახალი ხაზით გამოყოფილი URL-ების სია
   const imageList = str(formData, "images")
@@ -126,6 +121,7 @@ export async function saveProduct(formData: FormData) {
 
   revalidatePath("/admin/products");
   revalidatePath("/catalog");
+  if (!id) redirect(`/admin/prices/products?q=${encodeURIComponent(sku)}&ok=${encodeURIComponent("პროდუქტი შეიქმნა — დაუწერე ფასი")}`);
   redirect("/admin/products?saved=1");
 }
 
@@ -272,13 +268,9 @@ export async function saveSupplier(formData: FormData) {
     authType: String(formData.get("authType") ?? "BEARER"),
     authHeader: String(formData.get("authHeader") ?? "").trim() || null,
     fieldMap: String(formData.get("fieldMap") ?? "").trim() || null,
-    retailBase: ["LIST", "MARGIN"].includes(String(formData.get("retailBase")))
-      ? String(formData.get("retailBase"))
-      : "COST",
-    markupRetail: Number(formData.get("markupRetail") ?? 30),
-    markupDealer: Number(formData.get("markupDealer") ?? 15),
-    supplierDiscount: Math.min(90, Math.max(0, Number(formData.get("supplierDiscount")) || 0)),
-    minMargin: Math.min(500, Math.max(0, Number(formData.get("minMargin")) || 0)),
+    // ფასის წესს აქ არ ვეხებით — მხოლოდ „პროდუქციის ფასებიდან“ იცვლება.
+    // ფორმაში ველები აღარ არის და აქ რომ დარჩენილიყო, ყოველი შენახვა
+    // markupRetail-ს 30-ზე ჩამოყრიდა.
     // 0 = მხოლოდ ხელით; უარყოფითი და არარიცხვი ნულად
     syncEveryMin: Math.max(0, Math.floor(Number(formData.get("syncEveryMin")) || 0)),
     isActive: formData.get("isActive") === "on",
@@ -312,23 +304,6 @@ export async function saveSupplier(formData: FormData) {
   revalidatePath("/admin/suppliers");
 }
 
-/** ფასების გადათვლა მიმწოდებლის მიმდინარე წესით — ჩაკეტილი ფასები რჩება */
-export async function repriceSupplierAction(formData: FormData) {
-  await requireAdmin();
-  const id = String(formData.get("id") ?? "");
-  // პროცენტი იქვე იცვლება — ჯერ ვინახავთ, მერე ვთვლით, რომ ღილაკმა უკვე
-  // ახალი ციფრით იმუშაოს და ცალკე „შენახვა“ არ დასჭირდეს
-  const raw = formData.get("markupRetail");
-  const base = String(formData.get("retailBase") ?? "");
-  const data: { markupRetail?: number; retailBase?: string } = {};
-  if (raw !== null && String(raw).trim() !== "" && Number.isFinite(Number(raw))) data.markupRetail = Number(raw);
-  if (["COST", "LIST", "MARGIN"].includes(base)) data.retailBase = base;
-  if (Object.keys(data).length) await db.supplier.update({ where: { id }, data });
-  const { repriceSupplier } = await import("@/lib/suppliers/pricing");
-  await repriceSupplier(id);
-  revalidatePath("/admin/suppliers");
-  revalidatePath("/admin/products");
-}
 
 /* ---------------------------------- ბანერები --------------------------------- */
 
@@ -363,41 +338,7 @@ export async function deleteBanner(formData: FormData) {
   revalidatePath("/admin/banners");
 }
 
-/** სეგმენტური წესი — მიმწოდებელი × კატეგორია; შენახვისთანავე ფასები გადაითვლება */
-export async function savePricingRule(formData: FormData) {
-  await requireAdmin();
-  const supplierId = String(formData.get("supplierId") ?? "");
-  const categoryId = String(formData.get("categoryId") ?? "");
-  if (!supplierId || !categoryId) return;
-  const data = {
-    retailBase: ["LIST", "MARGIN"].includes(String(formData.get("retailBase")))
-      ? String(formData.get("retailBase"))
-      : "COST",
-    markupRetail: Number(formData.get("markupRetail")) || 0,
-    markupDealer: Number(formData.get("markupDealer")) || 0,
-  };
-  await db.supplierPricingRule.upsert({
-    where: { supplierId_categoryId: { supplierId, categoryId } },
-    create: { supplierId, categoryId, ...data },
-    update: data,
-  });
-  const { repriceSupplier } = await import("@/lib/suppliers/pricing");
-  await repriceSupplier(supplierId);
-  revalidatePath(`/admin/suppliers/${supplierId}/pricing`);
-  revalidatePath("/admin/products");
-}
 
-export async function deletePricingRule(formData: FormData) {
-  await requireAdmin();
-  const id = String(formData.get("id") ?? "");
-  const rule = await db.supplierPricingRule.findUnique({ where: { id } });
-  if (!rule) return;
-  await db.supplierPricingRule.delete({ where: { id } });
-  const { repriceSupplier } = await import("@/lib/suppliers/pricing");
-  await repriceSupplier(rule.supplierId);
-  revalidatePath(`/admin/suppliers/${rule.supplierId}/pricing`);
-  revalidatePath("/admin/products");
-}
 
 export async function deleteSupplier(formData: FormData) {
   await requireAdmin();
@@ -487,7 +428,6 @@ export async function setUserTier(formData: FormData) {
     where: { id },
     data: {
       priceTier: String(formData.get("priceTier") ?? "RETAIL"),
-      discountPercent: Number(formData.get("discountPercent") ?? 0),
       isActive: formData.get("isActive") === "on",
     },
   });

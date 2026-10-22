@@ -69,14 +69,11 @@ export function computePrices(
     price = base ? round2(base * (1 + rule.markupRetail / 100)) : 0;
   }
 
-  // საცალო სადილეროზე დაბლა არასდროს — LIST-ბაზაზე მიმწოდებელმა საცალო რომ არ მოგვცეს,
-  // −5% თვითღირებულებას დაედებოდა და წაგებაზე გავყიდდით.
-  // „მოგების წილით“ რეჟიმში ეს იატაკი არ მოქმედებს: ფასი იქ ისედაც ქოსთზე მაღლაა,
-  // ქოსთი × (1 + markupDealer) კი ფასს მიმწოდებლის საცალოზე ზემოთ აწევდა —
-  // ზუსტად ის, რაც არ შეიძლება.
-  if (!byMargin && dealerPrice !== null && price < dealerPrice) price = dealerPrice;
-  // თვითღირებულებად გაყიდვა დაუშვებელია — იატაკი ყველა წესის თავზეა
-  if (c !== null && terms.minMargin > 0) price = Math.max(price, round2(c * (1 + terms.minMargin / 100)));
+  // იატაკი ერთია და ყველა რეჟიმს ეხება: თვითღირებულებაზე დაბლა არასდროს,
+  // minMargin კი მას ზემოთ წევს. ძველი „სადილეროზე დაბლა არა“ (ქოსთი ×
+  // (1 + markupDealer)) ამოღებულია — ფანჯარაში აღარ ჩანდა, ფასს კი მაინც
+  // აწევდა და „მოგების წილით“ რეჟიმში მიმწოდებლის საცალოზე მაღლაც ადიოდა.
+  if (c !== null) price = Math.max(price, round2(c * (1 + Math.max(terms.minMargin, 0) / 100)));
 
   return { price, dealerPrice, cost: c };
 }

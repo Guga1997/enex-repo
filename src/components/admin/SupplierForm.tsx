@@ -13,11 +13,6 @@ export type SupplierDraft = {
   authType: string;
   authHeader: string | null;
   fieldMap: string | null;
-  retailBase: string;
-  markupRetail: number;
-  markupDealer: number;
-  supplierDiscount: number;
-  minMargin: number;
   syncEveryMin: number;
   isActive: boolean;
   hasSecret: boolean;
@@ -84,7 +79,6 @@ export default function SupplierForm({
   const [authType, setAuthType] = useState(supplier?.authType ?? "BEARER");
   const [adapter, setAdapter] = useState(supplier?.adapter ?? "GENERIC_REST");
   const [showHelp, setShowHelp] = useState(false);
-  const [retailBase, setRetailBase] = useState(supplier?.retailBase ?? "COST");
   const isIntellcom = adapter === "INTELLCOM";
   const isSheet = adapter === "SPREADSHEET";
 
@@ -186,89 +180,13 @@ export default function SupplierForm({
         </label>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <label className="block">
-          <span className="mb-1.5 block text-sm font-medium">საცალო ფასი ითვლება</span>
-          <select
-            name="retailBase"
-            value={retailBase}
-            onChange={(e) => setRetailBase(e.target.value)}
-            className={field}
-          >
-            <option value="COST">თვითღირებულებიდან (+%)</option>
-            <option value="LIST">მიმწოდებლის საცალოდან (−%)</option>
-            <option value="MARGIN">მოგების წილით (მის საცალოს მინუს მოგების %)</option>
-          </select>
-        </label>
-        <label className="block">
-          <span className="mb-1.5 block text-sm font-medium">
-            {retailBase === "MARGIN"
-              ? "საცალო: მოგების რამდენი % დავუთმოთ"
-              : retailBase === "LIST"
-                ? "საცალო: % მიმწოდებლის საცალოზე"
-                : "საცალო: % თვითღირებულებაზე"}
-          </span>
-          <input
-            name="markupRetail"
-            type="number"
-            step="0.1"
-            defaultValue={supplier?.markupRetail ?? (retailBase === "LIST" ? -5 : retailBase === "MARGIN" ? 5 : 30)}
-            className={field}
-          />
-          <span className="mt-1 block text-xs text-muted">
-            {retailBase === "MARGIN"
-              ? "სჭირდება ორივე ფასი API-დან. 5 → მისი საცალო 100₾, ჩვენი თვითღირებულება 80₾, მოგება 20₾ → ფასი 99₾"
-              : retailBase === "LIST"
-                ? "მინუსი = მასზე იაფად: −5 → მისი 100₾ ჩვენთან 95₾"
-                : "30 → 100₾ თვითღირებულება, 130₾ ფასი"}
-          </span>
-        </label>
-        <label className="block">
-          <span className="mb-1.5 block text-sm font-medium">სადილერო: % თვითღირებულებაზე</span>
-          <input
-            name="markupDealer"
-            type="number"
-            step="0.1"
-            defaultValue={supplier?.markupDealer ?? 15}
-            className={field}
-          />
-          <span className="mt-1 block text-xs text-muted">15 → მისი 100₾ სადილერო ჩვენთან 115₾</span>
-        </label>
-        <label className="block">
-          <span className="mb-1.5 block text-sm font-medium">ერთფასიან პოზიციაზე ფასდაკლება: %</span>
-          <input
-            name="supplierDiscount"
-            type="number"
-            step="0.1"
-            min="0"
-            max="90"
-            defaultValue={supplier?.supplierDiscount ?? 0}
-            className={field}
-          />
-          <span className="mt-1 block text-xs text-muted">
-            მუშაობს <b>მხოლოდ მაშინ, როცა მიმწოდებელი ერთ ფასს აგზავნის</b>. ცვალებადი
-            ფასდაკლების მინიმუმი: 10 → მისი 100₾ სინამდვილეში 90₾ გვიჯდება. საცალო ფასს
-            არ ცვლის — მხოლოდ ნამდვილ მოგებას აჩვენებს, რომელზეც პარტნიორების ფასდაკლება
-            ითვლება. თუ სადილეროსაც და საცალოსაც იძლევა, ეს ველი უგულებელყოფილია.
-          </span>
-        </label>
-        <label className="block">
-          <span className="mb-1.5 block text-sm font-medium">მინიმალური მოგება: %</span>
-          <input
-            name="minMargin"
-            type="number"
-            step="0.1"
-            min="0"
-            max="500"
-            defaultValue={supplier?.minMargin ?? 0}
-            className={field}
-          />
-          <span className="mt-1 block text-xs text-muted">
-            იატაკი ყველა წესის თავზე — ფასი თვითღირებულებაზე ამ პროცენტით მაინც მაღლა
-            დგება. თვითღირებულებად გაყიდვა დასაშვები არ არის.
-          </span>
-        </label>
-      </div>
+      <p className="rounded-lg bg-canvas p-3 text-sm text-muted">
+        ფასის წესი (ფორმულა, პროცენტი, მინიმალური მოგება) იცვლება მხოლოდ{" "}
+        <a href="/admin/prices" className="font-medium text-brand-600 hover:underline">
+          პროდუქციის ფასებში
+        </a>
+        .
+      </p>
 
       {isSheet && (
         <label className="block">
@@ -357,8 +275,7 @@ export default function SupplierForm({
 
       <p className="rounded-lg bg-canvas p-3 text-xs text-muted">
         ახალი პროდუქტი სინქიდან მოდის <b>გამორთული</b> — ჯერ დაათვალიერე და მერე
-        გამოაქვეყნე. ფასი პროდუქტს შემოსვლისას ეწერება; პროცენტის შეცვლის მერე
-        არსებულებზე „ფასების გადათვლა“ დააჭირე — ხელით ჩაკეტილ ფასს ის არ ეხება.
+        გამოაქვეყნე.
       </p>
 
       <button className="btn btn-primary hover:bg-brand-600">

@@ -39,7 +39,11 @@ export function tierShare(code: string): number {
 
 export const isPartner = (code: string) => tierShare(code) > 0;
 
-export type Viewer = { priceTier: string; discountPercent: number } | null;
+/**
+ * share — ფანჯრიდან დაყენებული წილი. getCurrentUser() ერთხელ ავსებს, რომ ფასი
+ * სინქრონულად ითვლებოდეს; თუ არ არის, კოდის ნაგულისხმევი მოქმედებს.
+ */
+export type Viewer = { priceTier: string; discountPercent: number; share?: number } | null;
 
 export type PricedProduct = {
   price: number;
@@ -94,7 +98,10 @@ function marginPrice(base: number, cost: number | null | undefined, share: numbe
 export function effectivePrice(p: PricedProduct, viewer: Viewer): EffectivePrice {
   const retail = p.price;
   const tier = viewer ? viewer.priceTier : "RETAIL";
-  const share = tierShare(tier);
+  const share =
+    viewer && typeof viewer.share === "number"
+      ? Math.min(Math.max(viewer.share, 0), MAX_PARTNER_SHARE)
+      : tierShare(tier);
   const partner = share > 0;
 
   let value = retail;

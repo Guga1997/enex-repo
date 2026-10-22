@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
 import { randomInt } from "crypto";
 import { db } from "./db";
+import { shareFor } from "./pricing-settings";
 import { sendEmail } from "./notify/email";
 import { sendSms, normalizeGeoPhone } from "./notify/sms";
 
@@ -58,7 +59,9 @@ export async function getCurrentUser() {
   const s = await getCustomerSession();
   if (!s) return null;
   const user = await db.user.findUnique({ where: { id: s.id } });
-  return user?.isActive ? user : null;
+  if (!user?.isActive) return null;
+  // საფეხურის წილი „პროდუქციის ფასებიდან“ — ფასის ყველა გამოთვლა ამას იყენებს
+  return { ...user, share: await shareFor(user.priceTier) };
 }
 
 /* ─────────────────────── რეგისტრაცია ─────────────────────── */
