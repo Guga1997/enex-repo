@@ -33,10 +33,17 @@ export function invalidateCategoryTree() {
   cache = null;
 }
 
-/** სავსე წინ, ცარიელი ბოლოს; შიგნით — sortOrder, მერე სახელი */
-export function byFullness(a: { visible: number; sortOrder: number; nameKa: string }, b: typeof a): number {
+/**
+ * რიგი: ჯერ ქვეჯგუფიანი (მენიუში ქვეშ სია აქვს), მერე ცალსტრიქონიანი — ასე
+ * ბადეში ცარიელი ადგილები არ რჩება; შემდეგ პროდუქტიანი ცარიელზე წინ; ბოლოს sortOrder.
+ */
+export function byFullness(
+  a: { visible: number; sortOrder: number; nameKa: string; children: unknown[] },
+  b: typeof a
+): number {
+  const nested = Number(b.children.length > 0) - Number(a.children.length > 0);
   const full = Number(b.visible > 0) - Number(a.visible > 0);
-  return full || a.sortOrder - b.sortOrder || a.nameKa.localeCompare(b.nameKa, "ka");
+  return nested || full || a.sortOrder - b.sortOrder || a.nameKa.localeCompare(b.nameKa, "ka");
 }
 
 export function buildTree(

@@ -33,6 +33,21 @@ test("ცარიელი ბოლოს, დანარჩენი sortOrd
   assert.deepEqual(byId.get("root")!.children.map((c) => c.id), ["a", "b", "empty-first", "empty-last"]);
 });
 
+test("ქვეჯგუფიანი წინ, ცალსტრიქონიანი ბოლოს — ბადეში ხვრელი არ რჩება", () => {
+  const { byId } = buildTree(
+    [
+      cat("lan", null, 0),
+      cat("controllers", "lan", 0), // პროდუქტი აქვს, ქვეჯგუფი — არა
+      cat("wifi", "lan", 1),
+      cat("ap", "wifi", 0),
+      cat("empty-nested", "lan", 2),
+      cat("empty-leaf", "empty-nested", 0),
+    ],
+    new Map([["controllers", 2], ["ap", 5]])
+  );
+  assert.deepEqual(byId.get("lan")!.children.map((c) => c.id), ["wifi", "empty-nested", "controllers"]);
+});
+
 test("გამორთული მშობლის შვილი მენიუში არ ჩნდება", () => {
   // გამორთული კატეგორია ხეში არ მოდის (where: isActive) — მისი შვილი ძირად არ უნდა იქცეს
   const { roots } = buildTree([cat("root", null, 0), cat("orphan", "missing-parent", 0)], new Map());
