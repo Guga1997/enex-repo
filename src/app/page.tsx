@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
 import HeroSlider from "@/components/HeroSlider";
 import CategoryIcon from "@/components/CategoryIcon";
+import { getCategoryTree } from "@/lib/category-tree";
 import { segmentTheme } from "@/lib/segment-theme";
 import { JsonLd, organizationJsonLd, websiteJsonLd } from "@/lib/seo";
 import { productCardSelect } from "@/lib/catalog";
@@ -25,7 +26,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function HomePage() {
   const { locale, t } = await getI18n();
-  const [banners, categories, discounted] = await Promise.all([
+  const [banners, rootCats, discounted, tree] = await Promise.all([
     db.banner.findMany({
       where: { isActive: true },
       orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
@@ -41,7 +42,11 @@ export default async function HomePage() {
       orderBy: { updatedAt: "desc" },
       take: 8,
     }),
+    getCategoryTree(),
   ]);
+  // სავსე სეგმენტი წინ, ცარიელი ბოლოს — მენიუს რიგით
+  const rank = new Map(tree.roots.map((r, i) => [r.id, i]));
+  const categories = [...rootCats].sort((a, b) => (rank.get(a.id) ?? 999) - (rank.get(b.id) ?? 999));
 
   // ბანერის ტექსტი ენის მიხედვით — თარგმანის გარეშე ქართული რჩება
   const slides =

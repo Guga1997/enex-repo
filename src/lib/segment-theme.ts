@@ -21,6 +21,9 @@ export type SegmentTheme = {
   /** ხატულა უჯრაში */
   ink: string;
   inkHover: string;
+  /** მენიუს ქვეჯგუფი — group/item-ის hover-ზე */
+  tintItem: string;
+  inkItem: string;
   /** ქვედა ხაზი */
   line: string;
   lineHover: string;
@@ -32,6 +35,7 @@ const THEMES: { test: RegExp; theme: SegmentTheme }[] = [
     theme: {
       tint: "bg-amber-200", tintHover: "group-hover:bg-amber-200",
       ink: "text-amber-700", inkHover: "group-hover:text-amber-700",
+      tintItem: "group-hover/item:bg-amber-200", inkItem: "group-hover/item:text-amber-700",
       line: "border-amber-500", lineHover: "group-hover:border-amber-500",
     },
   },
@@ -40,6 +44,7 @@ const THEMES: { test: RegExp; theme: SegmentTheme }[] = [
     theme: {
       tint: "bg-red-200", tintHover: "group-hover:bg-red-200",
       ink: "text-red-700", inkHover: "group-hover:text-red-700",
+      tintItem: "group-hover/item:bg-red-200", inkItem: "group-hover/item:text-red-700",
       line: "border-red-500", lineHover: "group-hover:border-red-500",
     },
   },
@@ -48,6 +53,7 @@ const THEMES: { test: RegExp; theme: SegmentTheme }[] = [
     theme: {
       tint: "bg-violet-200", tintHover: "group-hover:bg-violet-200",
       ink: "text-violet-700", inkHover: "group-hover:text-violet-700",
+      tintItem: "group-hover/item:bg-violet-200", inkItem: "group-hover/item:text-violet-700",
       line: "border-violet-500", lineHover: "group-hover:border-violet-500",
     },
   },
@@ -56,6 +62,7 @@ const THEMES: { test: RegExp; theme: SegmentTheme }[] = [
     theme: {
       tint: "bg-blue-200", tintHover: "group-hover:bg-blue-200",
       ink: "text-blue-700", inkHover: "group-hover:text-blue-700",
+      tintItem: "group-hover/item:bg-blue-200", inkItem: "group-hover/item:text-blue-700",
       line: "border-blue-500", lineHover: "group-hover:border-blue-500",
     },
   },
@@ -64,6 +71,7 @@ const THEMES: { test: RegExp; theme: SegmentTheme }[] = [
     theme: {
       tint: "bg-rose-200", tintHover: "group-hover:bg-rose-200",
       ink: "text-rose-700", inkHover: "group-hover:text-rose-700",
+      tintItem: "group-hover/item:bg-rose-200", inkItem: "group-hover/item:text-rose-700",
       line: "border-rose-500", lineHover: "group-hover:border-rose-500",
     },
   },
@@ -72,6 +80,7 @@ const THEMES: { test: RegExp; theme: SegmentTheme }[] = [
     theme: {
       tint: "bg-emerald-200", tintHover: "group-hover:bg-emerald-200",
       ink: "text-emerald-700", inkHover: "group-hover:text-emerald-700",
+      tintItem: "group-hover/item:bg-emerald-200", inkItem: "group-hover/item:text-emerald-700",
       line: "border-emerald-500", lineHover: "group-hover:border-emerald-500",
     },
   },
@@ -80,6 +89,7 @@ const THEMES: { test: RegExp; theme: SegmentTheme }[] = [
     theme: {
       tint: "bg-slate-300", tintHover: "group-hover:bg-slate-300",
       ink: "text-slate-700", inkHover: "group-hover:text-slate-700",
+      tintItem: "group-hover/item:bg-slate-300", inkItem: "group-hover/item:text-slate-700",
       line: "border-slate-500", lineHover: "group-hover:border-slate-500",
     },
   },
@@ -89,6 +99,7 @@ const THEMES: { test: RegExp; theme: SegmentTheme }[] = [
 const FALLBACK: SegmentTheme = {
   tint: "bg-brand-200", tintHover: "group-hover:bg-brand-200",
   ink: "text-brand-700", inkHover: "group-hover:text-brand-700",
+  tintItem: "group-hover/item:bg-brand-200", inkItem: "group-hover/item:text-brand-700",
   line: "border-brand-500", lineHover: "group-hover:border-brand-500",
 };
 

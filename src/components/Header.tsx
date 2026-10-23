@@ -1,6 +1,8 @@
 import Link from "@/components/Link";
-import { db } from "@/lib/db";
+import { getCategoryTree } from "@/lib/category-tree";
+import { segmentTheme } from "@/lib/segment-theme";
 import Logo from "./Logo";
+import SubcategoryIcon from "./SubcategoryIcon";
 import CartButton from "./CartButton";
 import SearchBox from "./SearchBox";
 import AccountButton from "./AccountButton";
@@ -12,20 +14,8 @@ import { nameOf } from "@/lib/i18n/content";
 
 export default async function Header() {
   const { locale, t } = await getI18n();
-  // სამი დონე ერთი მოთხოვნით: სეგმენტი → ქვეჯგუფი → ქვე-ქვეჯგუფი
-  const categories = await db.category.findMany({
-    where: { parentId: null, isActive: true },
-    orderBy: { sortOrder: "asc" },
-    include: {
-      children: {
-        where: { isActive: true },
-        orderBy: { sortOrder: "asc" },
-        include: {
-          children: { where: { isActive: true }, orderBy: { sortOrder: "asc" } },
-        },
-      },
-    },
-  });
+  // სეგმენტი → ქვეჯგუფი → ქვე-ქვეჯგუფი; ყველა დონეზე სავსე წინ, ცარიელი ბოლოს
+  const { roots: categories } = await getCategoryTree();
 
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-surface">
@@ -70,7 +60,9 @@ export default async function Header() {
       {/* სეგმენტების ზოლი — hover-ზე იშლება ქვეჯგუფები და მათი ქვეჯგუფები */}
       <div className="border-t border-line bg-surface">
         <div className="container-x flex items-stretch gap-1 overflow-x-auto">
-          {categories.map((segment) => (
+          {categories.map((segment) => {
+            const theme = segmentTheme(segment.nameKa, segment.slug);
+            return (
             <div key={segment.id} className="group static">
               <NavSegment name={nameOf(segment, locale)} slug={segment.slug} />
 
@@ -80,17 +72,26 @@ export default async function Header() {
                    ორი რამ: დახურვა ოდნავ ყოვნდება და ზემოთ უხილავი „ხიდია“,
                    რომელიც სწორედ ამ ზოლს ფარავს. */
                 <div className="invisible absolute left-0 right-0 top-full z-50 border-b border-line bg-surface opacity-0 shadow-xl transition-[opacity,visibility] delay-200 duration-150 before:absolute before:inset-x-0 before:-top-5 before:h-5 before:content-[''] group-hover:visible group-hover:opacity-100 group-hover:delay-0">
-                  <div className="container-x grid gap-x-8 gap-y-6 py-6 sm:grid-cols-2 lg:grid-cols-4">
-                    {segment.children.map((group) => (
-                      <div key={group.id}>
+                  <div className="container-x grid gap-x-8 gap-y-7 py-7 sm:grid-cols-2 lg:grid-cols-4">
+                    {segment.children.map((group, i) => (
+                      <div key={group.id} className="group/item flex items-start gap-3">
                         <Link
                           href={`/catalog/${group.slug}`}
-                          className="block text-sm font-semibold text-ink transition hover:text-brand-600"
+                          tabIndex={-1}
+                          aria-hidden
+                          className={`flex size-11 shrink-0 items-center justify-center rounded-xl bg-canvas text-muted transition duration-300 group-hover/item:-translate-y-0.5 ${theme.tintItem} ${theme.inkItem}`}
+                        >
+                          <SubcategoryIcon name={group.nameKa} slug={group.slug} delayMs={i * 45} className="size-6" />
+                        </Link>
+                        <div className="min-w-0 pt-0.5">
+                        <Link
+                          href={`/catalog/${group.slug}`}
+                          className="block text-sm font-semibold leading-5 text-ink transition hover:text-brand-600"
                         >
                           {nameOf(group, locale)}
                         </Link>
                         {group.children.length > 0 && (
-                          <ul className="mt-2 space-y-1">
+                          <ul className="mt-1.5 space-y-0.5">
                             {group.children.map((leaf) => (
                               <li key={leaf.id}>
                                 <Link
@@ -103,13 +104,15 @@ export default async function Header() {
                             ))}
                           </ul>
                         )}
+                        </div>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
             </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 

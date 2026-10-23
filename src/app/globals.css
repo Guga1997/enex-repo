@@ -166,3 +166,29 @@ select optgroup {
   background-color: var(--color-surface);
   color: var(--color-ink);
 }
+
+/* მენიუს ქვეჯგუფის ხატულა (SubcategoryIcon): ხაზები „ეხატება“ — მენიუს
+   გახსნისას რიგრიგობით (--d), მაუსის მიტანაზე თავიდან. ფიგურებს pathLength=1
+   აქვთ, ამიტომ dasharray 1 ნებისმიერ ხაზს მთლიანად ფარავს. ორი სახელი იმიტომ,
+   რომ ერთნაირი ანიმაცია ხელახლა არ ეშვება. */
+.cat-ico * {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+}
+.group:hover .cat-ico * {
+  animation: cat-draw 0.75s cubic-bezier(0.65, 0, 0.35, 1) var(--d, 0ms) both;
+}
+.group\/item:hover .cat-ico * {
+  animation: cat-redraw 0.6s cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+@keyframes cat-draw {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+@keyframes cat-redraw {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cat-ico * { animation: none !important; }
+}

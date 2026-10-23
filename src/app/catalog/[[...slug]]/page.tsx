@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { db } from "@/lib/db";
+import { getCategoryTree } from "@/lib/category-tree";
 import { clip, alts } from "@/lib/seo";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -88,6 +89,8 @@ export default async function CatalogPage({ params, searchParams }: Props) {
     if (!category || !category.isActive) notFound();
     categoryIds = await categoryIdsWithDescendants(category.id);
   }
+  // ქვეკატეგორიების ჩიპები: სავსე წინ, ცარიელი ბოლოს — იგივე რიგი, რაც მენიუში
+  const chips = category ? ((await getCategoryTree()).byId.get(category.id)?.children ?? []) : [];
 
   const viewer = await getCurrentUser();
   const query = parseQuery(sp, categoryIds);
@@ -125,9 +128,9 @@ export default async function CatalogPage({ params, searchParams }: Props) {
         </h1>
 
         {/* ქვეკატეგორიების ჩიპები */}
-        {category && category.children.length > 0 && (
+        {chips.length > 0 && (
           <div className="mb-6 flex flex-wrap gap-2">
-            {category.children.map((c) => (
+            {chips.map((c) => (
               <Link
                 key={c.id}
                 href={`/catalog/${c.slug}`}

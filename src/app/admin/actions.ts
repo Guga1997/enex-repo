@@ -8,6 +8,7 @@ import { productFilter } from "@/lib/admin-filters";
 import { cancelOrder, markOrderPaid } from "@/lib/orders";
 import { getSession, destroySession } from "@/lib/auth";
 import { slugify } from "@/lib/format";
+import { invalidateCategoryTree } from "@/lib/category-tree";
 import { generateApiKey } from "@/lib/api-auth";
 import { StockStatus } from "@/lib/constants";
 
@@ -163,6 +164,7 @@ export async function saveCategory(formData: FormData) {
   if (id) await db.category.update({ where: { id }, data });
   else await db.category.create({ data: { ...data, slug: slugify(nameKa) } });
 
+  invalidateCategoryTree();
   revalidatePath("/admin/categories");
   revalidatePath("/", "layout");
 }
@@ -173,6 +175,7 @@ export async function toggleCategoryActive(formData: FormData) {
   const category = await db.category.findUnique({ where: { id } });
   if (!category) return;
   await db.category.update({ where: { id }, data: { isActive: !category.isActive } });
+  invalidateCategoryTree();
   revalidatePath("/admin/categories");
   revalidatePath("/", "layout");
 }
@@ -183,6 +186,7 @@ export async function deleteCategory(formData: FormData) {
   const count = await db.product.count({ where: { categoryId: id } });
   if (count > 0) throw new Error(`კატეგორიაში ${count} პროდუქტია — ჯერ გადაიტანე ან წაშალე`);
   await db.category.delete({ where: { id } });
+  invalidateCategoryTree();
   revalidatePath("/admin/categories");
   revalidatePath("/", "layout");
 }
