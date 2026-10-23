@@ -1,0 +1,49 @@
+{
+ "products": [
+  {
+   "id": "5799",
+   "code": "882889",
+   "namege": "IP კამერა, Uniarch 5MP Bullet, 4.0mm, SD, mic, IPC-B125-APF40",
+   "price": "177",
+   "instock": "44",
+   "reserved": "0",
+   "brand": "UNIARCH"
+  },
+  {
+   "id": "5854",
+   "code": "882927",
+   "namege": "MP60UB ხმის გამაძლიერებელი 60W",
+   "price": "779",
+   "instock": "32",
+   "reserved": "0",
+   "brand": "DSPPA"
+  },
+  {
+   "id": "2925",
+   "code": "SN 4",
+   "namege": "SN 4 კრონშტეინი ჭერის, Mouse and Smile დეტექტორებისთვის",
+   "price": "6",
+   "instock": "29",
+   "reserved": "0",
+   "brand": "AMC"
+  },
+  {
+   "id": "161",
+   "code": "161000202",
+   "namege": "EKB3 კლავიატურა LED",
+   "price": "184",
+   "instock": "36",
+   "reserved": "6",
+   "brand": "Eldes"
+  },
+  {
+   "id": "3196",
+   "code": "31060027",
+   "namege": "SensoMAG S30 კვამლის დეტექტორი",
+   "price": null,
+   "instock": "127",
+   "reserved": "0",
+   "brand": "Teletek"
+  }
+ ]
+}

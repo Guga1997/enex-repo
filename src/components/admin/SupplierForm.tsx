@@ -80,6 +80,7 @@ export default function SupplierForm({
   const [adapter, setAdapter] = useState(supplier?.adapter ?? "GENERIC_REST");
   const [showHelp, setShowHelp] = useState(false);
   const isIntellcom = adapter === "INTELLCOM";
+  const isIntelectro = adapter === "INTELECTRO";
   const isSheet = adapter === "SPREADSHEET";
 
   return (
@@ -247,6 +248,11 @@ export default function SupplierForm({
             <>
               ველების შესაბამისობა ამ ადაპტერს არ სჭირდება. ჩაწერე მხოლოდ{" "}
               <code>identificationCode</code> — მის გარეშე სადილერო ფასი ნულით მოვა.
+            </>
+          ) : isIntelectro ? (
+            <>
+              ცარიელი დატოვე — ადაპტერი ველებს იცნობს. მისამართი: <code>https://intelectro.ge/api/v1</code>,
+              ავტორიზაცია: სათაური <code>api-key</code>.
             </>
           ) : isSheet ? (
             <>

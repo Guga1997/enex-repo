@@ -3,6 +3,7 @@ import { slugify } from "../format";
 import { localizeMedia } from "../media";
 import { genericRest } from "./generic-rest";
 import { intellcom } from "./intellcom";
+import { intelectro } from "./intelectro";
 import { muk } from "./muk";
 import { spreadsheet } from "./spreadsheet";
 import { computePrices, Pricer, repriceProduct } from "./pricing";
@@ -15,6 +16,7 @@ export type { SupplierItem, SupplierConfig, SupplierAdapter } from "./types";
 const ADAPTERS: Record<string, SupplierAdapter> = {
   GENERIC_REST: genericRest,
   INTELLCOM: intellcom,
+  INTELECTRO: intelectro,
   MUK: muk,
   SPREADSHEET: spreadsheet,
 };
@@ -268,7 +270,16 @@ export async function syncSupplier(supplierId: string): Promise<SyncResult> {
       authHeader: supplier.authHeader,
       fieldMap: supplier.fieldMap,
     };
-    const items = await resolveAdapter(supplier.adapter).fetchItems(cfg);
+    // ფოტოიანი პროდუქტის დეტალს თავიდან აღარ ვითხოვთ (ინტელექტრო: ერთი მოთხოვნა პოზიციაზე)
+    const known = new Set(
+      (
+        await db.productSupply.findMany({
+          where: { supplierId: supplier.id, product: { images: { some: {} } } },
+          select: { supplierSku: true },
+        })
+      ).map((s) => s.supplierSku)
+    );
+    const items = await resolveAdapter(supplier.adapter).fetchItems(cfg, { known });
     const pricer = await Pricer.load();
 
     for (const item of items) {

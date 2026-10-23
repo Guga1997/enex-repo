@@ -39,9 +39,15 @@ export type SupplierConfig = {
   fieldMap: string | null;
 };
 
+/**
+ * რაც სინქმა უკვე იცის. known — ამ მიმწოდებლის კოდები, რომელთა პროდუქტს ფოტო
+ * უკვე აქვს: ადაპტერს, რომელსაც დეტალი ცალკე მოთხოვნით მოაქვს, მათზე გამეორება არ სჭირდება.
+ */
+export type FetchContext = { known?: Set<string> };
+
 export type SupplierAdapter = {
   /** სრული კატალოგი ან მხოლოდ ნაშთი — რასაც კომპანია იძლევა */
-  fetchItems(cfg: SupplierConfig): Promise<SupplierItem[]>;
+  fetchItems(cfg: SupplierConfig, ctx?: FetchContext): Promise<SupplierItem[]>;
 };
 
 /**
