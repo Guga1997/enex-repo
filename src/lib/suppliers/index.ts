@@ -174,17 +174,29 @@ async function matchProductId(supplierId: string, item: SupplierItem): Promise<s
   });
   if (bySku) return bySku.id;
 
-  if (item.model?.trim()) {
+  // მოდელით დამთხვევა ერთი და იგივე ნივთის სხვადასხვა მიმწოდებლისგან
+  // გასაერთიანებლადაა. ორი პირობა:
+  //  • ზოგადი „მოდელი“ არ ითვლება — MUK Dell-ის ყველა ჩანთას „bag“-ს უწერს და 14
+  //    სხვადასხვა ჩანთა ერთ ბარათზე ჯდებოდა, ყველაზე იაფის ფასით;
+  //  • იმავე მიმწოდებლის სხვა კოდი სხვა ნივთია — მას უკვე თავისი მიწოდება აქვს.
+  const model = item.model?.trim() ?? "";
+  if (isSpecificModel(model)) {
     const byModel = await db.product.findFirst({
       where: {
-        model: item.model.trim(),
+        model,
         ...(item.brand ? { brand: { name: item.brand.trim() } } : {}),
+        supplies: { none: { supplierId } },
       },
       select: { id: true },
     });
     if (byModel) return byModel.id;
   }
   return null;
+}
+
+/** მოდელი ნივთს ცალსახად ასახელებს — ციფრი აქვს და ზოგადი სიტყვა არ არის */
+export function isSpecificModel(model: string): boolean {
+  return model.length >= 4 && /\d/.test(model);
 }
 
 /** ნაშთი პროდუქტზე = მისი ყველა მიმწოდებლის ჯამი */

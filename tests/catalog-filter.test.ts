@@ -170,3 +170,11 @@ test("გვერდის ნომერი ფილტრის შეც�
 test.after(async () => {
   await db.$disconnect();
 });
+
+/* ────────── სინქი: ზოგადი მოდელით სხვადასხვა ნივთი არ ერთიანდება ────────── */
+import { isSpecificModel } from "../src/lib/suppliers";
+
+test("ზოგადი მოდელი („bag“) დამთხვევისთვის არ გამოდგება", () => {
+  for (const m of ["bag", "mouse", "Headset", "PSU", ""]) assert.equal(isSpecificModel(m), false, m);
+  for (const m of ["AW5625P", "D50ZO", "GXP1615", "MS532"]) assert.equal(isSpecificModel(m), true, m);
+});
