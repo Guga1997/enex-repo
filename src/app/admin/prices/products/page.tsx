@@ -5,7 +5,8 @@ import { ci } from "@/lib/search-mode";
 import { effectivePrice, TIERS } from "@/lib/pricing";
 import { getTierShares } from "@/lib/pricing-settings";
 import PricesTabs from "@/components/admin/PricesTabs";
-import { saveProductPriceAction } from "../actions";
+import { applyPromoAction, endAllPromoAction, endPromoAction, saveProductPriceAction } from "../actions";
+import SelectAll from "@/components/admin/SelectAll";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "პროდუქტების ფასები" };
@@ -18,7 +19,7 @@ const FILTERS: Record<string, { label: string; where: Prisma.ProductWhereInput }
   all: { label: "ყველა", where: {} },
   locked: { label: "ხელით დაწერილი", where: { priceLocked: true } },
   own: { label: "მიმწოდებლის გარეშე", where: { supplies: { none: {} } } },
-  sale: { label: "ძველი ფასით (ფასდაკლება)", where: { oldPrice: { not: null } } },
+  sale: { label: "აქციაში", where: { oldPrice: { not: null } } },
 };
 
 const money = (n: number | null | undefined) => (n == null ? "—" : `${n.toFixed(2)}₾`);
@@ -98,8 +99,27 @@ export default async function ProductPricesPage({
         <span className="ml-auto text-sm text-muted">{total} პროდუქტი</span>
       </form>
 
+      {/* აქცია — რიგების ჩექბოქსები ამ ფორმას form="promo" ატრიბუტით ეკუთვნის */}
+      <form id="promo" action={applyPromoAction} className="card flex flex-wrap items-end gap-3 p-4">
+        <input type="hidden" name="return" value={here} />
+        <div className="text-sm">
+          <div className="font-semibold">აქცია</div>
+          <div className="text-xs text-muted">მონიშნე პროდუქტები ქვემოთ — ფასდაკლება ყველასთვის, „ფასდაკლებულებში“ გამოჩნდება</div>
+        </div>
+        <label className="block">
+          <span className="mb-1 block text-xs text-muted">ფასდაკლება %</span>
+          <input name="percent" inputMode="decimal" placeholder="10" className={`${input} w-24`} />
+        </label>
+        <button className="btn btn-primary px-4 py-2 text-sm">აქციის დაწყება</button>
+        <button formAction={endPromoAction} className="btn btn-outline px-4 py-2 text-sm">მონიშნულზე მოხსნა</button>
+        <button formAction={endAllPromoAction} className="btn btn-outline px-4 py-2 text-sm text-rose-600">
+          ყველა აქციის მოხსნა
+        </button>
+      </form>
+
       <div className="card overflow-hidden">
-        <div className="hidden grid-cols-[2.2fr_0.8fr_0.8fr_1.1fr_1fr_0.9fr_0.9fr_auto] gap-3 border-b border-line bg-canvas px-4 py-2 text-xs text-muted lg:grid">
+        <div className="hidden grid-cols-[auto_2.2fr_0.8fr_0.8fr_1.1fr_1fr_0.9fr_0.9fr_auto] gap-3 border-b border-line bg-canvas px-4 py-2 text-xs text-muted lg:grid">
+          <SelectAll form="promo" />
           <span>პროდუქტი</span>
           <span className="text-right">ქოსთი</span>
           <span className="text-right">მისი საცალო</span>
@@ -118,10 +138,12 @@ export default async function ProductPricesPage({
             <form
               key={p.id}
               action={saveProductPriceAction}
-              className="grid gap-3 border-b border-line px-4 py-3 last:border-0 lg:grid-cols-[2.2fr_0.8fr_0.8fr_1.1fr_1fr_0.9fr_0.9fr_auto] lg:items-center"
+              className="grid gap-3 border-b border-line px-4 py-3 last:border-0 lg:grid-cols-[auto_2.2fr_0.8fr_0.8fr_1.1fr_1fr_0.9fr_0.9fr_auto] lg:items-center"
             >
               <input type="hidden" name="id" value={p.id} />
               <input type="hidden" name="return" value={here} />
+
+              <input type="checkbox" name="ids" value={p.id} form="promo" className="size-4 accent-brand-500" aria-label="მონიშვნა" />
 
               <div className="min-w-0">
                 <Link href={`/admin/products/${p.id}`} className="block truncate text-sm font-medium hover:text-brand-600">
@@ -130,6 +152,11 @@ export default async function ProductPricesPage({
                 <div className="truncate text-xs text-muted">
                   {p.sku} · {supplied ? p.supplies.map((s) => s.supplier.name).join(", ") : "მიმწოდებლის გარეშე"}
                   {!p.isActive && " · დამალული"}
+                  {p.oldPrice != null && p.oldPrice > p.price && (
+                    <span className="ml-1 rounded bg-rose-50 px-1.5 text-rose-700">
+                      აქცია −{Math.round((1 - p.price / p.oldPrice) * 100)}%
+                    </span>
+                  )}
                 </div>
               </div>
 

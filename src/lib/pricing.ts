@@ -86,7 +86,12 @@ const round = (n: number) => Math.round(n * 100) / 100;
  */
 function baseOf(p: PricedProduct): number {
   const list = p.listPrice != null && p.listPrice > 0 ? p.listPrice : null;
-  return list !== null && p.cost != null && list > p.cost ? list : p.price;
+  if (list !== null && p.cost != null && list > p.cost) return list;
+  // აქციაში საფეხური ჩვეულებრივი ფასიდან ითვლება და არა აქციის ფასიდან —
+  // ორი ფასდაკლება ერთმანეთზე არ ეწყობა, პარტნიორი უკეთესს იღებს ორიდან
+  // (ბოლოს მაინც Math.min(value, retail) ჭრის აქციის ფასამდე)
+  if (p.oldPrice != null && p.oldPrice > p.price) return p.oldPrice;
+  return p.price;
 }
 
 function marginPrice(base: number, cost: number | null | undefined, share: number): number | null {

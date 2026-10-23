@@ -235,3 +235,13 @@ test("საცალოს გარეშე პოზიციას ცა�
   // COST რეჟიმს არ ეხება
   assert.equal(computePrices({ ...rule, retailBase: "COST" }, 800, null, terms).price, 840);
 });
+
+test("აქციაში პარტნიორი უკეთესს იღებს ორიდან — ფასდაკლებები არ ეწყობა", () => {
+  // ჩვეულებრივი 1000, ქოსთი 800 → M = 200. აქცია −5% → 950.
+  const P = { price: 950, oldPrice: 1000, cost: 800 };
+  const at = (t: string) => effectivePrice(P, { priceTier: t, discountPercent: 0 }).value;
+  assert.equal(at("RETAIL"), 950, "სტუმარი აქციის ფასს იხდის");
+  assert.equal(at("DEALER"), 950, "დილერი 980 იქნებოდა — აქცია სჯობს");
+  assert.equal(at("GOLD"), 940, "ოქრო 1000 − 30%×200 = 940 — საფეხური სჯობს");
+  assert.equal(at("PLATINUM"), 920);
+});

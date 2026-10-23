@@ -154,3 +154,92 @@ export async function saveProductPriceAction(formData: FormData) {
   refresh();
   return back2({ ok: `${product.sku}: შენახულია` });
 }
+
+/* ──────────────────────────────── აქცია ──────────────────────────────── */
+
+const round2 = (n: number) => Math.round(n * 100) / 100;
+
+function backTo(formData: FormData, msg: { ok?: string; error?: string }): never {
+  const ret = String(formData.get("return") ?? "/admin/prices/products");
+  const [path, query = ""] = ret.split("?");
+  const q = new URLSearchParams(query);
+  q.delete("ok");
+  q.delete("error");
+  if (msg.ok) q.set("ok", msg.ok);
+  if (msg.error) q.set("error", msg.error);
+  redirect(`${path.startsWith("/admin/prices") ? path : "/admin/prices/products"}?${q}`);
+}
+
+/**
+ * მონიშნულ პროდუქტებზე ფასდაკლება ყველასთვის. ჩვეულებრივი ფასი „ძველ ფასად“
+ * ინახება (საიტზე გადახაზული ჩანს და „ფასდაკლებულებში“ ხვდება), აქციის ფასი
+ * იკეტება, რომ სინქმა არ გადააწეროს. უკვე აქციაში მყოფზე საწყისი ფასიდან ითვლება.
+ * ქოსთზე დაბლა ჩამოსულ ფასდაკლებას არ ვადებთ — ცალკე ვითვლით და ვაჩვენებთ.
+ */
+export async function applyPromoAction(formData: FormData) {
+  await requireAdmin();
+  const ids = formData.getAll("ids").map(String).filter(Boolean);
+  const pct = num(formData, "percent");
+  if (!ids.length) backTo(formData, { error: "მონიშნე პროდუქტები" });
+  if (pct === null || pct <= 0 || pct >= 90) backTo(formData, { error: "ფასდაკლება 0-დან 90%-მდე უნდა იყოს" });
+
+  const products = await db.product.findMany({
+    where: { id: { in: ids } },
+    select: { id: true, price: true, oldPrice: true, cost: true },
+  });
+
+  let applied = 0;
+  let belowCost = 0;
+  for (const p of products) {
+    const regular = p.oldPrice && p.oldPrice > p.price ? p.oldPrice : p.price;
+    if (!(regular > 0)) continue;
+    const sale = round2(regular * (1 - pct! / 100));
+    if (p.cost && p.cost > 0 && sale <= p.cost) {
+      belowCost++;
+      continue;
+    }
+    await db.product.update({ where: { id: p.id }, data: { oldPrice: regular, price: sale, priceLocked: true } });
+    applied++;
+  }
+
+  refresh();
+  backTo(formData, {
+    ok:
+      `აქცია −${pct}%: ${applied} პროდუქტი` +
+      (belowCost ? ` · ${belowCost} გამოტოვებულია — ფასი ქოსთზე დაბლა ჩამოვიდოდა` : ""),
+  });
+}
+
+/** აქციის მოხსნა: ფასი ისევ ფორმულით, მიმწოდებლის გარეშეზე — „ძველი ფასი“ ბრუნდება */
+export async function endPromoAction(formData: FormData) {
+  await requireAdmin();
+  const all = formData.get("all") === "1";
+  const ids = formData.getAll("ids").map(String).filter(Boolean);
+  if (!all && !ids.length) backTo(formData, { error: "მონიშნე პროდუქტები" });
+
+  const products = await db.product.findMany({
+    where: { oldPrice: { not: null }, ...(all ? {} : { id: { in: ids } }) },
+    select: { id: true, oldPrice: true, _count: { select: { supplies: true } } },
+  });
+
+  for (const p of products) {
+    if (p._count.supplies > 0) {
+      await db.product.update({ where: { id: p.id }, data: { oldPrice: null, priceLocked: false } });
+      await repriceProduct(p.id);
+    } else {
+      await db.product.update({ where: { id: p.id }, data: { price: p.oldPrice!, oldPrice: null, priceLocked: false } });
+    }
+  }
+
+  refresh();
+  backTo(formData, { ok: `აქცია მოიხსნა: ${products.length} პროდუქტი` });
+}
+
+/**
+ * ყველა აქციის მოხსნა — ცალკე მოქმედებაა, რადგან React formAction-იან ღილაკზე
+ * name-ს თავისით ცვლის და „all=1“ ფორმიდან ვერ მოვა.
+ */
+export async function endAllPromoAction(formData: FormData) {
+  formData.set("all", "1");
+  return endPromoAction(formData);
+}

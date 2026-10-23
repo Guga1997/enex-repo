@@ -9,7 +9,7 @@ export default function SelectAll({ form }: { form: string }) {
       className="size-4 accent-brand-500"
       onChange={(e) => {
         const boxes = document.querySelectorAll<HTMLInputElement>(
-          `form#${form} input[type="checkbox"][name="ids"]`
+          `form#${form} input[type="checkbox"][name="ids"], input[type="checkbox"][name="ids"][form="${form}"]`
         );
         boxes.forEach((b) => { b.checked = e.currentTarget.checked; });
       }}
