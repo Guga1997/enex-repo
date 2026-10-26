@@ -6,6 +6,7 @@ import CheckoutForm from "@/components/CheckoutForm";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/customer-auth";
 import { getT } from "@/lib/i18n/server";
+import { canPayWithTbc } from "@/lib/payments/flitt";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "შეკვეთის გაფორმება" };
@@ -46,6 +47,7 @@ export default async function CheckoutPage() {
               : null
           }
           organizations={organizations}
+          tbcEnabled={await canPayWithTbc()}
         />
       </main>
       <Footer />

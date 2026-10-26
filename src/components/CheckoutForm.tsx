@@ -36,9 +36,12 @@ type Quote = {
 export default function CheckoutForm({
   user,
   organizations = [],
+  tbcEnabled = false,
 }: {
   user?: CheckoutUser;
   organizations?: CheckoutOrg[];
+  /** თიბისის (Flitt) გასაღებები სერვერზეა — სხვაგვარად ვარიანტი არ ჩანს */
+  tbcEnabled?: boolean;
 }) {
   const t = useT();
   const { lines, subtotal, clear, ready } = useCart();
@@ -46,7 +49,7 @@ export default function CheckoutForm({
 
   const [deliveryMethod, setDeliveryMethod] = useState<"COURIER" | "PICKUP">("COURIER");
   const [paymentMethod, setPaymentMethod] =
-    useState<"BOG" | "BANK_TRANSFER" | "INSTALLMENT" | "POS">("BOG");
+    useState<"BOG" | "TBC" | "BANK_TRANSFER" | "INSTALLMENT" | "POS">("BOG");
   const [isCompany, setIsCompany] = useState(user?.type === "COMPANY");
   const [organizationId, setOrganizationId] = useState(
     organizations.find((o) => o.isDefault)?.id ?? organizations[0]?.id ?? ""
@@ -239,7 +242,7 @@ export default function CheckoutForm({
         <fieldset className="card p-5">
           <legend className="px-1 font-semibold">{t("გადახდის მეთოდი")}</legend>
           <div className="mt-4 space-y-3">
-            {(["BOG", "BANK_TRANSFER", "POS", "INSTALLMENT"] as const).map((m) => (
+            {(["BOG", ...(tbcEnabled ? (["TBC"] as const) : []), "BANK_TRANSFER", "POS", "INSTALLMENT"] as const).map((m) => (
               <Radio
                 key={m}
                 checked={paymentMethod === m}
@@ -335,7 +338,7 @@ export default function CheckoutForm({
           disabled={busy}
           className="btn btn-primary mt-5 w-full hover:bg-brand-600 disabled:opacity-60"
         >
-          {busy ? "მუშავდება..." : paymentMethod === "BOG" ? "გადახდაზე გადასვლა" : "შეკვეთის დადასტურება"}
+          {busy ? "მუშავდება..." : paymentMethod === "BOG" || paymentMethod === "TBC" ? "გადახდაზე გადასვლა" : "შეკვეთის დადასტურება"}
         </button>
       </aside>
     </form>

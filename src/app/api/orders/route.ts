@@ -4,6 +4,8 @@ import { db } from "@/lib/db";
 import { isPurchasable, availableQty } from "@/lib/stock";
 import { reservationDeadline } from "@/lib/orders";
 import { createPayment } from "@/lib/payments/bog";
+import { canPayWithTbc, createFlittPayment } from "@/lib/payments/flitt";
+import { getLocale } from "@/lib/i18n/server";
 import { FREE_DELIVERY_FROM, RESERVATION_MINUTES } from "@/lib/constants";
 import { getCurrentUser } from "@/lib/customer-auth";
 import { effectivePrice } from "@/lib/pricing";
@@ -21,7 +23,7 @@ const schema = z.object({
   deliveryCity: z.string().optional(),
   deliveryAddress: z.string().optional(),
   comment: z.string().max(1000).optional(),
-  paymentMethod: z.enum(["BOG", "BANK_TRANSFER", "INSTALLMENT", "POS"]),
+  paymentMethod: z.enum(["BOG", "TBC", "BANK_TRANSFER", "INSTALLMENT", "POS"]),
   organizationId: z.string().optional(),
   items: z
     .array(z.object({ productId: z.string(), qty: z.number().int().min(1).max(999) }))
@@ -50,6 +52,10 @@ export async function POST(req: Request) {
     );
   }
   const input = parsed.data;
+
+  if (input.paymentMethod === "TBC" && !(await canPayWithTbc())) {
+    return NextResponse.json({ error: "თიბისის ბარათით გადახდა დროებით მიუწვდომელია" }, { status: 400 });
+  }
 
   if (input.deliveryMethod === "COURIER" && !input.deliveryAddress?.trim()) {
     return NextResponse.json({ error: "მიუთითეთ მიწოდების მისამართი" }, { status: 400 });
@@ -200,19 +206,19 @@ export async function POST(req: Request) {
   }
 
   // გადარიცხვა / განვადება / POS — ბანკზე გადამისამართება არ ხდება
-  if (input.paymentMethod !== "BOG") {
+  if (input.paymentMethod !== "BOG" && input.paymentMethod !== "TBC") {
     return NextResponse.json({ orderId: order.id, redirectUrl: `/order/${order.id}` });
   }
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? new URL(req.url).origin;
 
   try {
-    const payment = await createPayment({
+    const request = {
       orderId: order.id,
       orderNumber: order.number,
       amount: total,
       deliveryFee,
-      ttlMinutes: RESERVATION_MINUTES.BOG,
+      ttlMinutes: RESERVATION_MINUTES[input.paymentMethod],
       buyer: { name: input.customerName, email: input.customerEmail, phone: input.customerPhone },
       siteUrl,
       items: priced.map((l) => ({
@@ -221,7 +227,11 @@ export async function POST(req: Request) {
         qty: l.qty,
         price: l.unitPrice,
       })),
-    });
+    };
+    const payment =
+      input.paymentMethod === "TBC"
+        ? await createFlittPayment({ ...request, lang: await getLocale() })
+        : await createPayment(request);
 
     await db.order.update({
       where: { id: order.id },
