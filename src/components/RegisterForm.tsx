@@ -40,7 +40,7 @@ export default function RegisterForm({ next }: { next?: string }) {
                 : "border-line bg-surface text-ink hover:bg-canvas"
             }`}
           >
-            {k === "INDIVIDUAL" ? "ფიზიკური პირი" : "იურიდიული პირი"}
+            {k === "INDIVIDUAL" ? t("ფიზიკური პირი") : t("იურიდიული პირი")}
           </button>
         ))}
       </div>
@@ -49,19 +49,19 @@ export default function RegisterForm({ next }: { next?: string }) {
 
       <label className="block">
         <span className="mb-1.5 block text-sm font-medium">
-          {isCompany ? "კომპანიის დასახელება" : "სახელი და გვარი"}
+          {isCompany ? t("კომპანიის დასახელება") : t("სახელი და გვარი")}
         </span>
         <input
           name="name"
           required
           className={`${field} ${err("name") ? "border-rose-400" : ""}`}
-          placeholder={isCompany ? "შპს ინდექსი" : "გიორგი ნიშნიანიძე"}
+          placeholder={isCompany ? t("შპს ინდექსი") : t("გიორგი ნიშნიანიძე")}
         />
       </label>
 
       <label className="block">
         <span className="mb-1.5 block text-sm font-medium">
-          {isCompany ? "საიდენტიფიკაციო კოდი" : "პირადი ნომერი"}
+          {isCompany ? t("საიდენტიფიკაციო კოდი") : t("პირადი ნომერი")}
         </span>
         <input
           name="taxId"
@@ -69,7 +69,7 @@ export default function RegisterForm({ next }: { next?: string }) {
           inputMode="numeric"
           maxLength={isCompany ? 9 : 11}
           className={`${field} ${err("taxId") ? "border-rose-400" : ""}`}
-          placeholder={isCompany ? "9 ციფრი" : "11 ციფრი"}
+          placeholder={t("{0} ციფრი", isCompany ? 9 : 11)}
         />
       </label>
 
@@ -139,16 +139,15 @@ export default function RegisterForm({ next }: { next?: string }) {
       )}
 
       <p className="text-sm text-muted">
-        რეგისტრაციის შემდეგ ორ კოდს მიიღებ — ერთს ელფოსტაზე, მეორეს SMS-ით. ანგარიში
-        ორივეს დადასტურების შემდეგ ამოქმედდება.
+        {t("რეგისტრაციის შემდეგ ორ კოდს მიიღებ — ერთს ელფოსტაზე, მეორეს SMS-ით. ანგარიში ორივეს დადასტურების შემდეგ ამოქმედდება.")}
       </p>
 
       <button disabled={pending} className="btn btn-primary w-full hover:bg-brand-600 disabled:opacity-60">
-        {pending ? "იგზავნება…" : "რეგისტრაცია"}
+        {pending ? t("იგზავნება…") : t("რეგისტრაცია")}
       </button>
 
       <p className="text-center text-sm text-muted">
-        უკვე გაქვს ანგარიში?{" "}
+        {t("უკვე გაქვს ანგარიში?")}{" "}
         <Link href={next ? `/login?next=${encodeURIComponent(next)}` : "/login"} className="font-medium text-brand-600 hover:underline">
           {t("შესვლა")}
         </Link>

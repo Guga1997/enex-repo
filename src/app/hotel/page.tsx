@@ -11,8 +11,10 @@ import { effectivePrice } from "@/lib/pricing";
 import { JsonLd, breadcrumbJsonLd, clip, alts } from "@/lib/seo";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { getT } from "@/lib/i18n/server";
-import { getLocale } from "@/lib/i18n/server";
+import { getI18n, getLocale } from "@/lib/i18n/server";
+import { translate } from "@/lib/i18n/dict";
+import { nameOf } from "@/lib/i18n/content";
+import { translateAttr } from "@/lib/i18n/attributes";
 
 export const dynamic = "force-dynamic";
 
@@ -20,13 +22,18 @@ const ROOT = "სასტუმროს სისტემები";
 
 const META = {
   title: "სასტუმროს სისტემები — ელექტრონული საკეტები, სეიფები, მინიბარები",
-  description: clip(
-    "Omnitec Systems: სასტუმროს ელექტრონული საკეტები (OS Slim, EVO, Gaudi 3), დაშვების კონტროლი, სეიფები, მინიბარები, ენერგოსეივერები, ლოკერები და მართვის პროგრამა. ფასი ლარში ეროვნული ბანკის დღიური კურსით, მიწოდება შეკვეთით — Enex."
-  ),
+  // ჯერ თარგმანი, მერე clip — გასაღები სრული ტექსტია
+  description:
+    "Omnitec Systems: სასტუმროს ელექტრონული საკეტები (OS Slim, EVO, Gaudi 3), დაშვების კონტროლი, სეიფები, მინიბარები, ენერგოსეივერები, ლოკერები და მართვის პროგრამა. ფასი ლარში ეროვნული ბანკის დღიური კურსით, მიწოდება შეკვეთით — Enex.",
 } as const;
 
 export async function generateMetadata(): Promise<Metadata> {
-  return { ...META, alternates: alts("/hotel", await getLocale()) };
+  const locale = await getLocale();
+  return {
+    title: translate(locale, META.title),
+    description: clip(translate(locale, META.description)),
+    alternates: alts("/hotel", locale),
+  };
 }
 
 const serieOf = (p: { attributes: { name: string; value: string }[] }) =>
@@ -39,7 +46,7 @@ export default async function HotelPage({
 }: {
   searchParams: Promise<{ group?: string }>;
 }) {
-  const t = await getT();
+  const { locale, t } = await getI18n();
   const { group } = await searchParams;
   const root = await db.category.findFirst({
     where: { nameKa: ROOT },
@@ -55,7 +62,7 @@ export default async function HotelPage({
         categoryId: active ? active.id : { in: groups.map((c) => c.id) },
       },
       include: {
-        category: { select: { nameKa: true, slug: true } },
+        category: { select: { nameKa: true, nameEn: true, nameRu: true, slug: true } },
         attributes: { orderBy: { sortOrder: "asc" } },
         images: { orderBy: { sortOrder: "asc" }, take: 1 },
       },
@@ -74,7 +81,7 @@ export default async function HotelPage({
 
   return (
     <>
-      <JsonLd data={breadcrumbJsonLd([{ name: "მთავარი", path: "/" }, { name: ROOT, path: "/hotel" }])} />
+      <JsonLd data={breadcrumbJsonLd([{ name: t("მთავარი"), path: "/" }, { name: t(ROOT), path: "/hotel" }])} />
       <Suspense>
         <Header />
       </Suspense>
@@ -83,21 +90,22 @@ export default async function HotelPage({
         <nav className="mb-4 flex flex-wrap items-center gap-1.5 text-sm text-muted">
           <Link href="/" className="hover:text-brand-600">{t("მთავარი")}</Link>
           <span>/</span>
-          <span className="text-ink">{ROOT}</span>
+          <span className="text-ink">{t(ROOT)}</span>
         </nav>
 
         <section className="mb-6 rounded-2xl bg-gradient-to-br from-nav to-brand-700 px-6 py-8 text-white sm:px-10 sm:py-10">
           <h1 className="text-2xl font-bold sm:text-3xl">{t("სასტუმროს სისტემები")}</h1>
           <p className="mt-2 max-w-2xl text-sm text-white/80 sm:text-base">
-            <b className="text-white">Omnitec Systems</b> — ესპანური ბრენდი, 10 000-ზე მეტ სასტუმროში
-            მსოფლიოს 5 კონტინენტზე: ელექტრონული საკეტები, დაშვების კონტროლი, სეიფები, მინიბარები,
-            ენერგოსეივერები, ლოკერები და მართვის პროგრამა. ყველა პოზიცია{" "}
-            <b className="text-white">{t("შეკვეთით")}</b> მოდის; ობიექტის კონფიგურაცია და მონტაჟი — ჩვენი გუნდით.
+            <b className="text-white">Omnitec Systems</b>{" "}
+            {t("— ესპანური ბრენდი, 10 000-ზე მეტ სასტუმროში მსოფლიოს 5 კონტინენტზე: ელექტრონული საკეტები, დაშვების კონტროლი, სეიფები, მინიბარები, ენერგოსეივერები, ლოკერები და მართვის პროგრამა. ყველა პოზიცია შეკვეთით მოდის; ობიექტის კონფიგურაცია და მონტაჟი — ჩვენი გუნდით.")}
           </p>
           {fx && (
             <p className="mt-4 text-xs text-white/60">
-              ფასები ლარში, ეროვნული ბანკის კურსით: 1 EUR = {fx.rate.toFixed(4)} ₾
-              {fx.validFrom ? ` (${formatDate(fx.validFrom)})` : ""} — ყოველდღიურად ახლდება.
+              {t(
+                "ფასები ლარში, ეროვნული ბანკის კურსით: 1 EUR = {0} ₾{1} — ყოველდღიურად ახლდება.",
+                fx.rate.toFixed(4),
+                fx.validFrom ? ` (${formatDate(fx.validFrom)})` : ""
+              )}
             </p>
           )}
         </section>
@@ -108,7 +116,7 @@ export default async function HotelPage({
             href="/hotel"
             className={`rounded-full border px-4 py-2 text-sm ${!active ? "border-brand-500 bg-brand-500 text-white" : "border-line bg-surface hover:border-brand-500"}`}
           >
-            ყველა ({products.length})
+            {t("ყველა ({0})", products.length)}
           </Link>
           {groups.map((c) => (
             <Link
@@ -116,7 +124,7 @@ export default async function HotelPage({
               href={`/hotel?group=${c.slug}`}
               className={`rounded-full border px-4 py-2 text-sm ${active?.id === c.id ? "border-brand-500 bg-brand-500 text-white" : "border-line bg-surface hover:border-brand-500"}`}
             >
-              {c.nameKa}
+              {nameOf(c, locale)}
             </Link>
           ))}
         </div>
@@ -156,16 +164,16 @@ export default async function HotelPage({
                     </td>
                     <td className="p-3">
                       <Link href={`/product/${p.slug}`} className="font-medium hover:text-brand-600">
-                        {p.nameKa.split(" — ").slice(1).join(" — ") || p.nameKa}
+                        {nameOf(p, locale).split(" — ").slice(1).join(" — ") || nameOf(p, locale)}
                       </Link>
                     </td>
-                    <td className="p-3 text-muted">{p.category.nameKa}</td>
+                    <td className="p-3 text-muted">{nameOf(p.category, locale)}</td>
                     <td className="p-3 font-mono text-xs text-muted">{p.sku}</td>
                     <td className="p-3 text-right">
                       <div className="font-bold tabular-nums">{gel(price.value)}</div>
                       {price.saved > 0 && <div className="text-xs text-emerald-700">{t("სადილერო ფასი")}</div>}
                     </td>
-                    <td className="p-3 text-muted">{leadOf(p) || "შეკვეთით"}</td>
+                    <td className="p-3 text-muted">{translateAttr(leadOf(p) || "შეკვეთით", locale)}</td>
                     <td className="p-3 text-right">
                       <Link
                         href={`/product/${p.slug}`}
@@ -182,8 +190,7 @@ export default async function HotelPage({
         )}
 
         <p className="mt-6 text-sm text-muted">
-          ფასები ერთეულზეა. კომპლექტაცია (მექანიზმი, ფირფიტები, ბარათები, პროგრამა) ობიექტის მიხედვით
-          ირჩევა — მოგვწერეთ ნომრების რაოდენობა და მოგიმზადებთ შეთავაზებას მონტაჟით.
+          {t("ფასები ერთეულზეა. კომპლექტაცია (მექანიზმი, ფირფიტები, ბარათები, პროგრამა) ობიექტის მიხედვით ირჩევა — მოგვწერეთ ნომრების რაოდენობა და მოგიმზადებთ შეთავაზებას მონტაჟით.")}
         </p>
       </main>
       <Footer />

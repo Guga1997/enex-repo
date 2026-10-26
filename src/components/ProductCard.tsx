@@ -93,7 +93,7 @@ export default async function ProductCard({ p, viewer }: { p: CardProduct; viewe
             <div className="space-y-0.5">
               <div className="flex items-baseline gap-2">
                 <span className="text-xs text-muted">
-                  {price.isDealer ? "სადილერო:" : "თქვენი ფასი:"}
+                  {price.isDealer ? t("სადილერო:") : t("თქვენი ფასი:")}
                 </span>
                 <span className="text-lg font-bold text-brand-600">{gel(price.value)}</span>
               </div>

@@ -4,9 +4,9 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import LoginForm from "@/components/LoginForm";
 import { getCurrentUser } from "@/lib/customer-auth";
-import { getT } from "@/lib/i18n/server";
+import { getT, titleMeta } from "@/lib/i18n/server";
 
-export const metadata = { title: "შესვლა" };
+export const generateMetadata = titleMeta("შესვლა");
 
 export default async function LoginPage({
   searchParams,
@@ -29,7 +29,7 @@ export default async function LoginPage({
             </Link>
           </p>
           <p className="text-center text-sm text-muted">
-            ანგარიში არ გაქვს?{" "}
+            {t("ანგარიში არ გაქვს?")}{" "}
             <Link href={next ? `/register?next=${encodeURIComponent(next)}` : "/register"} className="font-medium text-brand-600 hover:underline">
               {t("რეგისტრაცია")}
             </Link>

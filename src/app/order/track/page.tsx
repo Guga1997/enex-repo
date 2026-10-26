@@ -3,9 +3,9 @@ import { Suspense } from "react";
 import { db } from "@/lib/db";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { getT } from "@/lib/i18n/server";
+import { getT, titleMeta } from "@/lib/i18n/server";
 
-export const metadata = { title: "შეკვეთის მოძებნა" };
+export const generateMetadata = titleMeta("შეკვეთის მოძებნა");
 
 export default async function TrackPage({
   searchParams,

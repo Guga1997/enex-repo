@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useState } from "react";
 import ProductPlaceholder from "./ProductPlaceholder";
+import { useT } from "@/components/LocaleProvider";
 
 type Img = { url: string; alt: string };
 
@@ -15,6 +16,7 @@ export default function Gallery({
   category?: string | null;
   label?: string | null;
 }) {
+  const t = useT();
   const [active, setActive] = useState(0);
 
   if (!images.length) {
@@ -44,7 +46,7 @@ export default function Gallery({
             <button
               key={img.url + i}
               onClick={() => setActive(i)}
-              aria-label={`სურათი ${i + 1}`}
+              aria-label={t("სურათი {0}", i + 1)}
               className={`relative size-20 shrink-0 rounded-lg border bg-white p-1 ${
                 i === active ? "border-brand-500" : "border-line"
               }`}

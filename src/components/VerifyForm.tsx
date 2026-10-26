@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { resendAction, verifyAction, type FormState } from "@/app/actions/customer";
+import { useT } from "@/components/LocaleProvider";
 
 const field =
   "w-full rounded-lg border border-line px-3 py-2.5 text-center text-lg tracking-[0.3em] outline-none focus:border-brand-500";
@@ -13,17 +14,18 @@ type Props = {
 };
 
 export default function VerifyForm({ channel, target, done }: Props) {
+  const t = useT();
   const [state, action, pending] = useActionState<FormState, FormData>(verifyAction, null);
   const [resendState, resend, resending] = useActionState<FormState, FormData>(resendAction, null);
 
-  const title = channel === "EMAIL" ? "ელფოსტა" : "მობილური";
+  const title = channel === "EMAIL" ? t("ელფოსტა") : t("მობილური");
   const mine = state?.field === channel;
 
   if (done) {
     return (
       <div className="card space-y-1 p-6">
         <p className="text-sm font-medium">{title}</p>
-        <p className="text-sm text-emerald-700">✓ დადასტურებულია — {target}</p>
+        <p className="text-sm text-emerald-700">{t("✓ დადასტურებულია —")} {target}</p>
       </div>
     );
   }
@@ -32,7 +34,7 @@ export default function VerifyForm({ channel, target, done }: Props) {
     <div className="card space-y-4 p-6">
       <div>
         <p className="text-sm font-medium">{title}</p>
-        <p className="text-sm text-muted">კოდი გაიგზავნა: {target}</p>
+        <p className="text-sm text-muted">{t("კოდი გაიგზავნა:")} {target}</p>
       </div>
 
       <form action={action} className="space-y-3">
@@ -49,7 +51,7 @@ export default function VerifyForm({ channel, target, done }: Props) {
           disabled={pending}
           className="btn btn-primary w-full hover:bg-brand-600 disabled:opacity-60"
         >
-          {pending ? "მოწმდება…" : "დადასტურება"}
+          {pending ? t("მოწმდება…") : t("დადასტურება")}
         </button>
       </form>
 
@@ -66,7 +68,7 @@ export default function VerifyForm({ channel, target, done }: Props) {
           disabled={resending}
           className="text-sm text-brand-600 hover:underline disabled:opacity-60"
         >
-          {resending ? "იგზავნება…" : "კოდი აღარ მოვიდა — გამომიგზავნე ხელახლა"}
+          {resending ? t("იგზავნება…") : t("კოდი აღარ მოვიდა — გამომიგზავნე ხელახლა")}
         </button>
       </form>
     </div>

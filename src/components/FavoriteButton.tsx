@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toggleFavoriteAction } from "@/app/actions/customer";
+import { useT } from "@/components/LocaleProvider";
 
 export default function FavoriteButton({
   productId,
@@ -13,6 +14,7 @@ export default function FavoriteButton({
   initial: boolean;
   signedIn: boolean;
 }) {
+  const t = useT();
   const [on, setOn] = useState(initial);
   const [pending, start] = useTransition();
   const router = useRouter();
@@ -42,7 +44,7 @@ export default function FavoriteButton({
       }`}
     >
       <span aria-hidden>{on ? "♥" : "♡"}</span>
-      {on ? "ფავორიტებშია" : "ფავორიტებში დამატება"}
+      {on ? t("ფავორიტებშია") : t("ფავორიტებში დამატება")}
     </button>
   );
 }

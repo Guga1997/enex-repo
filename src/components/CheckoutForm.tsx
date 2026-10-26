@@ -130,7 +130,7 @@ export default function CheckoutForm({
           router.push("/login?next=/checkout");
           return;
         }
-        setError(data.error ?? "შეკვეთის გაფორმება ვერ მოხერხდა");
+        setError(t(data.error ?? "შეკვეთის გაფორმება ვერ მოხერხდა"));
         setBusy(false);
         return;
       }
@@ -139,7 +139,7 @@ export default function CheckoutForm({
       if (data.redirectUrl.startsWith("http")) window.location.href = data.redirectUrl;
       else router.push(data.redirectUrl);
     } catch {
-      setError("კავშირის შეცდომა. სცადეთ თავიდან.");
+      setError(t("კავშირის შეცდომა. სცადეთ თავიდან."));
       setBusy(false);
     }
   }
@@ -163,7 +163,7 @@ export default function CheckoutForm({
             <Field
               name="customerId"
               label={t("პირადი ნომერი")}
-              hint="ზედნადებისთვის, არასავალდებულო"
+              hint={t("ზედნადებისთვის, არასავალდებულო")}
               defaultValue={user?.taxId}
             />
           </div>
@@ -189,7 +189,7 @@ export default function CheckoutForm({
                   >
                     {organizations.map((o) => (
                       <option key={o.id} value={o.id}>
-                        {o.name} — ს/კ {o.taxId}
+                        {o.name} — {t("ს/კ")} {o.taxId}
                       </option>
                     ))}
                   </select>
@@ -211,13 +211,13 @@ export default function CheckoutForm({
               checked={deliveryMethod === "COURIER"}
               onChange={() => setDeliveryMethod("COURIER")}
               title={t("ადგილზე მიტანა")}
-              desc={subtotal >= FREE_DELIVERY_FROM ? "უფასო" : "15₾"}
+              desc={subtotal >= FREE_DELIVERY_FROM ? t("უფასო") : "15₾"}
             />
             <Radio
               checked={deliveryMethod === "PICKUP"}
               onChange={() => setDeliveryMethod("PICKUP")}
               title={t("საწყობიდან გატანა")}
-              desc="უფასო"
+              desc={t("უფასო")}
             />
           </div>
 
@@ -230,7 +230,7 @@ export default function CheckoutForm({
                   className="w-full rounded-lg border border-line px-3 py-2.5 text-sm outline-none focus:border-brand-500"
                 >
                   {CITIES.map((c) => (
-                    <option key={c}>{c}</option>
+                    <option key={c} value={c}>{t(c)}</option>
                   ))}
                 </select>
               </label>
@@ -250,12 +250,12 @@ export default function CheckoutForm({
                 title={t(PAYMENT_METHOD_LABELS[m])}
                 desc={
                   m === "BANK_TRANSFER"
-                    ? "ინვოისი მაშინვე მოვა " + (user?.email ?? "მითითებულ ელფოსტაზე")
+                    ? t("ინვოისი მაშინვე მოვა {0}", user?.email ?? t("მითითებულ ელფოსტაზე"))
                     : m === "POS"
-                      ? "ბარათით გადაიხდი ნივთის მიღებისას"
+                      ? t("ბარათით გადაიხდი ნივთის მიღებისას")
                       : m === "INSTALLMENT"
-                        ? "ოპერატორი დაგიკავშირდებათ დასადასტურებლად"
-                        : "უსაფრთხო გადახდა ბანკის გვერდზე"
+                        ? t("ოპერატორი დაგიკავშირდებათ დასადასტურებლად")
+                        : t("უსაფრთხო გადახდა ბანკის გვერდზე")
                 }
               />
             ))}
@@ -286,7 +286,7 @@ export default function CheckoutForm({
                 <span className="text-muted"> × {l.qty}</span>
                 {l.overStock !== null && (
                   <span className="mt-1 block text-xs text-brand-600">
-                    საწყობში მხოლოდ {l.overStock} ცალია — დარჩენილს შეკვეთით მიიღებ
+                    {t("საწყობში მხოლოდ {0} ცალია — დარჩენილს შეკვეთით მიიღებ", l.overStock)}
                   </span>
                 )}
               </span>
@@ -302,24 +302,24 @@ export default function CheckoutForm({
           </div>
           {quote && quote.saved > 0 && (
             <div className="flex justify-between text-brand-600">
-              <dt>ფასდაკლება{quote.isDealer ? " (სადილერო)" : ""}</dt>
+              <dt>{quote.isDealer ? t("ფასდაკლება (სადილერო)") : t("ფასდაკლება")}</dt>
               <dd>−{gel(quote.saved)}</dd>
             </div>
           )}
           <div className="flex justify-between">
             <dt className="text-muted">{t("მიწოდება")}</dt>
-            <dd>{deliveryFee === 0 ? "უფასო" : gel(deliveryFee)}</dd>
+            <dd>{deliveryFee === 0 ? t("უფასო") : gel(deliveryFee)}</dd>
           </div>
           {quote && quote.weightKg > 0 && (
             <div className="flex justify-between">
               <dt className="text-muted">{t("წონა")}</dt>
-              <dd>{quote.weightKg} კგ</dd>
+              <dd>{quote.weightKg} {t("კგ")}</dd>
             </div>
           )}
           {quote && quote.volumeM3 > 0 && (
             <div className="flex justify-between">
               <dt className="text-muted">{t("მოცულობა")}</dt>
-              <dd>{quote.volumeM3} მ³</dd>
+              <dd>{quote.volumeM3} {t("მ³")}</dd>
             </div>
           )}
         </dl>
@@ -338,7 +338,7 @@ export default function CheckoutForm({
           disabled={busy}
           className="btn btn-primary mt-5 w-full hover:bg-brand-600 disabled:opacity-60"
         >
-          {busy ? "მუშავდება..." : paymentMethod === "BOG" || paymentMethod === "TBC" ? "გადახდაზე გადასვლა" : "შეკვეთის დადასტურება"}
+          {busy ? t("მუშავდება...") : paymentMethod === "BOG" || paymentMethod === "TBC" ? t("გადახდაზე გადასვლა") : t("შეკვეთის დადასტურება")}
         </button>
       </aside>
     </form>

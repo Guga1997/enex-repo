@@ -1,4 +1,7 @@
 import { LOCALES, withLocale, type Locale } from "./i18n/config";
+import { translate } from "./i18n/dict";
+import { descriptionOf, nameOf } from "./i18n/content";
+import { translateAttr } from "./i18n/attributes";
 /**
  * SEO-ს საერთო ნაწილი: საიტის მისამართი, სტრუქტურირებული მონაცემები (JSON-LD),
  * აღწერის ავტომატური აწყობა იქ, სადაც ხელით არავის დაუწერია.
@@ -32,9 +35,13 @@ export function clip(text: string, max = 160): string {
 
 type ProductForSeo = {
   nameKa: string;
+  nameEn?: string | null;
+  nameRu?: string | null;
   sku: string;
   model: string | null;
   descriptionKa: string | null;
+  descriptionEn?: string | null;
+  descriptionRu?: string | null;
   price: number;
   stockStatus: string;
   slug: string;
@@ -45,15 +52,19 @@ type ProductForSeo = {
 };
 
 /** აღწერა, თუ მიმწოდებელმა არ მოგვცა: სახელი, ბრენდი, მოდელი, მთავარი მახასიათებლები */
-export function productDescription(p: ProductForSeo): string {
-  if (p.descriptionKa?.trim()) return clip(p.descriptionKa);
-  const bits = [p.nameKa];
+export function productDescription(p: ProductForSeo, locale: Locale = "ka"): string {
+  const own = descriptionOf(p, locale);
+  if (own) return clip(own);
+  const t = (s: string, ...a: (string | number)[]) => translate(locale, s, ...a);
+  const bits = [nameOf(p, locale)];
   const brand = realBrand(p.brand);
-  if (brand) bits.push(`ბრენდი: ${brand}`);
-  if (p.model) bits.push(`მოდელი: ${p.model}`);
-  const specs = (p.attributes ?? []).slice(0, 4).map((a) => `${a.name}: ${a.value}`);
+  if (brand) bits.push(t("ბრენდი: {0}", brand));
+  if (p.model) bits.push(t("მოდელი: {0}", p.model));
+  const specs = (p.attributes ?? [])
+    .slice(0, 4)
+    .map((a) => `${translateAttr(a.name, locale)}: ${translateAttr(a.value, locale)}`);
   if (specs.length) bits.push(specs.join(", "));
-  bits.push("ოფიციალური გარანტია, მიწოდება საქართველოს მასშტაბით — Enex.");
+  bits.push(t("ოფიციალური გარანტია, მიწოდება საქართველოს მასშტაბით — Enex."));
   return clip(bits.join(". "));
 }
 
@@ -64,15 +75,15 @@ const AVAILABILITY: Record<string, string> = {
   PREORDER: "https://schema.org/PreOrder",
 };
 
-export function productJsonLd(p: ProductForSeo) {
+export function productJsonLd(p: ProductForSeo, locale: Locale = "ka") {
   return {
     "@context": "https://schema.org",
     "@type": "Product",
-    name: p.nameKa,
+    name: nameOf(p, locale),
     sku: p.sku,
     ...(p.model ? { mpn: p.model } : {}),
     ...(realBrand(p.brand) ? { brand: { "@type": "Brand", name: realBrand(p.brand) } } : {}),
-    description: productDescription(p),
+    description: productDescription(p, locale),
     image: p.images.map((i) => abs(i.url)),
     url: abs(`/product/${p.slug}`),
     offers: {

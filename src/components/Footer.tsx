@@ -11,8 +11,7 @@ export default async function Footer() {
         <div>
           <Logo className="h-10 w-auto text-ink" />
           <p className="mt-3 text-sm text-muted">
-            პროფესიონალური აღჭურვილობის ონლაინ მაღაზია — გარანტიით და მიწოდებით
-            საქართველოს მასშტაბით.
+            {t("პროფესიონალური აღჭურვილობის ონლაინ მაღაზია — გარანტიით და მიწოდებით საქართველოს მასშტაბით.")}
           </p>
         </div>
         <div>
@@ -39,13 +38,13 @@ export default async function Footer() {
               <li><a href={`tel:${CONTACT.phone.replace(/\s+/g, "")}`} className="hover:text-brand-600">{CONTACT.phone}</a></li>
             )}
             <li><a href={`mailto:${CONTACT.email}`} className="hover:text-brand-600">{CONTACT.email}</a></li>
-            <li>{CONTACT.address}</li>
-            <li className="pt-2">{CONTACT.hours}</li>
+            <li>{t(CONTACT.address)}</li>
+            <li className="pt-2">{t(CONTACT.hours)}</li>
           </ul>
         </div>
       </div>
       <div className="border-t border-line py-5 text-center text-xs text-muted">
-        © {new Date().getFullYear()} Enex. ყველა უფლება დაცულია.
+        © {new Date().getFullYear()} Enex. {t("ყველა უფლება დაცულია.")}
       </div>
     </footer>
   );

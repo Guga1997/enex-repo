@@ -3,10 +3,10 @@ import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/customer-auth";
 import { productCardSelect } from "@/lib/catalog";
 import ProductCard from "@/components/ProductCard";
-import { getT } from "@/lib/i18n/server";
+import { getT, titleMeta } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "ჩემი ფავორიტები" };
+export const generateMetadata = titleMeta("ჩემი ფავორიტები");
 
 export default async function FavoritesPage() {
   const t = await getT();

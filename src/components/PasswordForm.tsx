@@ -44,7 +44,7 @@ export default function PasswordForm() {
       )}
 
       <button disabled={pending} className="btn btn-primary hover:bg-brand-600 disabled:opacity-60">
-        {pending ? "ინახება…" : "შენახვა"}
+        {pending ? t("ინახება…") : t("შენახვა")}
       </button>
     </form>
   );

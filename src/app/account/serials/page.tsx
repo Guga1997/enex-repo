@@ -1,10 +1,10 @@
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/customer-auth";
 import { formatDate } from "@/lib/format";
-import { getT } from "@/lib/i18n/server";
+import { getT, titleMeta } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "სერიული ნომრები" };
+export const generateMetadata = titleMeta("სერიული ნომრები");
 
 export default async function SerialsPage() {
   const t = await getT();

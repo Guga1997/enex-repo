@@ -2,7 +2,7 @@ import Link from "@/components/Link";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/customer-auth";
 import { gel, formatDate } from "@/lib/format";
-import { getT } from "@/lib/i18n/server";
+import { getT, titleMeta } from "@/lib/i18n/server";
 import {
   ORDER_BUCKETS,
   ORDER_STATUS_LABELS,
@@ -12,7 +12,7 @@ import {
 } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "ჩემი შეკვეთები" };
+export const generateMetadata = titleMeta("ჩემი შეკვეთები");
 
 export default async function AccountOrdersPage({
   searchParams,
@@ -78,8 +78,8 @@ export default async function AccountOrdersPage({
               </div>
 
               <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted">
-                <span>{o.items.length} პოზიცია</span>
-                <span>{DELIVERY_METHOD_LABELS[o.deliveryMethod] ?? o.deliveryMethod}</span>
+                <span>{t("{0} პოზიცია", o.items.length)}</span>
+                <span>{t(DELIVERY_METHOD_LABELS[o.deliveryMethod] ?? o.deliveryMethod)}</span>
                 <span>{t(PAYMENT_METHOD_LABELS[o.paymentMethod] ?? o.paymentMethod)}</span>
               </div>
 
@@ -92,7 +92,7 @@ export default async function AccountOrdersPage({
 
               {o.returnedAt && (
                 <p className="mt-2 text-sm text-rose-700">
-                  დაბრუნებულია {formatDate(o.returnedAt)}
+                  {t("დაბრუნებულია")} {formatDate(o.returnedAt)}
                   {o.returnReason ? ` — ${o.returnReason}` : ""}
                 </p>
               )}

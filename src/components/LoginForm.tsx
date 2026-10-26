@@ -41,7 +41,7 @@ export default function LoginForm({ next }: { next?: string }) {
         disabled={pending}
         className="btn btn-primary w-full hover:bg-brand-600 disabled:opacity-60"
       >
-        {pending ? "მოწმდება…" : "შესვლა"}
+        {pending ? t("მოწმდება…") : t("შესვლა")}
       </button>
     </form>
   );

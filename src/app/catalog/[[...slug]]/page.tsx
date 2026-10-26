@@ -9,6 +9,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
 import FilterSidebar from "@/components/FilterSidebar";
+import { attrLabels } from "@/lib/i18n/attributes";
 import SortSelect from "@/components/SortSelect";
 import Pagination from "@/components/Pagination";
 import { getCurrentUser } from "@/lib/customer-auth";
@@ -60,7 +61,11 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
   const count = await db.product.count({ where: { isActive: true, categoryId: cat.id } });
   const subs = cat.children.map((c) => nameOf(c, locale)).join(", ");
   const description = clip(
-    `${nameOf(cat, locale)}${cat.parent ? " — " + nameOf(cat.parent, locale) : ""}: ${subs ? subs + ". " : ""}${count ? count + " პროდუქტი" : "პროფესიონალური აღჭურვილობა"} ოფიციალური გარანტიით, მიწოდება საქართველოს მასშტაბით — Enex.`
+    `${nameOf(cat, locale)}${cat.parent ? " — " + nameOf(cat.parent, locale) : ""}: ${subs ? subs + ". " : ""}${
+      count
+        ? translate(locale, "{0} პროდუქტი ოფიციალური გარანტიით, მიწოდება საქართველოს მასშტაბით — Enex.", count)
+        : translate(locale, "პროფესიონალური აღჭურვილობა ოფიციალური გარანტიით, მიწოდება საქართველოს მასშტაბით — Enex.")
+    }`
   );
   return {
     title: cat.parent ? `${nameOf(cat, locale)} — ${nameOf(cat.parent, locale)}` : nameOf(cat, locale),
@@ -119,12 +124,12 @@ export default async function CatalogPage({ params, searchParams }: Props) {
             </>
           )}
           <span className="font-medium text-ink">
-            {(category ? nameOf(category, locale) : null) ?? (query.q ? `ძებნა: ${query.q}` : "კატალოგი")}
+            {(category ? nameOf(category, locale) : null) ?? (query.q ? t("ძებნა: {0}", query.q) : t("კატალოგი"))}
           </span>
         </nav>
 
         <h1 className="mb-4 text-2xl font-bold">
-          {(category ? nameOf(category, locale) : null) ?? (query.q ? `ძებნის შედეგები: ${query.q}` : "ყველა პროდუქტი")}
+          {(category ? nameOf(category, locale) : null) ?? (query.q ? t("ძებნის შედეგები: {0}", query.q) : t("ყველა პროდუქტი"))}
         </h1>
 
         {/* ქვეკატეგორიების ჩიპები */}
@@ -144,7 +149,13 @@ export default async function CatalogPage({ params, searchParams }: Props) {
 
         <div className="grid gap-6 lg:grid-cols-[16rem_1fr]">
           <Suspense fallback={<div className="card h-96 animate-pulse" />}>
-            <FilterSidebar facets={facets} />
+            <FilterSidebar
+              facets={facets}
+              labels={attrLabels(
+                facets.attributes.flatMap((a) => [a.name, ...a.values.flatMap((v) => [v.value, ...(v.members ?? [])])]),
+                locale
+              )}
+            />
           </Suspense>
 
           <div>

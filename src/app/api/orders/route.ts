@@ -5,7 +5,8 @@ import { isPurchasable, availableQty } from "@/lib/stock";
 import { reservationDeadline } from "@/lib/orders";
 import { createPayment } from "@/lib/payments/bog";
 import { canPayWithTbc, createFlittPayment } from "@/lib/payments/flitt";
-import { getLocale } from "@/lib/i18n/server";
+import { getI18n } from "@/lib/i18n/server";
+import { nameOf } from "@/lib/i18n/content";
 import { FREE_DELIVERY_FROM, RESERVATION_MINUTES } from "@/lib/constants";
 import { getCurrentUser } from "@/lib/customer-auth";
 import { effectivePrice } from "@/lib/pricing";
@@ -37,35 +38,37 @@ async function nextOrderNumber(): Promise<string> {
 }
 
 export async function POST(req: Request) {
+  // შეცდომა მყიდველის ენაზე — ენა checkout-ის გვერდიდან (referer) მოდის
+  const { locale, t } = await getI18n();
   let payload: unknown;
   try {
     payload = await req.json();
   } catch {
-    return NextResponse.json({ error: "არავალიდური მოთხოვნა" }, { status: 400 });
+    return NextResponse.json({ error: t("არავალიდური მოთხოვნა") }, { status: 400 });
   }
 
   const parsed = schema.safeParse(payload);
   if (!parsed.success) {
     return NextResponse.json(
-      { error: parsed.error.issues[0]?.message ?? "ვალიდაციის შეცდომა" },
+      { error: t(parsed.error.issues[0]?.message ?? "ვალიდაციის შეცდომა") },
       { status: 400 }
     );
   }
   const input = parsed.data;
 
   if (input.paymentMethod === "TBC" && !(await canPayWithTbc())) {
-    return NextResponse.json({ error: "თიბისის ბარათით გადახდა დროებით მიუწვდომელია" }, { status: 400 });
+    return NextResponse.json({ error: t("თიბისის ბარათით გადახდა დროებით მიუწვდომელია") }, { status: 400 });
   }
 
   if (input.deliveryMethod === "COURIER" && !input.deliveryAddress?.trim()) {
-    return NextResponse.json({ error: "მიუთითეთ მიწოდების მისამართი" }, { status: 400 });
+    return NextResponse.json({ error: t("მიუთითეთ მიწოდების მისამართი") }, { status: 400 });
   }
 
   // შეკვეთა მხოლოდ დარეგისტრირებულს — კალათა ბრაუზერში რჩება, კლიენტი შესვლაზე გადადის
   const viewer = await getCurrentUser();
   if (!viewer) {
     return NextResponse.json(
-      { error: "შეკვეთის გასაფორმებლად გაიარე რეგისტრაცია ან შედი ანგარიშში", requireLogin: true },
+      { error: t("შეკვეთის გასაფორმებლად გაიარე რეგისტრაცია ან შედი ანგარიშში"), requireLogin: true },
       { status: 401 }
     );
   }
@@ -77,7 +80,7 @@ export async function POST(req: Request) {
   if (!perUser.ok || !perIp.ok) {
     const sec = Math.max(perUser.ok ? 0 : perUser.retryAfterSec, perIp.ok ? 0 : perIp.retryAfterSec);
     return NextResponse.json(
-      { error: `ძალიან ბევრი შეკვეთა ერთბაშად — ${retryText(sec)}` },
+      { error: t("ძალიან ბევრი შეკვეთა ერთბაშად — {0}", retryText(sec, t)) },
       { status: 429, headers: { "Retry-After": String(sec) } }
     );
   }
@@ -93,16 +96,16 @@ export async function POST(req: Request) {
     const p = byId.get(item.productId);
     if (!p) {
       return NextResponse.json(
-        { error: "კალათაში არსებული პროდუქტი აღარ არის ხელმისაწვდომი" },
+        { error: t("კალათაში არსებული პროდუქტი აღარ არის ხელმისაწვდომი") },
         { status: 409 }
       );
     }
     if (!isPurchasable(p)) {
-      return NextResponse.json({ error: `"${p.nameKa}" არ არის მარაგში` }, { status: 409 });
+      return NextResponse.json({ error: t("„{0}“ არ არის მარაგში", nameOf(p, locale)) }, { status: 409 });
     }
     if (p.stockStatus === "IN_STOCK" && item.qty > availableQty(p)) {
       return NextResponse.json(
-        { error: `"${p.nameKa}" — ხელმისაწვდომია მხოლოდ ${availableQty(p)} ცალი` },
+        { error: t("„{0}“ — ხელმისაწვდომია მხოლოდ {1} ცალი", nameOf(p, locale), availableQty(p)) },
         { status: 409 }
       );
     }
@@ -123,7 +126,7 @@ export async function POST(req: Request) {
       select: { id: true },
     });
     if (!org) {
-      return NextResponse.json({ error: "ორგანიზაცია ვერ მოიძებნა" }, { status: 400 });
+      return NextResponse.json({ error: t("ორგანიზაცია ვერ მოიძებნა") }, { status: 400 });
     }
     organizationId = org.id;
   }
@@ -144,7 +147,7 @@ export async function POST(req: Request) {
         select: { stockQty: true, reservedQty: true, nameKa: true },
       });
       if (!fresh || availableQty(fresh) < l.qty) {
-        throw new Error(`"${fresh?.nameKa ?? l.product.nameKa}" ამ წუთას სხვამ დაიკავა — შეამცირე რაოდენობა`);
+        throw new Error(t("„{0}“ ამ წუთას სხვამ დაიკავა — შეამცირე რაოდენობა", nameOf(l.product, locale)));
       }
       await tx.product.update({
         where: { id: l.product.id },
@@ -184,7 +187,7 @@ export async function POST(req: Request) {
     },
     });
   }).catch((e: unknown) => {
-    const msg = e instanceof Error ? e.message : "შეკვეთის შექმნა ვერ მოხერხდა";
+    const msg = e instanceof Error ? e.message : t("შეკვეთის შექმნა ვერ მოხერხდა");
     return { error: msg } as const;
   });
 
@@ -230,7 +233,7 @@ export async function POST(req: Request) {
     };
     const payment =
       input.paymentMethod === "TBC"
-        ? await createFlittPayment({ ...request, lang: await getLocale() })
+        ? await createFlittPayment({ ...request, lang: locale })
         : await createPayment(request);
 
     await db.order.update({

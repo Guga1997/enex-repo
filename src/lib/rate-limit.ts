@@ -1,4 +1,5 @@
 import { headers } from "next/headers";
+import { translate, type T } from "./i18n/dict";
 
 /**
  * მოთხოვნების შეზღუდვა — მეხსიერებაში, ერთი სერვერისთვის.
@@ -54,10 +55,10 @@ export async function clientIp(): Promise<string> {
 }
 
 /** ადამიანური ტექსტი ლოდინის დროზე */
-export function retryText(sec: number): string {
-  if (sec < 60) return `სცადე ${sec} წამში`;
-  const min = Math.ceil(sec / 60);
-  return `სცადე ${min} წუთში`;
+export function retryText(sec: number, t?: T): string {
+  const tr: T = t ?? ((s, ...a) => translate("ka", s, ...a));
+  if (sec < 60) return tr("სცადე {0} წამში", sec);
+  return tr("სცადე {0} წუთში", Math.ceil(sec / 60));
 }
 
 /* ─── ლიმიტები ერთ ადგილას, რომ ერთმანეთს შევადაროთ ─── */

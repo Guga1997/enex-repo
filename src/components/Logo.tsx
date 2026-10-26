@@ -26,7 +26,7 @@ export default function Logo({
       viewBox={tagline ? "0 0 216 64" : "0 0 156 64"}
       className={className}
       role="img"
-      aria-label="Enex — პროფესიონალური აღჭურვილობა"
+      aria-label="Enex"
     >
       <g stroke="#009cd1" strokeWidth="7.5" strokeLinecap="round">
         <path d="M15 19H47" /><path d="M15 32H36" /><path d="M15 45H47" />

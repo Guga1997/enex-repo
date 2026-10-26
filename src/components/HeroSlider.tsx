@@ -108,7 +108,7 @@ export default function HeroSlider({ slides }: { slides: Slide[] }) {
               <button
                 key={s.id}
                 type="button"
-                aria-label={`სლაიდი ${i + 1}`}
+                aria-label={t("სლაიდი {0}", i + 1)}
                 onClick={() => go(i)}
                 className={`h-2 rounded-full transition-all ${
                   i === index ? "w-6 bg-white" : "w-2 bg-white/50 hover:bg-white/80"

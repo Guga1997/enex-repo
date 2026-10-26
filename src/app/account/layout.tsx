@@ -49,7 +49,7 @@ export default async function AccountLayout({ children }: { children: React.Reac
                   href={l.href}
                   className="block rounded-lg px-3 py-2 text-sm hover:bg-canvas"
                 >
-                  {l.label}
+                  {t(l.label)}
                 </Link>
               ))}
               <form action={logoutAction} className="border-t border-line pt-2 mt-2">

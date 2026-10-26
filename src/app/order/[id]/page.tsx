@@ -7,7 +7,8 @@ import { markOrderFailed, markOrderPaid } from "@/lib/orders";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { gel, formatDate } from "@/lib/format";
-import { getT } from "@/lib/i18n/server";
+import { getLocale, getT, titleMeta } from "@/lib/i18n/server";
+import { nameOf } from "@/lib/i18n/content";
 import {
   ORDER_STATUS_LABELS,
   PAYMENT_METHOD_LABELS,
@@ -15,7 +16,7 @@ import {
 } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "შეკვეთა" };
+export const generateMetadata = titleMeta("შეკვეთა");
 
 export default async function OrderPage({
   params,
@@ -28,7 +29,10 @@ export default async function OrderPage({
   const { id } = await params;
   const flags = await searchParams;
 
-  let order = await db.order.findUnique({ where: { id }, include: { items: true } });
+  const locale = await getLocale();
+  // დასახელება მიმდინარე ენაზე — შეკვეთის სტრიქონში ქართული სახელია შენახული
+  const include = { items: { include: { product: { select: { nameKa: true, nameEn: true, nameRu: true } } } } } as const;
+  let order = await db.order.findUnique({ where: { id }, include });
   if (!order) notFound();
 
   // ბანკიდან დაბრუნდა, callback კი ჯერ არ მოსულა — სტატუსს პირდაპირ ბანკს ვკითხავთ
@@ -36,7 +40,7 @@ export default async function OrderPage({
     const status = await fetchPaymentStatus(order.paymentId).catch(() => null);
     if (status?.key === "completed") await markOrderPaid(order.id, status.raw);
     else if (status?.key === "rejected") await markOrderFailed(order.id, status.raw);
-    if (status) order = (await db.order.findUnique({ where: { id }, include: { items: true } })) ?? order;
+    if (status) order = (await db.order.findUnique({ where: { id }, include })) ?? order;
   }
 
   const paid = order.paymentStatus === "PAID";
@@ -58,21 +62,28 @@ export default async function OrderPage({
         >
           <div className="text-3xl">{paid ? "✓" : failed || expired ? "✕" : "⏳"}</div>
           <h1 className="mt-2 text-xl font-bold">
-            {paid
-              ? "შეკვეთა წარმატებით გაფორმდა"
-              : expired
-                ? order.status === "EXPIRED"
-                  ? "შეკვეთის ვადა გავიდა"
-                  : "შეკვეთა გაუქმებულია"
-                : failed
-                  ? "გადახდა ვერ შესრულდა"
-                  : "შეკვეთა მიღებულია"}
+            {t(
+              paid
+                ? "შეკვეთა წარმატებით გაფორმდა"
+                : expired
+                  ? order.status === "EXPIRED"
+                    ? "შეკვეთის ვადა გავიდა"
+                    : "შეკვეთა გაუქმებულია"
+                  : failed
+                    ? "გადახდა ვერ შესრულდა"
+                    : "შეკვეთა მიღებულია"
+            )}
           </h1>
           {!paid && !expired && order.reservedUntil && (
             <p className="mt-2 text-sm text-muted">
-              {t("ნაშთი შენთვისაა დაკავებული")} <b>{formatDate(order.reservedUntil)}</b>{" "}
-              {order.reservedUntil.toLocaleTimeString("ka-GE", { timeZone: "Asia/Tbilisi", hour: "2-digit", minute: "2-digit" })}-მდე — ამის შემდეგ შეკვეთა
-              ავტომატურად გაუქმდება.
+              {t(
+                "ნაშთი შენთვისაა დაკავებული {0}-მდე — ამის შემდეგ შეკვეთა ავტომატურად გაუქმდება.",
+                `${formatDate(order.reservedUntil)} ${order.reservedUntil.toLocaleTimeString("ka-GE", {
+                  timeZone: "Asia/Tbilisi",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}`
+              )}
             </p>
           )}
           {order.status === "EXPIRED" && (
@@ -86,7 +97,7 @@ export default async function OrderPage({
 
           {!paid && order.paymentMethod === "BANK_TRANSFER" && (
             <p className="mt-3 text-sm text-muted">
-              ინვოისს გამოგიგზავნით ელფოსტაზე {order.customerEmail}.
+              {t("ინვოისს გამოგიგზავნით ელფოსტაზე {0}.", order.customerEmail)}
               {order.invoiceSentAt && (
                 <>
                   {" "}
@@ -104,13 +115,12 @@ export default async function OrderPage({
           )}
           {!paid && order.paymentMethod === "INSTALLMENT" && (
             <p className="mt-3 text-sm text-muted">
-              განვადების გასაფორმებლად ოპერატორი დაგიკავშირდებათ ნომერზე {order.customerPhone}.
+              {t("განვადების გასაფორმებლად ოპერატორი დაგიკავშირდებათ ნომერზე {0}.", order.customerPhone)}
             </p>
           )}
           {flags.payment_error && (
             <p className="mt-3 text-sm text-rose-600">
-              გადახდის სისტემასთან დაკავშირება ვერ მოხერხდა. დაგვიკავშირდით
-              შეკვეთის ნომრით.
+              {t("გადახდის სისტემასთან დაკავშირება ვერ მოხერხდა. დაგვიკავშირდით შეკვეთის ნომრით.")}
             </p>
           )}
         </div>
@@ -129,7 +139,7 @@ export default async function OrderPage({
               label={t("მიწოდება")}
               value={
                 order.deliveryMethod === "PICKUP"
-                  ? "თვითგატანა"
+                  ? t("თვითგატანა")
                   : `${order.deliveryCity ?? ""} ${order.deliveryAddress ?? ""}`.trim()
               }
             />
@@ -143,7 +153,7 @@ export default async function OrderPage({
               {order.items.map((i) => (
                 <li key={i.id} className="flex justify-between gap-4 py-2.5">
                   <span>
-                    {i.name} <span className="text-muted">#{i.sku} × {i.qty}</span>
+                    {i.product ? nameOf(i.product, locale) : i.name} <span className="text-muted">#{i.sku} × {i.qty}</span>
                   </span>
                   <span className="shrink-0 font-medium">{gel(i.price * i.qty)}</span>
                 </li>
@@ -158,7 +168,7 @@ export default async function OrderPage({
             </div>
             <div className="flex justify-between">
               <span className="text-muted">{t("მიწოდება")}</span>
-              <span>{order.deliveryFee === 0 ? "უფასო" : gel(order.deliveryFee)}</span>
+              <span>{order.deliveryFee === 0 ? t("უფასო") : gel(order.deliveryFee)}</span>
             </div>
             <div className="flex justify-between border-t border-line pt-2 text-base font-bold">
               <span>{t("ჯამი")}</span>

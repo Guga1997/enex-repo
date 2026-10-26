@@ -54,7 +54,7 @@ export default function AddToCart({ line, disabled, withQty }: Props) {
         }}
         className="btn btn-primary flex-1 hover:bg-brand-600"
       >
-        {done ? "✓ დაემატა კალათაში" : "კალათაში დამატება"}
+        {done ? t("✓ დაემატა კალათაში") : t("კალათაში დამატება")}
       </button>
     </div>
   );

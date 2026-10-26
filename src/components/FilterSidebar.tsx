@@ -6,8 +6,16 @@ import { STOCK_LABELS } from "@/lib/constants";
 import { attrKey, type Facets } from "@/lib/catalog";
 import { useT } from "@/components/LocaleProvider";
 
-export default function FilterSidebar({ facets }: { facets: Facets }) {
+export default function FilterSidebar({
+  facets,
+  labels = {},
+}: {
+  facets: Facets;
+  /** მახასიათებლების თარგმანი — სერვერზე ითვლება (data/attr-i18n.json ბრაუზერში არ მოდის) */
+  labels?: Record<string, string>;
+}) {
   const t = useT();
+  const L = (s: string) => labels[s] ?? t(s);
   const router = useRouter();
   const pathname = usePathname();
   const sp = useSearchParams();
@@ -94,7 +102,7 @@ export default function FilterSidebar({ facets }: { facets: Facets }) {
         ...ranges.map((r) => ({
           key: attr.name,
           value: r.value,
-          label: `${t(attr.name)}: ${t(r.value)}`,
+          label: `${L(attr.name)}: ${L(r.value)}`,
           remove: () => toggleValues(key, r.members!),
         })),
         ...cur
@@ -102,7 +110,7 @@ export default function FilterSidebar({ facets }: { facets: Facets }) {
           .map((v) => ({
             key: attr.name,
             value: v,
-            label: `${t(attr.name)}: ${t(v)}`,
+            label: `${L(attr.name)}: ${L(v)}`,
             remove: () => toggleMulti(key, v),
           })),
       ];
@@ -145,7 +153,7 @@ export default function FilterSidebar({ facets }: { facets: Facets }) {
         className="btn btn-outline mb-3 w-full lg:hidden"
         aria-expanded={open}
       >
-        ფილტრი {activeCount > 0 ? `(${activeCount})` : ""}
+        {t("ფილტრი")} {activeCount > 0 ? `(${activeCount})` : ""}
       </button>
 
       <aside
@@ -261,7 +269,7 @@ export default function FilterSidebar({ facets }: { facets: Facets }) {
           {facets.attributes.map((attr) => {
             const key = attrKey(attr.name);
             return (
-              <Section key={attr.name} title={t(attr.name)} scroll>
+              <Section key={attr.name} title={L(attr.name)} scroll>
                 {attr.values.map((v) => {
                   // დიაპაზონი = მისი ყველა მნიშვნელობა ერთად
                   const members = v.members ?? [v.value];
@@ -269,7 +277,7 @@ export default function FilterSidebar({ facets }: { facets: Facets }) {
                   return (
                     <Check
                       key={v.value}
-                      label={t(v.value)}
+                      label={L(v.value)}
                       count={v.count}
                       checked={members.every((m) => cur.includes(m))}
                       onChange={() => toggleValues(key, members)}

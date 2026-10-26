@@ -20,6 +20,8 @@ import { StockStatus } from "@/lib/constants";
 import { getI18n } from "@/lib/i18n/server";
 import { nameOf, descriptionOf } from "@/lib/i18n/content";
 import { getLocale } from "@/lib/i18n/server";
+import { translate } from "@/lib/i18n/dict";
+import { translateAttr } from "@/lib/i18n/attributes";
 
 export const dynamic = "force-dynamic";
 
@@ -37,11 +39,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       attributes: { orderBy: { sortOrder: "asc" }, take: 4 },
     },
   });
-  if (!p || !p.isActive) return { title: "პროდუქტი ვერ მოიძებნა", robots: { index: false } };
+  if (!p || !p.isActive) return { title: translate(locale, "პროდუქტი ვერ მოიძებნა"), robots: { index: false } };
 
   // სათაურში ბრენდი და მოდელი — ამით ეძებენ; სახელი ისედაც აღწერითია
   const title = [nameOf(p, locale), realBrand(p.brand), p.model].filter(Boolean).join(" — ");
-  const description = productDescription(p);
+  const description = productDescription(p, locale);
   return {
     title,
     description,
@@ -107,7 +109,7 @@ export default async function ProductPage({ params }: Props) {
     p.oldPrice && p.oldPrice > p.price ? Math.round((1 - p.price / p.oldPrice) * 100) : null;
 
   const crumbs = [
-    { name: "მთავარი", path: "/" },
+    { name: t("მთავარი"), path: "/" },
     ...(p.category.parent ? [{ name: nameOf(p.category.parent, locale), path: `/catalog/${p.category.parent.slug}` }] : []),
     { name: nameOf(p.category, locale), path: `/catalog/${p.category.slug}` },
     { name, path: `/product/${p.slug}` },
@@ -115,7 +117,7 @@ export default async function ProductPage({ params }: Props) {
 
   return (
     <>
-      <JsonLd data={productJsonLd(p)} />
+      <JsonLd data={productJsonLd(p, locale)} />
       <JsonLd data={breadcrumbJsonLd(crumbs)} />
       <Suspense>
         <Header />
@@ -187,7 +189,7 @@ export default async function ProductPage({ params }: Props) {
                 <div className="space-y-1">
                   <div className="flex items-baseline gap-3">
                     <span className="text-sm text-muted">
-                      {price.isDealer ? "სადილერო:" : "თქვენი ფასი:"}
+                      {price.isDealer ? t("სადილერო:") : t("თქვენი ფასი:")}
                     </span>
                     <span className="text-3xl font-bold text-brand-600">{gel(price.value)}</span>
                     <span className="rounded bg-rose-500 px-2 py-0.5 text-xs font-bold text-white">
@@ -218,7 +220,7 @@ export default async function ProductPage({ params }: Props) {
                   <Link href="/register" className="font-medium text-brand-600 hover:underline">
                     {t("დარეგისტრირდი")}
                   </Link>{" "}
-                  და შენს ფასს დაინახავ.
+                  {t("და შენს ფასს დაინახავ.")}
                 </p>
               )}
 
@@ -272,8 +274,8 @@ export default async function ProductPage({ params }: Props) {
                   <tbody>
                     {p.attributes.map((a, i) => (
                       <tr key={a.id} className={i % 2 ? "bg-canvas" : ""}>
-                        <td className="w-1/2 px-4 py-2.5 text-muted">{t(a.name)}</td>
-                        <td className="px-4 py-2.5 font-medium">{t(a.value)}</td>
+                        <td className="w-1/2 px-4 py-2.5 text-muted">{translateAttr(a.name, locale)}</td>
+                        <td className="px-4 py-2.5 font-medium">{translateAttr(a.value, locale)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -296,9 +298,9 @@ export default async function ProductPage({ params }: Props) {
                   rel="noopener noreferrer"
                   className="flex items-center justify-between gap-3 px-4 py-3 text-sm hover:bg-canvas"
                 >
-                  <span className="font-medium text-brand-600">{d.title}</span>
+                  <span className="font-medium text-brand-600">{translateAttr(d.title, locale)}</span>
                   <span className="text-muted">
-                    {DOC_KIND[d.kind] ?? d.kind}
+                    {t(DOC_KIND[d.kind] ?? d.kind)}
                     {d.sizeBytes ? " · " + Math.round(d.sizeBytes / 1024) + " KB" : ""}
                   </span>
                 </a>

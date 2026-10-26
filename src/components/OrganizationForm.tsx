@@ -50,7 +50,7 @@ export default function OrganizationForm() {
 
       <div className="flex gap-2">
         <button disabled={pending} className="btn btn-primary hover:bg-brand-600 disabled:opacity-60">
-          {pending ? "ინახება…" : "დამატება"}
+          {pending ? t("ინახება…") : t("დამატება")}
         </button>
         <button type="button" onClick={() => setOpen(false)} className="btn">
           {t("გაუქმება")}

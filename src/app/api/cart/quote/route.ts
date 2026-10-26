@@ -5,6 +5,8 @@ import { getCurrentUser } from "@/lib/customer-auth";
 import { effectivePrice } from "@/lib/pricing";
 import { isPurchasable, availableQty } from "@/lib/stock";
 import { FREE_DELIVERY_FROM } from "@/lib/constants";
+import { getLocale } from "@/lib/i18n/server";
+import { nameOf } from "@/lib/i18n/content";
 
 /**
  * კალათის სერვერული გადათვლა: ფასი მომხმარებლის დონით, წონა და მოცულობა.
@@ -39,6 +41,8 @@ export async function POST(req: Request) {
   }
 
   const viewer = await getCurrentUser();
+  // დასახელება checkout-ის გვერდის ენაზე (referer)
+  const locale = await getLocale();
   const products = await db.product.findMany({
     where: { id: { in: items.map((i) => i.productId) }, isActive: true },
   });
@@ -50,7 +54,7 @@ export async function POST(req: Request) {
     const price = effectivePrice(p, viewer);
     return [{
       productId: p.id,
-      name: p.nameKa,
+      name: nameOf(p, locale),
       sku: p.sku,
       qty: item.qty,
       unitPrice: price.value,

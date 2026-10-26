@@ -20,6 +20,7 @@ import {
   type RegisterInput,
 } from "@/lib/customer-auth";
 import { rateLimit, clientIp, retryText, LIMITS } from "@/lib/rate-limit";
+import { getT } from "@/lib/i18n/server";
 import { createSession, verifyLogin } from "@/lib/auth";
 import { homeFor } from "@/lib/workflow";
 
@@ -57,9 +58,10 @@ async function clearPending() {
 /* ─────────────────────── რეგისტრაცია ─────────────────────── */
 
 export async function registerAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  const t = await getT();
   const ip = await clientIp();
   const rl = rateLimit(`register:${ip}`, LIMITS.registerPerIp.limit, LIMITS.registerPerIp.windowMs);
-  if (!rl.ok) return { error: `ძალიან ბევრი რეგისტრაცია — ${retryText(rl.retryAfterSec)}` };
+  if (!rl.ok) return { error: t("ძალიან ბევრი რეგისტრაცია — {0}", retryText(rl.retryAfterSec, t)) };
 
   const type = String(formData.get("type") ?? "INDIVIDUAL");
   const input: RegisterInput = {
@@ -73,10 +75,10 @@ export async function registerAction(_prev: FormState, formData: FormData): Prom
   };
 
   if (input.password !== String(formData.get("password2") ?? ""))
-    return { error: "პაროლები არ ემთხვევა", field: "password2" };
+    return { error: t("პაროლები არ ემთხვევა"), field: "password2" };
 
   const res = await registerUser(input);
-  if (!res.ok) return { error: res.error, field: res.field };
+  if (!res.ok) return { error: t(res.error), field: res.field };
 
   // იურიდიულ პირს პირველი ორგანიზაცია თავისივე რეკვიზიტებით ეხსნება
   if (input.type === "COMPANY") {
@@ -105,15 +107,16 @@ export async function registerAction(_prev: FormState, formData: FormData): Prom
 /* ─────────────────────── ვერიფიკაცია ─────────────────────── */
 
 export async function verifyAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  const t = await getT();
   const userId = await getPendingUserId();
-  if (!userId) return { error: "სესიას ვადა გაუვიდა — გაიარე რეგისტრაცია თავიდან" };
+  if (!userId) return { error: t("სესიას ვადა გაუვიდა — გაიარე რეგისტრაცია თავიდან") };
 
   const channel = String(formData.get("channel") ?? "EMAIL") === "SMS" ? "SMS" : "EMAIL";
   const code = String(formData.get("code") ?? "");
-  if (!/^\d{6}$/.test(code.trim())) return { error: "კოდი 6 ციფრისგან შედგება", field: channel };
+  if (!/^\d{6}$/.test(code.trim())) return { error: t("კოდი 6 ციფრისგან შედგება"), field: channel };
 
   const res = await confirmCode(userId, channel, code);
-  if (!res.ok) return { error: res.error, field: channel };
+  if (!res.ok) return { error: t(res.error), field: channel };
 
   const user = await db.user.findUnique({ where: { id: userId } });
   if (user && isVerified(user)) {
@@ -131,28 +134,30 @@ export async function verifyAction(_prev: FormState, formData: FormData): Promis
     redirect(after || "/account");
   }
 
-  return { ok: channel === "EMAIL" ? "ელფოსტა დადასტურდა" : "ნომერი დადასტურდა" };
+  return { ok: t(channel === "EMAIL" ? "ელფოსტა დადასტურდა" : "ნომერი დადასტურდა") };
 }
 
 export async function resendAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  const t = await getT();
   const userId = await getPendingUserId();
-  if (!userId) return { error: "სესიას ვადა გაუვიდა — გაიარე რეგისტრაცია თავიდან" };
+  if (!userId) return { error: t("სესიას ვადა გაუვიდა — გაიარე რეგისტრაცია თავიდან") };
 
   // ყოველი კოდი ფასიანი SMS-ია — წუთში ერთი, საათში ხუთი
   const quick = rateLimit(`resend:${userId}`, LIMITS.resendPerUser.limit, LIMITS.resendPerUser.windowMs);
-  if (!quick.ok) return { error: `კოდი ახლახან გაიგზავნა — ${retryText(quick.retryAfterSec)}` };
+  if (!quick.ok) return { error: t("კოდი ახლახან გაიგზავნა — {0}", retryText(quick.retryAfterSec, t)) };
   const hourly = rateLimit(`resend-h:${userId}`, LIMITS.resendPerUserHour.limit, LIMITS.resendPerUserHour.windowMs);
-  if (!hourly.ok) return { error: `ლიმიტი ამოიწურა — ${retryText(hourly.retryAfterSec)}` };
+  if (!hourly.ok) return { error: t("ლიმიტი ამოიწურა — {0}", retryText(hourly.retryAfterSec, t)) };
 
   const channel = String(formData.get("channel") ?? "EMAIL") === "SMS" ? "SMS" : "EMAIL";
   const res = await issueCode(userId, channel);
-  if (!res.ok) return { error: res.error };
-  return { ok: channel === "EMAIL" ? "ახალი კოდი ელფოსტაზე გაიგზავნა" : "ახალი კოდი SMS-ით გაიგზავნა" };
+  if (!res.ok) return { error: t(res.error) };
+  return { ok: t(channel === "EMAIL" ? "ახალი კოდი ელფოსტაზე გაიგზავნა" : "ახალი კოდი SMS-ით გაიგზავნა") };
 }
 
 /* ─────────────────────────── შესვლა ─────────────────────────── */
 
 export async function loginAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  const t = await getT();
   const login = String(formData.get("login") ?? "");
   const password = String(formData.get("password") ?? "");
   const next = String(formData.get("next") ?? "/account");
@@ -163,7 +168,7 @@ export async function loginAction(_prev: FormState, formData: FormData): Promise
   const byAcc = rateLimit(`login-acc:${login.toLowerCase().trim()}`, LIMITS.loginPerAccount.limit, LIMITS.loginPerAccount.windowMs);
   if (!byIp.ok || !byAcc.ok) {
     const sec = Math.max(byIp.ok ? 0 : byIp.retryAfterSec, byAcc.ok ? 0 : byAcc.retryAfterSec);
-    return { error: `ძალიან ბევრი მცდელობა — ${retryText(sec)}` };
+    return { error: t("ძალიან ბევრი მცდელობა — {0}", retryText(sec, t)) };
   }
 
   const res = await verifyCustomerLogin(login, password);
@@ -189,7 +194,7 @@ export async function loginAction(_prev: FormState, formData: FormData): Promise
       redirect(homeFor(staff.role));
     }
 
-    return { error: res.error };
+    return { error: t(res.error) };
   }
 
   await createCustomerSession({
@@ -233,6 +238,7 @@ export async function setNewsletterAction(formData: FormData) {
 }
 
 export async function addOrganizationAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  const t = await getT();
   const user = await getCurrentUser();
   if (!user) redirect("/login?next=/account/organizations");
 
@@ -241,9 +247,9 @@ export async function addOrganizationAction(_prev: FormState, formData: FormData
   const address = String(formData.get("address") ?? "").trim();
   const isDefault = formData.get("isDefault") === "on";
 
-  if (name.length < 2) return { error: "მიუთითე დასახელება", field: "name" };
-  if (taxId.length !== 9) return { error: "საიდენტიფიკაციო კოდი 9 ციფრისგან შედგება", field: "taxId" };
-  if (address.length < 5) return { error: "მიუთითე იურიდიული მისამართი", field: "address" };
+  if (name.length < 2) return { error: t("მიუთითე დასახელება"), field: "name" };
+  if (taxId.length !== 9) return { error: t("საიდენტიფიკაციო კოდი 9 ციფრისგან შედგება"), field: "taxId" };
+  if (address.length < 5) return { error: t("მიუთითე იურიდიული მისამართი"), field: "address" };
 
   if (isDefault) {
     await db.organization.updateMany({ where: { userId: user.id }, data: { isDefault: false } });
@@ -251,27 +257,28 @@ export async function addOrganizationAction(_prev: FormState, formData: FormData
   await db.organization.create({ data: { userId: user.id, name, taxId, address, isDefault } });
 
   revalidatePath("/account/organizations");
-  return { ok: "ორგანიზაცია დაემატა" };
+  return { ok: t("ორგანიზაცია დაემატა") };
 }
 
 export async function changePasswordAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  const t = await getT();
   const user = await getCurrentUser();
   if (!user) redirect("/login?next=/account/password");
 
   const current = String(formData.get("current") ?? "");
   const next = String(formData.get("next") ?? "");
 
-  if (next.length < 8) return { error: "ახალი პაროლი მინიმუმ 8 სიმბოლო", field: "next" };
+  if (next.length < 8) return { error: t("ახალი პაროლი მინიმუმ 8 სიმბოლო"), field: "next" };
   if (next !== String(formData.get("next2") ?? ""))
-    return { error: "პაროლები არ ემთხვევა", field: "next2" };
+    return { error: t("პაროლები არ ემთხვევა"), field: "next2" };
   if (!(await bcrypt.compare(current, user.passwordHash)))
-    return { error: "მიმდინარე პაროლი არასწორია", field: "current" };
+    return { error: t("მიმდინარე პაროლი არასწორია"), field: "current" };
 
   await db.user.update({
     where: { id: user.id },
     data: { passwordHash: await bcrypt.hash(next, 10) },
   });
-  return { ok: "პაროლი შეიცვალა" };
+  return { ok: t("პაროლი შეიცვალა") };
 }
 
 /* ─────────────────────── პაროლის აღდგენა ─────────────────────── */
@@ -287,15 +294,16 @@ export async function getResettingUserId(): Promise<string | null> {
  * გვერდი ამას არ ამხელს, თორემ ელფოსტების შესამოწმებელ ხელსაწყოდ იქცევა.
  */
 export async function requestResetAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  const t = await getT();
   const login = String(formData.get("login") ?? "").trim();
-  if (!login) return { error: "მიუთითე ელფოსტა ან ტელეფონის ნომერი" };
+  if (!login) return { error: t("მიუთითე ელფოსტა ან ტელეფონის ნომერი") };
 
   const ip = await clientIp();
   const byIp = rateLimit(`reset-ip:${ip}`, LIMITS.resetPerIp.limit, LIMITS.resetPerIp.windowMs);
   const byAcc = rateLimit(`reset-acc:${login.toLowerCase()}`, LIMITS.resetPerAccount.limit, LIMITS.resetPerAccount.windowMs);
   if (!byIp.ok || !byAcc.ok) {
     const sec = Math.max(byIp.ok ? 0 : byIp.retryAfterSec, byAcc.ok ? 0 : byAcc.retryAfterSec);
-    return { error: `ძალიან ბევრი მოთხოვნა — ${retryText(sec)}` };
+    return { error: t("ძალიან ბევრი მოთხოვნა — {0}", retryText(sec, t)) };
   }
 
   const user = await findUserByLogin(login);
@@ -313,17 +321,18 @@ export async function requestResetAction(_prev: FormState, formData: FormData): 
 }
 
 export async function resetPasswordAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  const t = await getT();
   const userId = await getResettingUserId();
-  if (!userId) return { error: "კოდი არ არის მოთხოვნილი — დაიწყე თავიდან" };
+  if (!userId) return { error: t("კოდი არ არის მოთხოვნილი — დაიწყე თავიდან") };
 
   const code = String(formData.get("code") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const repeat = String(formData.get("password2") ?? "");
-  if (password.length < 8) return { error: "პაროლი მინიმუმ 8 სიმბოლო უნდა იყოს", field: "password" };
-  if (password !== repeat) return { error: "პაროლები არ ემთხვევა", field: "password2" };
+  if (password.length < 8) return { error: t("პაროლი მინიმუმ 8 სიმბოლო უნდა იყოს"), field: "password" };
+  if (password !== repeat) return { error: t("პაროლები არ ემთხვევა"), field: "password2" };
 
   const res = await resetPassword(userId, code, password);
-  if (!res.ok) return { error: res.error, field: "code" };
+  if (!res.ok) return { error: t(res.error), field: "code" };
 
   (await cookies()).delete(RESETTING);
 

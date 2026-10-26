@@ -3,14 +3,14 @@ import { db } from "@/lib/db";
 import { gel } from "@/lib/format";
 import { markOrderFailed, markOrderPaid } from "@/lib/orders";
 import { isMockMode } from "@/lib/payments/bog";
-import { getT } from "@/lib/i18n/server";
+import { getT, titleMeta } from "@/lib/i18n/server";
 
 /**
  * სატესტო "ბანკის გვერდი". მუშაობს მხოლოდ PAYMENT_MOCK რეჟიმში —
  * BOG-ის გასაღებების ჩაწერისთანავე ავტომატურად ითიშება.
  */
 export const dynamic = "force-dynamic";
-export const metadata = { title: "გადახდა (სატესტო რეჟიმი)" };
+export const generateMetadata = titleMeta("გადახდა (სატესტო რეჟიმი)");
 
 export default async function MockPaymentPage({
   searchParams,
@@ -64,8 +64,11 @@ export default async function MockPaymentPage({
 
         {settled ? (
           <p className="mt-6 rounded-lg bg-canvas p-3 text-center text-sm text-muted">
-            ეს შეკვეთა უკვე დასრულებულია ({order.paymentStatus === "PAID" ? "გადახდილია" : "გაუქმებულია"}) —
-            იმიტაცია აღარ მოქმედებს.{" "}
+            {t(
+              order.paymentStatus === "PAID"
+                ? "ეს შეკვეთა უკვე დასრულებულია (გადახდილია) — იმიტაცია აღარ მოქმედებს."
+                : "ეს შეკვეთა უკვე დასრულებულია (გაუქმებულია) — იმიტაცია აღარ მოქმედებს."
+            )}{" "}
             <a href={`/order/${order.id}`} className="text-brand-600 hover:underline">{t("შეკვეთის გვერდი")}</a>
           </p>
         ) : (

@@ -9,8 +9,9 @@ import { effectivePrice } from "@/lib/pricing";
 import { JsonLd, breadcrumbJsonLd, clip, alts } from "@/lib/seo";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { getT } from "@/lib/i18n/server";
-import { getLocale } from "@/lib/i18n/server";
+import { getI18n, getLocale } from "@/lib/i18n/server";
+import { translate } from "@/lib/i18n/dict";
+import { nameOf } from "@/lib/i18n/content";
 
 export const dynamic = "force-dynamic";
 
@@ -18,13 +19,18 @@ const ROOT = "დიზელის გენერატორები";
 
 const META = {
   title: "დიზელის გენერატორები 15–2000 kVA — Baudouin, IVECO, Perkins, Scania",
-  description: clip(
-    "ZEN დიზელ-გენერატორები Baudouin, IVECO, Perkins და Scania ძრავებით, 15-დან 2000 kVA-მდე. ფასი ლარში ეროვნული ბანკის დღიური კურსით, ტექნიკური დოკუმენტაცია ყველა მოდელზე, მიწოდება შეკვეთით — Enex."
-  ),
+  // ჯერ თარგმანი, მერე clip — გასაღები სრული ტექსტია
+  description:
+    "ZEN დიზელ-გენერატორები Baudouin, IVECO, Perkins და Scania ძრავებით, 15-დან 2000 kVA-მდე. ფასი ლარში ეროვნული ბანკის დღიური კურსით, ტექნიკური დოკუმენტაცია ყველა მოდელზე, მიწოდება შეკვეთით — Enex.",
 } as const;
 
 export async function generateMetadata(): Promise<Metadata> {
-  return { ...META, alternates: alts("/generators", await getLocale()) };
+  const locale = await getLocale();
+  return {
+    title: translate(locale, META.title),
+    description: clip(translate(locale, META.description)),
+    alternates: alts("/generators", locale),
+  };
 }
 
 /** kVA სახელიდან ან მახასიათებლიდან — დალაგებისთვის */
@@ -38,7 +44,7 @@ export default async function GeneratorsPage({
 }: {
   searchParams: Promise<{ engine?: string }>;
 }) {
-  const t = await getT();
+  const { locale, t } = await getI18n();
   const { engine } = await searchParams;
   const root = await db.category.findFirst({
     where: { nameKa: ROOT },
@@ -68,7 +74,7 @@ export default async function GeneratorsPage({
 
   return (
     <>
-      <JsonLd data={breadcrumbJsonLd([{ name: "მთავარი", path: "/" }, { name: ROOT, path: "/generators" }])} />
+      <JsonLd data={breadcrumbJsonLd([{ name: t("მთავარი"), path: "/" }, { name: t(ROOT), path: "/generators" }])} />
       <Suspense>
         <Header />
       </Suspense>
@@ -77,21 +83,21 @@ export default async function GeneratorsPage({
         <nav className="mb-4 flex flex-wrap items-center gap-1.5 text-sm text-muted">
           <Link href="/" className="hover:text-brand-600">{t("მთავარი")}</Link>
           <span>/</span>
-          <span className="text-ink">{ROOT}</span>
+          <span className="text-ink">{t(ROOT)}</span>
         </nav>
 
         <section className="mb-6 rounded-2xl bg-gradient-to-br from-nav to-brand-700 px-6 py-8 text-white sm:px-10 sm:py-10">
           <h1 className="text-2xl font-bold sm:text-3xl">{t("დიზელის გენერატორები")}</h1>
           <p className="mt-2 max-w-2xl text-sm text-white/80 sm:text-base">
-            ZEN სერიის სადგურები Baudouin, IVECO, Perkins და Scania ძრავებით — 15-დან 2000 kVA-მდე.
-            ყველა მოდელი <b className="text-white">{t("შეკვეთით")}</b> მოდის; თითოეულს თან ახლავს ქარხნული
-            ტექნიკური დოკუმენტაცია. კონფიგურაცია (ავტომატიკა ATS, ხმაურდამცავი კორპუსი, ტრეილერი)
-            მოთხოვნით.
+            {t("ZEN სერიის სადგურები Baudouin, IVECO, Perkins და Scania ძრავებით — 15-დან 2000 kVA-მდე. ყველა მოდელი შეკვეთით მოდის; თითოეულს თან ახლავს ქარხნული ტექნიკური დოკუმენტაცია. კონფიგურაცია (ავტომატიკა ATS, ხმაურდამცავი კორპუსი, ტრეილერი) მოთხოვნით.")}
           </p>
           {fx && (
             <p className="mt-4 text-xs text-white/60">
-              ფასები ლარში, ეროვნული ბანკის კურსით: 1 EUR = {fx.rate.toFixed(4)} ₾
-              {fx.validFrom ? ` (${formatDate(fx.validFrom)})` : ""} — ყოველდღიურად ახლდება.
+              {t(
+                "ფასები ლარში, ეროვნული ბანკის კურსით: 1 EUR = {0} ₾{1} — ყოველდღიურად ახლდება.",
+                fx.rate.toFixed(4),
+                fx.validFrom ? ` (${formatDate(fx.validFrom)})` : ""
+              )}
             </p>
           )}
         </section>
@@ -102,7 +108,7 @@ export default async function GeneratorsPage({
             href="/generators"
             className={`rounded-full border px-4 py-2 text-sm ${!active ? "border-brand-500 bg-brand-500 text-white" : "border-line bg-surface hover:border-brand-500"}`}
           >
-            ყველა ({products.length})
+            {t("ყველა ({0})", products.length)}
           </Link>
           {engines.map((c) => (
             <Link
@@ -110,7 +116,7 @@ export default async function GeneratorsPage({
               href={`/generators?engine=${c.slug}`}
               className={`rounded-full border px-4 py-2 text-sm ${active?.id === c.id ? "border-brand-500 bg-brand-500 text-white" : "border-line bg-surface hover:border-brand-500"}`}
             >
-              {c.nameKa}
+              {nameOf(c, locale)}
             </Link>
           ))}
         </div>
@@ -139,7 +145,7 @@ export default async function GeneratorsPage({
                       </Link>
                     </td>
                     <td className="p-3 text-right font-medium tabular-nums">{kva || "—"}</td>
-                    <td className="p-3 text-muted">{p.category.nameKa.replace(" ძრავით", "")}</td>
+                    <td className="p-3 text-muted">{p.category.nameKa.replace(/\s*[Ⴀ-ჿ]+/g, "")}</td>
                     <td className="p-3 text-right">
                       <div className="font-bold tabular-nums">{gel(price.value)}</div>
                       {price.saved > 0 && <div className="text-xs text-emerald-700">{t("სადილერო ფასი")}</div>}
@@ -169,8 +175,7 @@ export default async function GeneratorsPage({
         )}
 
         <p className="mt-6 text-sm text-muted">
-          სიმძლავრე მითითებულია Stand-by რეჟიმში (ISO 8528-1). Prime სიმძლავრე ≈ 10%-ით ნაკლები.
-          მიწოდების ვადა და საბოლოო კონფიგურაცია შეკვეთისას დგინდება — დაგვიკავშირდით.
+          {t("სიმძლავრე მითითებულია Stand-by რეჟიმში (ISO 8528-1). Prime სიმძლავრე ≈ 10%-ით ნაკლები. მიწოდების ვადა და საბოლოო კონფიგურაცია შეკვეთისას დგინდება — დაგვიკავშირდით.")}
         </p>
       </main>
       <Footer />

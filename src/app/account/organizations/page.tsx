@@ -2,10 +2,10 @@ import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/customer-auth";
 import { formatDate } from "@/lib/format";
 import OrganizationForm from "@/components/OrganizationForm";
-import { getT } from "@/lib/i18n/server";
+import { getT, titleMeta } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "ყველა ორგანიზაცია" };
+export const generateMetadata = titleMeta("ყველა ორგანიზაცია");
 
 export default async function OrganizationsPage() {
   const t = await getT();
@@ -21,8 +21,7 @@ export default async function OrganizationsPage() {
       <div>
         <h1 className="text-xl font-bold">{t("ყველა ორგანიზაცია")}</h1>
         <p className="mt-1 text-sm text-muted">
-          ერთი ანგარიშიდან რამდენიმე იურიდიული პირის სახელზე შეგიძლია შეკვეთა — ინვოისი
-          არჩეული ორგანიზაციის რეკვიზიტებით გამოიწერება.
+          {t("ერთი ანგარიშიდან რამდენიმე იურიდიული პირის სახელზე შეგიძლია შეკვეთა — ინვოისი არჩეული ორგანიზაციის რეკვიზიტებით გამოიწერება.")}
         </p>
       </div>
 
@@ -41,10 +40,10 @@ export default async function OrganizationsPage() {
                 )}
               </div>
               <div className="mt-2 space-y-1 text-sm text-muted">
-                <p>საიდენტიფიკაციო კოდი: {o.taxId}</p>
-                <p>მისამართი: {o.address}</p>
+                <p>{t("საიდენტიფიკაციო კოდი:")} {o.taxId}</p>
+                <p>{t("მისამართი:")} {o.address}</p>
                 <p>
-                  შეკვეთა: {o._count.orders} · დამატებულია {formatDate(o.createdAt)}
+                  {t("შეკვეთა:")} {o._count.orders} · {t("დამატებულია")} {formatDate(o.createdAt)}
                 </p>
               </div>
             </div>

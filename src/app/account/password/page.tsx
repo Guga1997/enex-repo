@@ -1,7 +1,7 @@
 import PasswordForm from "@/components/PasswordForm";
-import { getT } from "@/lib/i18n/server";
+import { getT, titleMeta } from "@/lib/i18n/server";
 
-export const metadata = { title: "პაროლის შეცვლა" };
+export const generateMetadata = titleMeta("პაროლის შეცვლა");
 
 export default async function PasswordPage() {
   const t = await getT();

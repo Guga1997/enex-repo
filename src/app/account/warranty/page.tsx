@@ -1,10 +1,10 @@
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/customer-auth";
 import { formatDate } from "@/lib/format";
-import { getT } from "@/lib/i18n/server";
+import { getT, titleMeta } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "გარანტია" };
+export const generateMetadata = titleMeta("გარანტია");
 
 export default async function WarrantyPage() {
   const t = await getT();
@@ -42,16 +42,16 @@ export default async function WarrantyPage() {
                       active ? "bg-emerald-50 text-emerald-700" : "bg-canvas text-muted"
                     }`}
                   >
-                    {active ? `ძალაშია — დარჩა ${daysLeft} დღე` : "ვადა ამოიწურა"}
+                    {active ? t("ძალაშია — დარჩა {0} დღე", daysLeft) : t("ვადა ამოიწურა")}
                   </span>
                 </div>
                 <div className="mt-2 space-y-1 text-sm text-muted">
-                  <p>კოდი: #{it.sku} · შეკვეთა {it.order.number}</p>
+                  <p>{t("კოდი:")} #{it.sku} · {t("შეკვეთა")} {it.order.number}</p>
                   <p>
-                    ვადა: {formatDate(until)}
-                    {it.warrantyMonths ? ` (${it.warrantyMonths} თვე)` : ""}
+                    {t("ვადა:")} {formatDate(until)}
+                    {it.warrantyMonths ? ` (${t("{0} თვე", it.warrantyMonths)})` : ""}
                   </p>
-                  {it.serialNumbers && <p>სერიული: {it.serialNumbers.replace(/\n/g, ", ")}</p>}
+                  {it.serialNumbers && <p>{t("სერიული:")} {it.serialNumbers.replace(/\n/g, ", ")}</p>}
                 </div>
               </div>
             );

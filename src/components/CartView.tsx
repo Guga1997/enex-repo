@@ -67,7 +67,7 @@ export default function CartView() {
                   </button>
                 </div>
                 {l.maxQty > 0 && l.qty >= l.maxQty && (
-                  <span className="text-xs text-amber-600">მარაგშია მხოლოდ {l.maxQty} ცალი</span>
+                  <span className="text-xs text-amber-600">{t("მარაგშია მხოლოდ {0} ცალი", l.maxQty)}</span>
                 )}
                 <button
                   onClick={() => remove(l.productId)}
@@ -95,12 +95,12 @@ export default function CartView() {
           </div>
           <div className="flex justify-between">
             <dt className="text-muted">{t("მიწოდება")}</dt>
-            <dd>{delivery === 0 ? "უფასო" : gel(delivery)}</dd>
+            <dd>{delivery === 0 ? t("უფასო") : gel(delivery)}</dd>
           </div>
         </dl>
         {delivery > 0 && (
           <p className="mt-2 text-xs text-muted">
-            {gel(FREE_DELIVERY_FROM - subtotal)}-ით მეტი შეძენისას მიწოდება უფასოა.
+            {t("{0}-ით მეტი შეძენისას მიწოდება უფასოა.", gel(FREE_DELIVERY_FROM - subtotal))}
           </p>
         )}
         <div className="mt-4 flex justify-between border-t border-line pt-4 text-lg font-bold">

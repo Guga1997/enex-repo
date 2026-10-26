@@ -1,10 +1,10 @@
 import { getCurrentUser } from "@/lib/customer-auth";
 import { setNewsletterAction } from "@/app/actions/customer";
 import { formatDate } from "@/lib/format";
-import { getT } from "@/lib/i18n/server";
+import { getT, titleMeta } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "პერსონალური ინფორმაცია" };
+export const generateMetadata = titleMeta("პერსონალური ინფორმაცია");
 
 export default async function ProfilePage() {
   const t = await getT();
@@ -12,13 +12,13 @@ export default async function ProfilePage() {
   const isCompany = user.type === "COMPANY";
 
   const rows: [string, string][] = [
-    [isCompany ? "დასახელება" : "სახელი და გვარი", user.name],
-    [isCompany ? "საიდენტიფიკაციო კოდი" : "პირადი ნომერი", user.taxId],
-    ["ფიზიკური მისამართი", user.address],
-    ["ელფოსტა", user.email],
-    ["ტელეფონი", `+995 ${user.phone}`],
-    ["ტიპი", isCompany ? "იურიდიული პირი" : "ფიზიკური პირი"],
-    ["რეგისტრაციის თარიღი", formatDate(user.createdAt)],
+    [t(isCompany ? "დასახელება" : "სახელი და გვარი"), user.name],
+    [t(isCompany ? "საიდენტიფიკაციო კოდი" : "პირადი ნომერი"), user.taxId],
+    [t("ფიზიკური მისამართი"), user.address],
+    [t("ელფოსტა"), user.email],
+    [t("ტელეფონი"), `+995 ${user.phone}`],
+    [t("ტიპი"), t(isCompany ? "იურიდიული პირი" : "ფიზიკური პირი")],
+    [t("რეგისტრაციის თარიღი"), formatDate(user.createdAt)],
   ];
 
   return (

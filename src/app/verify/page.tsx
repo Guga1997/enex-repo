@@ -6,9 +6,9 @@ import { getPendingUserId } from "@/app/actions/customer";
 import { db } from "@/lib/db";
 import { emailIsMocked } from "@/lib/notify/email";
 import { smsIsMocked } from "@/lib/notify/sms";
-import { getT } from "@/lib/i18n/server";
+import { getT, titleMeta } from "@/lib/i18n/server";
 
-export const metadata = { title: "ანგარიშის დადასტურება" };
+export const generateMetadata = titleMeta("ანგარიშის დადასტურება");
 
 export default async function VerifyPage() {
   const t = await getT();
