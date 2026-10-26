@@ -57,7 +57,7 @@ export default async function ProductCard({ p, viewer }: { p: CardProduct; viewe
         {p.images[0] ? (
           <Image
             src={p.images[0].url}
-            alt={p.images[0].alt ?? name}
+            alt={(locale === "ka" && p.images[0].alt) || name}
             fill
             sizes="(max-width: 768px) 50vw, 25vw"
             className="object-contain p-4 transition group-hover:scale-105"

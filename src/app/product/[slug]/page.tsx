@@ -142,7 +142,7 @@ export default async function ProductPage({ params }: Props) {
 
         <div className="grid gap-8 lg:grid-cols-2">
           <Gallery
-            images={p.images.map((i) => ({ url: i.url, alt: i.alt ?? name }))}
+            images={p.images.map((i) => ({ url: i.url, alt: (locale === "ka" && i.alt) || name }))}
             category={nameOf(p.category, locale)}
             label={p.model ?? p.sku}
           />
