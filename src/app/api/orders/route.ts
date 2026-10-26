@@ -24,7 +24,8 @@ const schema = z.object({
   deliveryCity: z.string().optional(),
   deliveryAddress: z.string().optional(),
   comment: z.string().max(1000).optional(),
-  paymentMethod: z.enum(["BOG", "TBC", "BANK_TRANSFER", "INSTALLMENT", "POS"]),
+  // განვადება ცალკე მეთოდად აღარ არის — ბანკის გადახდის გვერდზეა (ძველი შეკვეთები INSTALLMENT-ით რჩება)
+  paymentMethod: z.enum(["BOG", "TBC", "BANK_TRANSFER", "POS"]),
   organizationId: z.string().optional(),
   items: z
     .array(z.object({ productId: z.string(), qty: z.number().int().min(1).max(999) }))
@@ -208,7 +209,7 @@ export async function POST(req: Request) {
     console.error("გაყიდვების შეტყობინება ჩავარდა", e);
   }
 
-  // გადარიცხვა / განვადება / POS — ბანკზე გადამისამართება არ ხდება
+  // გადარიცხვა / POS — ბანკზე გადამისამართება არ ხდება
   if (input.paymentMethod !== "BOG" && input.paymentMethod !== "TBC") {
     return NextResponse.json({ orderId: order.id, redirectUrl: `/order/${order.id}` });
   }

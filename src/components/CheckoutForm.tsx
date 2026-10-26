@@ -10,6 +10,12 @@ import { useT } from "@/components/LocaleProvider";
 
 const CITIES = ["თბილისი", "ბათუმი", "ქუთაისი", "რუსთავი", "გორი", "ზუგდიდი", "თელავი", "სხვა"];
 
+/** ონლაინ გადახდა ბანკის გვერდზე — ლოგო ბანკების ოფიციალური საიტებიდან (public/brand/pay) */
+const BANK = {
+  BOG: { name: "საქართველოს ბანკი", logo: "/brand/pay/bog.svg" },
+  TBC: { name: "თიბისი ბანკი", logo: "/brand/pay/tbc.svg" },
+} as const;
+
 export type CheckoutUser = {
   name: string;
   email: string;
@@ -49,7 +55,7 @@ export default function CheckoutForm({
 
   const [deliveryMethod, setDeliveryMethod] = useState<"COURIER" | "PICKUP">("COURIER");
   const [paymentMethod, setPaymentMethod] =
-    useState<"BOG" | "TBC" | "BANK_TRANSFER" | "INSTALLMENT" | "POS">("BOG");
+    useState<"BOG" | "TBC" | "BANK_TRANSFER" | "POS">("BOG");
   const [isCompany, setIsCompany] = useState(user?.type === "COMPANY");
   const [organizationId, setOrganizationId] = useState(
     organizations.find((o) => o.isDefault)?.id ?? organizations[0]?.id ?? ""
@@ -242,20 +248,20 @@ export default function CheckoutForm({
         <fieldset className="card p-5">
           <legend className="px-1 font-semibold">{t("გადახდის მეთოდი")}</legend>
           <div className="mt-4 space-y-3">
-            {(["BOG", ...(tbcEnabled ? (["TBC"] as const) : []), "BANK_TRANSFER", "POS", "INSTALLMENT"] as const).map((m) => (
+            {(["BOG", ...(tbcEnabled ? (["TBC"] as const) : []), "BANK_TRANSFER", "POS"] as const).map((m) => (
               <Radio
                 key={m}
                 checked={paymentMethod === m}
                 onChange={() => setPaymentMethod(m)}
-                title={t(PAYMENT_METHOD_LABELS[m])}
+                // ბანკის გვერდზე ბარათიც, განვადებაც და ქულებიც არის — სათაურად ბანკი, აღწერაში ვარიანტები
+                title={m in BANK ? t(BANK[m as keyof typeof BANK].name) : t(PAYMENT_METHOD_LABELS[m])}
+                logo={m in BANK ? BANK[m as keyof typeof BANK].logo : undefined}
                 desc={
                   m === "BANK_TRANSFER"
                     ? t("ინვოისი მაშინვე მოვა {0}", user?.email ?? t("მითითებულ ელფოსტაზე"))
                     : m === "POS"
                       ? t("ბარათით გადაიხდი ნივთის მიღებისას")
-                      : m === "INSTALLMENT"
-                        ? t("ოპერატორი დაგიკავშირდებათ დასადასტურებლად")
-                        : t("უსაფრთხო გადახდა ბანკის გვერდზე")
+                      : t("ბარათით, განვადებით ან ქულებით — უსაფრთხო გადახდა ბანკის გვერდზე")
                 }
               />
             ))}
@@ -385,11 +391,13 @@ function Radio({
   onChange,
   title,
   desc,
+  logo,
 }: {
   checked: boolean;
   onChange: () => void;
   title: string;
   desc: string;
+  logo?: string;
 }) {
   return (
     <label
@@ -398,6 +406,10 @@ function Radio({
       }`}
     >
       <input type="radio" checked={checked} onChange={onChange} className="mt-0.5 size-4 accent-brand-500" />
+      {logo && (
+        // eslint-disable-next-line @next/next/no-img-element -- პატარა SVG, ოპტიმიზატორი არ სჭირდება
+        <img src={logo} alt="" width={32} height={32} className="size-8 shrink-0 rounded-md bg-white object-contain p-0.5" />
+      )}
       <span>
         <span className="block text-sm font-medium">{title}</span>
         <span className="block text-xs text-muted">{desc}</span>

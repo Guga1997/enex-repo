@@ -67,9 +67,9 @@ You can also pick up your order from our showroom during business hours.`,
       title: "გადახდის პირობები",
       body: `მიიღება შემდეგი გადახდის მეთოდები:
 
-• ბარათით ონლაინ — Visa, Mastercard (უსაფრთხო გადახდა ბანკის გვერდზე)
+• ონლაინ, ბანკის გვერდზე — ბარათით (Visa, Mastercard), განვადებით ან ქულებით
 • საბანკო გადარიცხვა — იურიდიული პირებისთვის, ინვოისის საფუძველზე
-• განვადება — პარტნიორი ბანკების პირობებით
+• ბარათით ადგილზე — POS ტერმინალით, ნივთის მიღებისას
 
 ყველა ფასი მოცემულია დღგ-ს ჩათვლით.`,
     },
@@ -77,9 +77,9 @@ You can also pick up your order from our showroom during business hours.`,
       title: "Payment terms",
       body: `We accept the following payment methods:
 
-• Card online — Visa, Mastercard (secure payment on the bank's page)
+• Online, on the bank's page — by card (Visa, Mastercard), in installments or with points
 • Bank transfer — for companies, against an invoice
-• Installments — on the terms of our partner banks
+• Card on delivery — via POS terminal when you receive your order
 
 All prices include VAT.`,
     },
@@ -87,9 +87,9 @@ All prices include VAT.`,
       title: "Условия оплаты",
       body: `Принимаются следующие способы оплаты:
 
-• Картой онлайн — Visa, Mastercard (безопасная оплата на странице банка)
+• Онлайн, на странице банка — картой (Visa, Mastercard), в рассрочку или баллами
 • Банковский перевод — для юридических лиц, на основании счёта
-• Рассрочка — на условиях банков-партнёров
+• Картой при получении — через POS-терминал
 
 Все цены указаны с НДС.`,
     },
