@@ -10,9 +10,18 @@ type Described = { descriptionKa?: string | null; descriptionEn?: string | null;
 const GEO = /[Ⴀ-ჿ]/;
 
 export function nameOf(x: Named, locale: Locale): string {
-  if (locale === "en") return x.nameEn?.trim() || x.nameKa;
-  if (locale === "ru") return x.nameRu?.trim() || x.nameKa;
+  if (locale === "en") return capital(x.nameEn?.trim()) || x.nameKa;
+  if (locale === "ru") return capital(x.nameRu?.trim()) || x.nameKa;
   return x.nameKa;
+}
+
+/**
+ * ფრაზების ლექსიკონით ნათარგმნი ძველი სახელები პატარა ასოთი იწყება („водонепроницаемый зажим…“).
+ * „iPhone“, „eSIM“ ტიპის სახელს არ ვეხებით — მეორე ასოც პატარა უნდა იყოს.
+ */
+function capital(s: string | undefined): string | undefined {
+  if (!s || !/^\p{Ll}\p{Ll}/u.test(s)) return s;
+  return s[0].toUpperCase() + s.slice(1);
 }
 
 const ENTITIES: Record<string, string> = {

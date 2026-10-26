@@ -5,7 +5,13 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { translateAttr, attrLabels } from "../src/lib/i18n/attributes";
-import { descriptionOf, plainText } from "../src/lib/i18n/content";
+import { descriptionOf, nameOf, plainText } from "../src/lib/i18n/content";
+
+test("სახელი დიდი ასოთი, iPhone-ის ტიპი უცვლელად", () => {
+  assert.equal(nameOf({ nameKa: "ქ", nameRu: "настенный кронштейн" }, "ru"), "Настенный кронштейн");
+  assert.equal(nameOf({ nameKa: "ქ", nameEn: "iPhone case" }, "en"), "iPhone case");
+  assert.equal(nameOf({ nameKa: "ქ", nameEn: null }, "en"), "ქ");
+});
 
 test("ერთეულები წესით: მმ, მ, მპ, დიაპაზონი", () => {
   assert.equal(translateAttr("2.8 მმ", "en"), "2.8 mm");
