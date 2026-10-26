@@ -20,6 +20,12 @@ test("ერთეულები წესით: მმ, მ, მპ, დი�
   assert.equal(translateAttr("-10°C-დან +55°C-მდე", "en"), "-10°C to +55°C");
   assert.equal(translateAttr("-10°C-დან +55°C-მდე", "ru"), "от -10°C до +55°C");
   assert.equal(translateAttr("60მ-მდე", "en"), "up to 60 m");
+  // ჩამონათვალი: თითო ნაწილი ცალკე, „up to“ ორწერტილის შემდეგ
+  assert.equal(
+    translateAttr("5 GHz: 2402 Mbps-მდე, 2.4 GHz: 574 Mbps-მდე", "en"),
+    "5 GHz: up to 2402 Mbps, 2.4 GHz: up to 574 Mbps"
+  );
+  assert.equal(translateAttr("5 GHz: 2402 Mbps-მდე, 2.4 GHz: 574 Mbps-მდე", "ru"), "5 GHz: до 2402 Mbps, 2.4 GHz: до 574 Mbps");
 });
 
 test("ლექსიკონი (data/attr-i18n.json) და ქართული უცვლელად", () => {

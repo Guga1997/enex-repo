@@ -64,14 +64,16 @@ const UNIT_RE = new RegExp(
 const UNIT_OF = new Map(UNITS.map(([ka, en, ru]) => [ka, { en, ru }]));
 
 function byRules(text: string, locale: "en" | "ru"): string {
-  let s = text;
+  // „5 GHz: 2402 Mbps-მდე“ — წინსართი ორწერტილის შემდეგ ჯდება: „5 GHz: up to 2402 Mbps“
+  const [, label = "", value] = text.match(/^((?:[^:]*:\s+)?)(.*)$/s)!;
+  let s = value;
   // „X-დან Y-მდე“ → „X to Y“ / „от X до Y“
   s = s.replace(/^(.+?)-დან\s*(.+?)-მდე$/, (_, a, b) => (locale === "en" ? `${a} to ${b}` : `от ${a} до ${b}`));
   // „60მ-მდე“ → „up to 60 m“
   s = s.replace(/^(.+?)-მდე$/, (_, a) => (locale === "en" ? `up to ${a}` : `до ${a}`));
   s = s.replace(/^(.+?)-დან$/, (_, a) => (locale === "en" ? `from ${a}` : `от ${a}`));
   s = s.replace(UNIT_RE, (_, d, u) => `${d} ${UNIT_OF.get(u)![locale]}`);
-  return s;
+  return label + s;
 }
 
 function lookup(text: string, locale: "en" | "ru"): string | null {
@@ -89,8 +91,8 @@ export function translateAttr(text: string, locale: Locale): string {
   if (exact) return exact;
   const ruled = byRules(text, locale);
   if (!GEO.test(ruled)) return ruled;
-  // წესის შემდეგ დარჩენილი ნაწილი ლექსიკონშია? („-10°C-დან +55°C-მდე“ კი არა, „30 მ, ფერადი“)
-  const parts = ruled.split(/(\s*[,;/+]\s*)/);
+  // ჩამონათვალი („30 მ, ფერადი“; „5 GHz: …-მდე, 2.4 GHz: …-მდე“) — თითო ნაწილი ცალკე, ორიგინალიდან
+  const parts = text.split(/(\s*[,;/+]\s*)/);
   const joined = parts.map((p) => (GEO.test(p) ? lookup(p, locale) ?? byRules(p, locale) : p)).join("");
   return GEO.test(joined) ? text : joined;
 }
