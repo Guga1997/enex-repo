@@ -4,6 +4,7 @@ import { localizeMedia } from "../media";
 import { genericRest } from "./generic-rest";
 import { intellcom } from "./intellcom";
 import { intelectro } from "./intelectro";
+import { elvare } from "./elvare";
 import { muk } from "./muk";
 import { spreadsheet } from "./spreadsheet";
 import { computePrices, Pricer, repriceProduct } from "./pricing";
@@ -17,6 +18,7 @@ const ADAPTERS: Record<string, SupplierAdapter> = {
   GENERIC_REST: genericRest,
   INTELLCOM: intellcom,
   INTELECTRO: intelectro,
+  ELVARE: elvare,
   MUK: muk,
   SPREADSHEET: spreadsheet,
 };

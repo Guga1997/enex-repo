@@ -254,6 +254,11 @@ export default function SupplierForm({
               ცარიელი დატოვე — ადაპტერი ველებს იცნობს. მისამართი: <code>https://intelectro.ge/api/v1</code>,
               ავტორიზაცია: სათაური <code>api-key</code>.
             </>
+          ) : adapter === "ELVARE" ? (
+            <>
+              ცარიელი დატოვე. მისამართი: <code>https://webapi.elvare.ge/ext/v1</code>, ავტორიზაცია „არ სჭირდება“,
+              გასაღები ფორმატში <code>login:password</code>. მოთხოვნას მხოლოდ რეგისტრირებული IP-დან იღებს.
+            </>
           ) : isSheet ? (
             <>
               თითო ფურცელი — სახელი ზუსტად როგორც Excel-შია; <code>columns</code> სვეტების ნომრებია
