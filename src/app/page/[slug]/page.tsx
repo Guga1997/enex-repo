@@ -4,6 +4,9 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { getLocale } from "@/lib/i18n/server";
 import type { Locale } from "@/lib/i18n/config";
+import LegalText from "@/components/LegalText";
+import { returns } from "@/content/legal/returns";
+import { privacy } from "@/content/legal/privacy";
 
 export const dynamic = "force-dynamic";
 
@@ -120,78 +123,42 @@ The warranty does not cover mechanical damage, faults caused by improper use, or
 Гарантия не распространяется на механические повреждения, неисправности, вызванные неправильной эксплуатацией, и повреждения от перепадов напряжения.`,
     },
   },
-  returns: {
-    ka: {
-      title: "დაბრუნების პოლიტიკა",
-      body: `პროდუქტის დაბრუნება შესაძლებელია მიღებიდან 14 კალენდარული დღის განმავლობაში, თუ:
-
-• შენარჩუნებულია სასაქონლო სახე და ორიგინალი შეფუთვა
-• პროდუქტი არ ყოფილა გამოყენებული
-• თან ახლავს შესყიდვის დამადასტურებელი დოკუმენტი
-
-თანხის დაბრუნება ხდება 5-10 სამუშაო დღეში.`,
-    },
-    en: {
-      title: "Return policy",
-      body: `You can return a product within 14 calendar days of receiving it, provided that:
-
-• its condition and original packaging are intact
-• the product has not been used
-• it is accompanied by proof of purchase
-
-Refunds are made within 5–10 business days.`,
-    },
-    ru: {
-      title: "Политика возврата",
-      body: `Товар можно вернуть в течение 14 календарных дней с момента получения, если:
-
-• сохранены товарный вид и оригинальная упаковка
-• товар не был в использовании
-• есть документ, подтверждающий покупку
-
-Деньги возвращаются в течение 5–10 рабочих дней.`,
-    },
-  },
-  privacy: {
-    ka: {
-      title: "კონფიდენციალურობის პოლიტიკა",
-      body: `თქვენს პერსონალურ მონაცემებს ვამუშავებთ მხოლოდ შეკვეთის შესრულებისა და მომსახურების გაწევის მიზნით.
-
-ჩვენ არ ვუზიარებთ თქვენს მონაცემებს მესამე პირებს, გარდა იმ შემთხვევებისა, როცა ეს აუცილებელია მიწოდების ან გადახდის უზრუნველსაყოფად.
-
-გადახდის ბარათის მონაცემები მუშავდება მხოლოდ ბანკის მხარეს — ჩვენს სერვერზე არ ინახება.`,
-    },
-    en: {
-      title: "Privacy policy",
-      body: `We process your personal data only to fulfil your orders and provide our services.
-
-We do not share your data with third parties, except where this is necessary for delivery or payment.
-
-Payment card details are processed only by the bank — they are never stored on our server.`,
-    },
-    ru: {
-      title: "Политика конфиденциальности",
-      body: `Мы обрабатываем ваши персональные данные исключительно для выполнения заказов и оказания услуг.
-
-Мы не передаём ваши данные третьим лицам, за исключением случаев, когда это необходимо для доставки или оплаты.
-
-Данные платёжной карты обрабатываются только на стороне банка — на нашем сервере они не хранятся.`,
-    },
-  },
 };
 
+/** იურიდიული დოკუმენტები — სათაურებით, სიებით და ცხრილებით (LegalText) */
+const LEGAL: Record<string, Record<Locale, Page>> = { returns, privacy };
+
 export function generateStaticParams() {
-  return Object.keys(PAGES).map((slug) => ({ slug }));
+  return [...Object.keys(PAGES), ...Object.keys(LEGAL)].map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  return { title: PAGES[slug]?.[await getLocale()]?.title ?? "Enex" };
+  const locale = await getLocale();
+  return { title: (PAGES[slug] ?? LEGAL[slug])?.[locale]?.title ?? "Enex" };
 }
 
 export default async function StaticPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const page = PAGES[slug]?.[await getLocale()];
+  const locale = await getLocale();
+  const legal = LEGAL[slug]?.[locale];
+  if (legal) {
+    return (
+      <>
+        <Suspense>
+          <Header />
+        </Suspense>
+        <main className="container-x max-w-3xl py-10">
+          <h1 className="mb-6 text-2xl font-bold">{legal.title}</h1>
+          <div className="card p-6">
+            <LegalText body={legal.body} />
+          </div>
+        </main>
+        <Footer />
+      </>
+    );
+  }
+  const page = PAGES[slug]?.[locale];
   if (!page) notFound();
 
   return (
