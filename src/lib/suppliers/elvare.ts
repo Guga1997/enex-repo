@@ -108,6 +108,40 @@ export function categoryPaths(cats: ElvCategory[]): Map<string, string[]> {
   return out;
 }
 
+const E = "ენერგო უზრუნველყოფა";
+const PROT = [E, "ელექტროდამცავი მოწყობილობები"];
+
+/**
+ * Elvare-ს ხე → ჩვენი ხე: მათი კატეგორიები „ენერგო უზრუნველყოფის“ ქვეშ, მათივე სახელებით.
+ * რაც უკვე გვაქვს, იქ რჩება — დაბალი ძაბვის დაცვა = ჩვენი „ელექტროდამცავი მოწყობილობები“
+ * (ამომრთველები, დიფ. ავტომატები, მცველები, იმპულსისგან დაცვა, გაჟონვის რელეები),
+ * ქსელის კაბელი — LAN კაბელებში, სახანძრო — სახანძრო სიგნალიზაციაში.
+ * გზა სრულია ძირიდან: სახელით ვერ ვეძებთ — მათი „კედლის კარადები“ ელ. კარადაა, ჩვენი — ქსელის.
+ * ახალი კატეგორიები: scripts/elvare-categories.ts.
+ */
+export function ourCategoryPath(path: string[] | undefined): string[] | undefined {
+  if (!path?.length) return undefined;
+  const [top, ...rest] = path;
+  if (top === "დაბალი ძაბვის დაცვის მოწყობილობები") {
+    const [mid, leaf = ""] = rest;
+    if (mid === "ავტომატური ამომრთველი") {
+      if (leaf.startsWith("DC")) return [...PROT, "DC ავტომატური ამომრთველები"];
+      if (leaf.startsWith("დიფერენციალური")) return [...PROT, "დიფერენციალური ავტომატები"];
+      return [...PROT, "ავტომატური ამომრთველები", ...rest.slice(1)];
+    }
+    if (mid === "გადაძაბვის დამცველი") return [...PROT, "დენის იმპულსისგან დაცვა"];
+    if (mid === "დნობადი მცველი") return [...PROT, "დნობადი მცველები"];
+    if (leaf === "გაჟონვის რელე") return [...PROT, "გაჟონვის რელეები"];
+    return [...PROT, ...rest];
+  }
+  if (top === "კაბელი") {
+    const leaf = rest[rest.length - 1];
+    if (leaf === "ქსელის კაბელები") return ["LAN & WAN", "LAN კაბელები"];
+    if (leaf === "სახანძრო კაბელები") return ["უსაფრთხოების სისტემები", "სახანძრო სიგნალიზაცია", "სახანძრო კაბელი"];
+  }
+  return [E, ...path];
+}
+
 /** პროდუქტი → ჩვენი ფორმა; ფასის ან კოდის გარეშე, სხვა ვალუტაში — არ შემოგვაქვს */
 export function toItem(
   p: ElvProduct,
@@ -127,7 +161,7 @@ export function toItem(
     name,
     model: modelFromName(name),
     brand: (p.brand_id && brands.get(p.brand_id)) || null,
-    categoryPath: (p.category_id && paths.get(p.category_id)) || undefined,
+    categoryPath: ourCategoryPath((p.category_id && paths.get(p.category_id)) || undefined),
     cost: cost > 0 ? cost : null,
     listPrice: list > 0 ? list : null,
     qty,

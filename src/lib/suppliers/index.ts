@@ -97,7 +97,16 @@ const attrValue = (v: string) => {
 export async function resolveCategoryId(path: string[] | undefined): Promise<string> {
   if (path?.length) {
     // SQLite-ს რეგისტრის უგულებელყოფა არ შეუძლია — შედარებას მეხსიერებაში ვაკეთებთ
-    const all = await db.category.findMany({ select: { id: true, nameKa: true } });
+    const all = await db.category.findMany({ select: { id: true, nameKa: true, parentId: true } });
+    // ჯერ — სრული გზა ძირიდან, თუ ზუსტად ემთხვევა: ერთნაირი სახელი სხვადასხვა შტოში
+    // („კედლის კარადები“ ქსელისაც და ელექტროსიც) სახელით ძებნაში ირევა
+    const key = (s: string) => s.trim().toLowerCase();
+    let parent: string | null = null;
+    for (const name of path) {
+      parent = all.find((c) => c.parentId === parent && key(c.nameKa) === key(name))?.id ?? null;
+      if (!parent) break;
+    }
+    if (parent) return parent;
     const byName = new Map(all.map((c) => [c.nameKa.trim().toLowerCase(), c.id]));
     const byNorm = new Map(all.map((c) => [normCat(c.nameKa), c.id]));
     const byCode = new Map<string, string>();

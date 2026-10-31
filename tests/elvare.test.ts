@@ -4,18 +4,19 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { categoryPaths, makeElvare, toItem, type Transport } from "../src/lib/suppliers/elvare";
+import { categoryPaths, makeElvare, ourCategoryPath, toItem, type Transport } from "../src/lib/suppliers/elvare";
 import type { SupplierConfig } from "../src/lib/suppliers/types";
 
 const cats = [
-  { id: "c1", name: "კაბელები", parent_id: "", sort_order: 1 },
-  { id: "c2", name: "ძალოვანი კაბელები", parent_id: "c1", sort_order: 1 },
+  { id: "c1", name: "დაბალი ძაბვის დაცვის მოწყობილობები", parent_id: "", sort_order: 1 },
+  { id: "c2", name: "ავტომატური ამომრთველი", parent_id: "c1", sort_order: 1 },
+  { id: "c3", name: "MCB ავტომატური ამომრთველები", parent_id: "c2", sort_order: 1 },
 ];
 const product = {
   id: "3f1c",
   sku: "G_-00017595",
   name: "ავტომატური ამომრთველი 6kA C 1P 10A Tengen TGB1N-63",
-  category_id: "c2",
+  category_id: "c3",
   brand_id: "b1",
   price: 6.5,
   dealer_price: 5.85,
@@ -27,7 +28,22 @@ const product = {
 };
 
 test("კატეგორიის გზა ძირიდან", () => {
-  assert.deepEqual(categoryPaths(cats).get("c2"), ["კაბელები", "ძალოვანი კაბელები"]);
+  assert.deepEqual(categoryPaths(cats).get("c2"), ["დაბალი ძაბვის დაცვის მოწყობილობები", "ავტომატური ამომრთველი"]);
+});
+
+test("Elvare-ს კატეგორია → ჩვენი: არსებულში, თუ გვაქვს, თორემ მათი ხე ენერგოს ქვეშ", () => {
+  const E = "ენერგო უზრუნველყოფა";
+  assert.deepEqual(ourCategoryPath(["კაბელი", "საკომუნიკაციო კაბელი", "ქსელის კაბელები"]), ["LAN & WAN", "LAN კაბელები"]);
+  assert.deepEqual(ourCategoryPath(["სამონტაჟო კარადები", "კედლის კარადები"]), [E, "სამონტაჟო კარადები", "კედლის კარადები"]);
+  assert.deepEqual(
+    ourCategoryPath(["დაბალი ძაბვის დაცვის მოწყობილობები", "რელე", "გაჟონვის რელე"]),
+    [E, "ელექტროდამცავი მოწყობილობები", "გაჟონვის რელეები"]
+  );
+  assert.deepEqual(
+    ourCategoryPath(["დაბალი ძაბვის დაცვის მოწყობილობები", "კონტაქტორები", "კონტაქტორი"]),
+    [E, "ელექტროდამცავი მოწყობილობები", "კონტაქტორები", "კონტაქტორი"]
+  );
+  assert.equal(ourCategoryPath(undefined), undefined);
 });
 
 test("პროდუქტი: dealer_price თვითღირებულებაა, price — საცალო", () => {
@@ -38,7 +54,9 @@ test("პროდუქტი: dealer_price თვითღირებულ�
   assert.equal(item.qty, 120);
   assert.equal(item.brand, "Tengen");
   assert.equal(item.model, "TGB1N-63");
-  assert.deepEqual(item.categoryPath, ["კაბელები", "ძალოვანი კაბელები"]);
+  assert.deepEqual(item.categoryPath, [
+    "ენერგო უზრუნველყოფა", "ელექტროდამცავი მოწყობილობები", "ავტომატური ამომრთველები", "MCB ავტომატური ამომრთველები",
+  ]);
   assert.deepEqual(item.images, ["https://elvare.ge/images/3f1c/0"]);
 });
 
