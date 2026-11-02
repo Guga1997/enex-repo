@@ -10,6 +10,7 @@ import type { Locale } from "./config";
 export const en: Record<string, string> = {
   // — ნავიგაცია, ჰედერი, ფუტერი
   "კატალოგი": "Catalog",
+  "კაბელები": "Cables",
   "კატალოგის ნახვა": "Browse catalog",
   "კატალოგში გადასვლა": "Go to catalog",
   "კატეგორიები": "Categories",
@@ -515,6 +516,7 @@ export const en: Record<string, string> = {
 export const ru: Record<string, string> = {
   // — ნავიგაცია, ჰედერი, ფუტერი
   "კატალოგი": "Каталог",
+  "კაბელები": "Кабели",
   "კატალოგის ნახვა": "Смотреть каталог",
   "კატალოგში გადასვლა": "Перейти в каталог",
   "კატეგორიები": "Категории",

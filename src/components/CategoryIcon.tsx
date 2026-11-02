@@ -56,6 +56,13 @@ const ICONS: Record<string, React.ReactNode> = {
       <path d="M4.5 12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3" />
     </>
   ),
+  cable: (
+    <>
+      <path d="M4 20c0-6 4-6 8-8s8-2 8-8" />
+      <path d="M2.5 18.5h3v3h-3zM18.5 2.5h3v3h-3z" />
+      <path d="M8.5 15.5l2 2M13.5 8.5l2 2" />
+    </>
+  ),
   box: (
     <>
       <path d="M12 2.5 21 7v10l-9 4.5L3 17V7z" />
@@ -66,6 +73,7 @@ const ICONS: Record<string, React.ReactNode> = {
 
 function pick(name: string, slug = ""): React.ReactNode {
   const s = `${name} ${slug}`.toLowerCase();
+  if (/^კაბელ|kabel|cable/.test(s)) return ICONS.cable;
   if (/ენერგო|კვება|generator|energo/.test(s)) return ICONS.power;
   if (/უსაფრთხო|დაცვ|კამერ|security/.test(s)) return ICONS.shield;
   if (/ოპტიკ|optik|ბოჭკ/.test(s)) return ICONS.fiber;

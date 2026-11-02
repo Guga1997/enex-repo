@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import { db } from "@/lib/db";
 import { getCategoryTree } from "@/lib/category-tree";
+import { CABLES_SLUG, cableCategoryIds, cableGroups, cablesSegment } from "@/lib/cables";
 import { clip, alts } from "@/lib/seo";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -42,6 +43,20 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
   const base = slug?.length ? `/catalog/${slug[slug.length - 1]}` : "/catalog";
   const robots = filtered ? { index: false, follow: true } : undefined;
 
+  if (slug?.[slug.length - 1] === CABLES_SLUG) {
+    const groups = cableGroups((await getCategoryTree()).roots);
+    return {
+      title: translate(locale, "კაბელები"),
+      description: clip(
+        `${translate(locale, "კაბელები")}: ${groups.map((g) => nameOf(g, locale)).join(", ")}. ${translate(
+          locale,
+          "პროფესიონალური აღჭურვილობა ოფიციალური გარანტიით, მიწოდება საქართველოს მასშტაბით — Enex."
+        )}`
+      ),
+      alternates: alts(base, locale),
+      robots,
+    };
+  }
   if (!slug?.length) {
     return {
       title: translate(locale, "კატალოგი — ვიდეო-მეთვალყურეობა, ქსელი, ენერგო უზრუნველყოფა"),
@@ -82,8 +97,13 @@ export default async function CatalogPage({ params, searchParams }: Props) {
 
   let category = null;
   let categoryIds: string[] = [];
+  const tree = await getCategoryTree();
+  // „კაბელები“ — ვირტუალური სეგმენტი: საკუთარი კატეგორია არ აქვს, ოთხი შტოს კაბელებს აერთიანებს
+  const cables = slug?.[slug.length - 1] === CABLES_SLUG ? cablesSegment(tree.roots) : null;
 
-  if (slug?.length) {
+  if (cables) {
+    categoryIds = cableCategoryIds(tree.roots);
+  } else if (slug?.length) {
     category = await db.category.findUnique({
       where: { slug: slug[slug.length - 1] },
       include: {
@@ -95,7 +115,8 @@ export default async function CatalogPage({ params, searchParams }: Props) {
     categoryIds = await categoryIdsWithDescendants(category.id);
   }
   // ქვეკატეგორიების ჩიპები: სავსე წინ, ცარიელი ბოლოს — იგივე რიგი, რაც მენიუში
-  const chips = category ? ((await getCategoryTree()).byId.get(category.id)?.children ?? []) : [];
+  const chips = cables ? cables.children : category ? (tree.byId.get(category.id)?.children ?? []) : [];
+  const heading = cables ? nameOf(cables, locale) : category ? nameOf(category, locale) : null;
 
   const viewer = await getCurrentUser();
   const query = parseQuery(sp, categoryIds);
@@ -124,12 +145,12 @@ export default async function CatalogPage({ params, searchParams }: Props) {
             </>
           )}
           <span className="font-medium text-ink">
-            {(category ? nameOf(category, locale) : null) ?? (query.q ? t("ძებნა: {0}", query.q) : t("კატალოგი"))}
+            {heading ?? (query.q ? t("ძებნა: {0}", query.q) : t("კატალოგი"))}
           </span>
         </nav>
 
         <h1 className="mb-4 text-2xl font-bold">
-          {(category ? nameOf(category, locale) : null) ?? (query.q ? t("ძებნის შედეგები: {0}", query.q) : t("ყველა პროდუქტი"))}
+          {heading ?? (query.q ? t("ძებნის შედეგები: {0}", query.q) : t("ყველა პროდუქტი"))}
         </h1>
 
         {/* ქვეკატეგორიების ჩიპები */}

@@ -1,5 +1,6 @@
 import Link from "@/components/Link";
 import { getCategoryTree } from "@/lib/category-tree";
+import { cablesSegment } from "@/lib/cables";
 import { segmentTheme } from "@/lib/segment-theme";
 import Logo from "./Logo";
 import SubcategoryIcon from "./SubcategoryIcon";
@@ -15,7 +16,10 @@ import { nameOf } from "@/lib/i18n/content";
 export default async function Header() {
   const { locale, t } = await getI18n();
   // სეგმენტი → ქვეჯგუფი → ქვე-ქვეჯგუფი; ყველა დონეზე სავსე წინ, ცარიელი ბოლოს
-  const { roots: categories } = await getCategoryTree();
+  const { roots } = await getCategoryTree();
+  // „კაბელები“ ენერგოს მერე — ვირტუალური სეგმენტი, კაბელები თავიანთ ადგილასაც რჩება
+  const cables = cablesSegment(roots);
+  const categories = cables ? [...roots.slice(0, 1), cables, ...roots.slice(1)] : roots;
 
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-surface">
