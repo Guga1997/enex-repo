@@ -58,6 +58,19 @@ export default async function Header() {
       {/* სეგმენტების ზოლი — hover-ზე იშლება ქვეჯგუფები და მათი ქვეჯგუფები */}
       <div className="border-t border-line bg-surface">
         <div className="container-x flex items-stretch gap-1 overflow-x-auto">
+          {/* ფასდაკლებები — ზედა ნავიგაციაში ადგილი მხოლოდ დიდ ეკრანზეა, პატარაზე ზოლის თავშია */}
+          <Link
+            href="/sale"
+            className="flex min-w-20 flex-col items-center justify-center gap-1 whitespace-nowrap border-b-2 border-transparent px-4 pt-1.5 pb-1.5 text-xs font-medium text-red-600 dark:text-red-400 lg:hidden"
+          >
+            <span className="flex size-9 items-center justify-center rounded-xl bg-red-50 dark:bg-red-500/10">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="size-5" aria-hidden>
+                <path d="M3 12.6V4.5A1.5 1.5 0 0 1 4.5 3h8.1a1.5 1.5 0 0 1 1.06.44l7.4 7.4a1.5 1.5 0 0 1 0 2.12l-8.1 8.1a1.5 1.5 0 0 1-2.12 0l-7.4-7.4A1.5 1.5 0 0 1 3 12.6z" />
+                <circle cx="7.5" cy="7.5" r="1.5" />
+              </svg>
+            </span>
+            {t("ფასდაკლებები")}
+          </Link>
           {categories.map((segment) => {
             const theme = segmentTheme(segment.nameKa, segment.slug);
             return (
