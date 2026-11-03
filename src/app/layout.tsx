@@ -44,6 +44,13 @@ const META: Metadata = {
  */
 const THEME_SCRIPT = `try{var t=localStorage.getItem('theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme:dark)').matches))document.documentElement.classList.add('dark')}catch(e){}`;
 
+/**
+ * ნახვების სტატისტიკა — Umami, ჩვენსავე სერვერზე (enex.ge/stats). cookie-ებს არ წერს,
+ * IP-ს არ ინახავს. მხოლოდ enex.ge-ზე ითვლის (ლოკალური dev არა); ადმინის გვერდებს არ ითვლის.
+ */
+const UMAMI_WEBSITE_ID = process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID ?? "470ef852-3147-4e2f-81bf-43a7bb3d5c7e";
+const UMAMI_FILTER = `window.enexStats=function(type,p){return p&&p.url&&/^\\/(admin|stats)(\\/|$)/.test(new URL(p.url,location.origin).pathname)?false:p}`;
+
 
 /** სათაური და აღწერა მიმდინარე ენაზე */
 export async function generateMetadata(): Promise<Metadata> {
@@ -63,6 +70,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang={HTML_LANG[locale]} className={georgian.variable} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: UMAMI_FILTER }} />
+        <script
+          defer
+          src="/stats/t.js"
+          data-website-id={UMAMI_WEBSITE_ID}
+          data-domains="enex.ge"
+          data-before-send="enexStats"
+        />
       </head>
       <body>
         <LocaleProvider locale={locale}>
