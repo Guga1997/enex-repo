@@ -37,16 +37,10 @@ export default async function Header() {
             {t("კატალოგი")}
           </Link>
           <Link
-            href="/generators"
-            className="hidden rounded-lg px-3 py-2 text-muted transition hover:bg-canvas hover:text-ink lg:block"
+            href="/sale"
+            className="hidden rounded-lg px-3 py-2 font-medium text-red-600 transition hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10 lg:block"
           >
-            {t("გენერატორები")}
-          </Link>
-          <Link
-            href="/hotel"
-            className="hidden rounded-lg px-3 py-2 text-muted transition hover:bg-canvas hover:text-ink lg:block"
-          >
-            {t("სასტუმროსთვის")}
+            {t("ფასდაკლებული პროდუქტები")}
           </Link>
           <Link
             href="/order/track"

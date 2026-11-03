@@ -7,6 +7,7 @@ import ProductCard from "@/components/ProductCard";
 import HeroSlider from "@/components/HeroSlider";
 import CategoryIcon from "@/components/CategoryIcon";
 import { getCategoryTree } from "@/lib/category-tree";
+import { cablesSegment } from "@/lib/cables";
 import { segmentTheme } from "@/lib/segment-theme";
 import { JsonLd, organizationJsonLd, websiteJsonLd } from "@/lib/seo";
 import { productCardSelect } from "@/lib/catalog";
@@ -46,7 +47,11 @@ export default async function HomePage() {
   ]);
   // სავსე სეგმენტი წინ, ცარიელი ბოლოს — მენიუს რიგით
   const rank = new Map(tree.roots.map((r, i) => [r.id, i]));
-  const categories = [...rootCats].sort((a, b) => (rank.get(a.id) ?? 999) - (rank.get(b.id) ?? 999));
+  const sorted = [...rootCats].sort((a, b) => (rank.get(a.id) ?? 999) - (rank.get(b.id) ?? 999));
+  // „კაბელები“ — ვირტუალური სეგმენტი, ზოლის მსგავსად ენერგოს მერე
+  const cables = cablesSegment(tree.roots);
+  const categories: { id: string; slug: string; nameKa: string; nameEn: string | null; nameRu: string | null; image: string | null }[] =
+    cables ? [...sorted.slice(0, 1), { ...cables, image: null }, ...sorted.slice(1)] : sorted;
 
   // ბანერის ტექსტი ენის მიხედვით — თარგმანის გარეშე ქართული რჩება
   const slides =
@@ -113,7 +118,7 @@ export default async function HomePage() {
           </section>
         )}
 
-        <ProductRow t={t} title={t("ფასდაკლებები")} href="/catalog?discount=1" products={discounted} />
+        <ProductRow t={t} title={t("ფასდაკლებები")} href="/sale" products={discounted} />
 
         {/* რა საიტია — ადამიანისთვისაც და საძიებო სისტემისთვისაც; სახელი საკურიერო კომპანიას ჰგავს */}
         <section className="mt-12 rounded-2xl border border-line bg-surface p-6 sm:p-8">

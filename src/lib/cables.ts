@@ -1,4 +1,4 @@
-import type { TreeNode } from "./category-tree";
+import { bySize, type TreeNode } from "./category-tree";
 
 /**
  * „კაბელები“ — ვირტუალური სეგმენტი ზოლში. კაბელები ხეში ოთხ ადგილასაა (ენერგო, LAN,
@@ -29,7 +29,9 @@ function find(roots: TreeNode[], path: string[]): TreeNode[] {
 
 /** ჯგუფები, რომლებშიც ხილული პროდუქტია — მენიუსა და კატალოგის ჩიპებისთვის */
 export function cableGroups(roots: TreeNode[]): TreeNode[] {
-  return SOURCES.flatMap((p) => find(roots, p)).filter((n) => n.visible > 0);
+  return SOURCES.flatMap((p) => find(roots, p))
+    .filter((n) => n.visible > 0)
+    .sort(bySize);
 }
 
 /** ზოლის სეგმენტი — ჩვეულებრივი კატეგორიის ფორმით, რომ Header-მა ერთნაირად დახატოს */

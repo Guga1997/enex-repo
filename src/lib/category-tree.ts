@@ -46,6 +46,14 @@ export function byFullness(
   return nested || full || a.sortOrder - b.sortOrder || a.nameKa.localeCompare(b.nameKa, "ka");
 }
 
+/**
+ * ქვეჯგუფების რიგი: ჯერ ყველაზე მეტქვეპუნქტიანი, კლებით — მენიუში გრძელი სია წინაა,
+ * ცალსტრიქონიანი ბოლოს. ძირეულ სეგმენტებს არ ეხება: მათ რიგს ადმინის sortOrder წყვეტს.
+ */
+export function bySize(a: Parameters<typeof byFullness>[0], b: Parameters<typeof byFullness>[0]): number {
+  return b.children.length - a.children.length || byFullness(a, b);
+}
+
 export function buildTree(
   cats: Omit<TreeNode, "visible" | "children">[],
   counts: Map<string, number>
@@ -59,7 +67,7 @@ export function buildTree(
   }
   const sum = (n: TreeNode): number => {
     n.visible = (counts.get(n.id) ?? 0) + n.children.reduce((s, c) => s + sum(c), 0);
-    n.children.sort(byFullness);
+    n.children.sort(bySize);
     return n.visible;
   };
   roots.forEach(sum);

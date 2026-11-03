@@ -23,6 +23,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const entries: Entry[] = [
     { path: "/", changeFrequency: "daily", priority: 1 },
     { path: "/catalog", changeFrequency: "daily", priority: 0.9 },
+    { path: "/sale", changeFrequency: "daily", priority: 0.8 },
     { path: "/generators", changeFrequency: "daily", priority: 0.8 },
     { path: "/hotel", changeFrequency: "daily", priority: 0.8 },
     ...categories.map((c) => ({
