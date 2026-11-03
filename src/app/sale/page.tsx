@@ -1,6 +1,6 @@
 import Link from "@/components/Link";
-import Image from "next/image";
 import { Suspense } from "react";
+import BannerCarousel from "@/components/BannerCarousel";
 import type { Metadata } from "next";
 import { db } from "@/lib/db";
 import Header from "@/components/Header";
@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
 
 /**
  * „ფასდაკლებული პროდუქტები“ — ყველა პროდუქტი, რომელსაც oldPrice აქვს.
- * ზემოთ — სარეკლამო ბანერები ფასით; ბანერი ჩანს მხოლოდ მაშინ, როცა მისი პროდუქტი
+ * ზემოთ — სარეკლამო ბანერების კარუსელი, ქვემოთ — ჩვეულებრივი ბარათები; ბანერი ჩანს მხოლოდ მაშინ, როცა მისი პროდუქტი
  * ჩართულია და ფასდაკლებაშია (თორემ ბანერის ფასი საიტისას აღარ დაემთხვევა).
  */
 const BANNERS: { slug: string; image: string; title: string }[] = [
@@ -67,26 +67,7 @@ export default async function SalePage() {
         </nav>
         <h1 className="mb-6 text-2xl font-bold">{t("ფასდაკლებული პროდუქტები")}</h1>
 
-        {banners.length > 0 && (
-          <section className="mb-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {banners.map((b) => (
-              <Link
-                key={b.slug}
-                href={`/product/${b.slug}`}
-                className="group block overflow-hidden rounded-2xl border border-line bg-surface transition hover:shadow-md"
-              >
-                <Image
-                  src={b.image}
-                  alt={b.title}
-                  width={940}
-                  height={788}
-                  sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-                  className="h-auto w-full transition duration-300 group-hover:scale-[1.02]"
-                />
-              </Link>
-            ))}
-          </section>
-        )}
+        <BannerCarousel banners={banners} />
 
         {products.length === 0 ? (
           <div className="card p-12 text-center text-muted">{t("ამჟამად ფასდაკლებული პროდუქტი არ არის.")}</div>
