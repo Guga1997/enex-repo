@@ -23,7 +23,7 @@ export default async function Header() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-surface">
-      <div className="container-x flex h-16 items-center gap-4">
+      <div className="container-x flex h-16 items-center gap-2 sm:gap-4">
         <Link href="/" className="shrink-0 text-ink" aria-label={t("Enex — მთავარი")}>
           <Logo className="h-9 w-auto" />
         </Link>
@@ -33,7 +33,8 @@ export default async function Header() {
         </div>
 
         <nav className="ml-auto flex items-center gap-1 text-sm">
-          <Link href="/catalog" className="rounded-lg px-3 py-2 text-muted transition hover:bg-canvas hover:text-ink">
+          {/* ტელეფონზე კატეგორიების ზოლი ქვემოთაა — „კატალოგი“ ადგილს არ იკავებს */}
+          <Link href="/catalog" className="hidden rounded-lg px-3 py-2 text-muted transition hover:bg-canvas hover:text-ink sm:block">
             {t("კატალოგი")}
           </Link>
           <Link
