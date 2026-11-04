@@ -10,6 +10,9 @@ const nextConfig: NextConfig = {
   },
   images: {
     remotePatterns: [{ protocol: "https", hostname: "**" }],
+    // ფოტოების cache nginx-შია (/etc/nginx/conf.d/enex-image-cache.conf). Next-ის disk cache
+    // restart-ის შემდეგ ყველა ფაილს კითხულობდა (70 000 ფაილი) და ფოტოები ~70 წამი ჭედავდა.
+    maximumDiskCacheSize: 0,
   },
 };
 
