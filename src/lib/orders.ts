@@ -1,6 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { db } from "./db";
-import { deriveStatus } from "./stock";
+import { adjustAfterSale, deriveStatus } from "./stock";
 import { RESERVATION_MINUTES } from "./constants";
 import { notifySalesPaid } from "./notify/sales";
 
@@ -55,6 +55,7 @@ export async function markOrderPaid(orderId: string, raw?: unknown, opts: { noti
         where: { id: product.id },
         data: {
           stockQty: newQty,
+          stockAdjust: adjustAfterSale(product.stockAdjust, item.qty),
           reservedQty: Math.max(0, product.reservedQty - item.qty),
           stockStatus: deriveStatus(newQty, product.stockStatus),
         },

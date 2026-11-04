@@ -44,6 +44,7 @@ export default async function StockLogPage({
               <th className="p-3 font-medium">SKU</th>
               <th className="p-3 font-medium">რაოდენობა</th>
               <th className="p-3 font-medium">სტატუსი</th>
+              <th className="p-3 font-medium">მიზეზი</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
@@ -72,11 +73,12 @@ export default async function StockLogPage({
                     </>
                   )}
                 </td>
+                <td className="p-3 text-xs text-muted">{l.note ?? "—"}</td>
               </tr>
             ))}
             {logs.length === 0 && (
               <tr>
-                <td colSpan={5} className="p-10 text-center text-muted">ჩანაწერი არ არის.</td>
+                <td colSpan={6} className="p-10 text-center text-muted">ჩანაწერი არ არის.</td>
               </tr>
             )}
           </tbody>

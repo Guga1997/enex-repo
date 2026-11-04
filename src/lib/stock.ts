@@ -55,3 +55,23 @@ export function deriveStatus(qty: number, current: string): string {
   if (current === StockStatus.IN_TRANSIT || current === StockStatus.PREORDER) return current;
   return StockStatus.OUT_OF_STOCK;
 }
+
+/* ------------------------------ ხელით კორექცია ------------------------------ */
+
+/** ნაშთი = მიმწოდებლების ჯამი + ჩვენი კორექცია; უარყოფითი ვერ იქნება */
+export function rolledUpQty(supplyQtys: number[], stockAdjust: number): number {
+  return Math.max(0, supplyQtys.reduce((sum, q) => sum + q, 0) + stockAdjust);
+}
+
+/**
+ * რა კორექცია სჭირდება, რომ ნაშთი ზუსტად target გახდეს. მიმწოდებლის გარეშე პროდუქტს
+ * კორექცია არ სჭირდება — სინქი მას არ ეხება და ნაშთი პირდაპირ იწერება.
+ */
+export function planStockAdjust(supplyQtys: number[], target: number): number {
+  return supplyQtys.length ? target - supplyQtys.reduce((sum, q) => sum + q, 0) : 0;
+}
+
+/** გაყიდვა ჯერ ჩვენს დამატებულ მარაგს ხარჯავს; მინუს-კორექციას (გადადებულს) არ ეხება */
+export function adjustAfterSale(stockAdjust: number, soldQty: number): number {
+  return stockAdjust > 0 ? Math.max(0, stockAdjust - soldQty) : stockAdjust;
+}

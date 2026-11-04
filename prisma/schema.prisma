@@ -137,6 +137,9 @@ model Product {
   listPrice   Float?
 
   stockQty     Int       @default(0)
+  /// ხელით კორექცია მიმწოდებლების ჯამზე (ადმინი → მარაგი). სინქი stockQty-ს თავიდან
+  /// ითვლის, ეს კი რჩება: stockQty = ჯამი + stockAdjust. მიმწოდებლის გარეშე პროდუქტზე 0-ია.
+  stockAdjust  Int       @default(0)
   /// გაუფორმებელ შეკვეთებში დაკავებული რაოდენობა. ცალკე ველია, რომ სინქმა
   /// (რომელიც stockQty-ს გადააწერს) რეზერვაცია არ წაშალოს. ხელმისაწვდომი = stockQty − reservedQty.
   reservedQty  Int       @default(0)
@@ -369,6 +372,7 @@ model StockSyncLog {
   newQty    Int
   oldStatus String
   newStatus String
+  note      String? // ხელით ცვლილების მიზეზი
   createdAt DateTime @default(now())
 
   @@index([sku])

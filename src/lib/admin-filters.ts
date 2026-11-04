@@ -24,6 +24,11 @@ export function productFilter(f: {
     { stockStatus: "OUT_OF_STOCK" },
     { stockStatus: "IN_STOCK", stockQty: { gt: 0, lte: 5 } },
   ] });
+  else if (f.stock === "in") AND.push({ stockQty: { gt: 0 } });
+  else if (f.stock === "low") AND.push({ stockQty: { gt: 0, lte: 5 } });
+  else if (f.stock === "out") AND.push({ stockQty: { lte: 0 } });
+  else if (f.stock === "reserved") AND.push({ reservedQty: { gt: 0 } });
+  else if (f.stock === "adjusted") AND.push({ stockAdjust: { not: 0 } });
 
   if (AND.length) where.AND = AND;
   return where;

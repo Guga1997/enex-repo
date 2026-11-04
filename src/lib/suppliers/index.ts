@@ -1,5 +1,6 @@
 import { db } from "../db";
 import { slugify } from "../format";
+import { rolledUpQty } from "../stock";
 import { localizeMedia } from "../media";
 import { genericRest } from "./generic-rest";
 import { intellcom } from "./intellcom";
@@ -212,10 +213,13 @@ export function isSpecificModel(model: string): boolean {
   return model.length >= 4 && /\d/.test(model);
 }
 
-/** ნაშთი პროდუქტზე = მისი ყველა მიმწოდებლის ჯამი */
+/** ნაშთი პროდუქტზე = მისი ყველა მიმწოდებლის ჯამი + ხელით კორექცია (ადმინის „მარაგი“) */
 export async function rollupStock(productId: string) {
-  const supplies = await db.productSupply.findMany({ where: { productId } });
-  const qty = supplies.reduce((sum, s) => sum + s.qty, 0);
+  const [supplies, product] = await Promise.all([
+    db.productSupply.findMany({ where: { productId } }),
+    db.product.findUnique({ where: { id: productId }, select: { stockAdjust: true } }),
+  ]);
+  const qty = rolledUpQty(supplies.map((s) => s.qty), product?.stockAdjust ?? 0);
 
   const etas = supplies
     .filter((s) => s.incomingDate && s.qty <= 0)
