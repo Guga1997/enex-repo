@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { saveStock } from "@/app/admin/inventory/actions";
+import { saveOwnStock } from "@/app/admin/inventory/actions";
 
-/** ნაშთის შეცვლა სტრიქონშივე: −/+ ან ციფრი, შენახვა ღილაკით ან Enter-ით */
+/** „ჩემი მარაგი“ სტრიქონშივე: −/+ ან ციფრი, შენახვა ღილაკით ან Enter-ით */
 export default function StockControl({ productId, qty }: { productId: string; qty: number }) {
   const [value, setValue] = useState(String(qty));
   const [note, setNote] = useState("");
@@ -21,7 +21,7 @@ export default function StockControl({ productId, qty }: { productId: string; qt
     if (!valid || !delta || pending) return;
     setError("");
     start(async () => {
-      const r = await saveStock(productId, target, note);
+      const r = await saveOwnStock(productId, target, note);
       if (r.error) setError(r.error);
       else setNote("");
     });
@@ -38,7 +38,7 @@ export default function StockControl({ productId, qty }: { productId: string; qt
           min={0}
           step={1}
           value={value}
-          aria-label="ნაშთი"
+          aria-label="ჩემი მარაგი"
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter") save();

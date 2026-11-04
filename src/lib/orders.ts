@@ -1,6 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { db } from "./db";
-import { adjustAfterSale, deriveStatus } from "./stock";
+import { deriveStatus, splitSale } from "./stock";
 import { RESERVATION_MINUTES } from "./constants";
 import { notifySalesPaid } from "./notify/sales";
 
@@ -47,15 +47,26 @@ export async function markOrderPaid(orderId: string, raw?: unknown, opts: { noti
 
     for (const item of order.items) {
       if (!item.productId) continue;
-      const product = await tx.product.findUnique({ where: { id: item.productId } });
+      const product = await tx.product.findUnique({
+        where: { id: item.productId },
+        include: { supplies: { select: { id: true, qty: true }, orderBy: { qty: "desc" } } },
+      });
       if (!product) continue;
+
+      // ჯერ ჩემი მარაგი, მერე მიმწოდებლისა — შემდეგი სინქი მიმწოდებლის ციფრს თავიდან დაწერს
+      const split = splitSale(product.stockAdjust, product.supplies.map((s) => s.qty), item.qty);
+      for (const [i, supply] of product.supplies.entries()) {
+        if (split.supplies[i] !== supply.qty) {
+          await tx.productSupply.update({ where: { id: supply.id }, data: { qty: split.supplies[i] } });
+        }
+      }
 
       const newQty = Math.max(0, product.stockQty - item.qty);
       await tx.product.update({
         where: { id: product.id },
         data: {
           stockQty: newQty,
-          stockAdjust: adjustAfterSale(product.stockAdjust, item.qty),
+          stockAdjust: split.own,
           reservedQty: Math.max(0, product.reservedQty - item.qty),
           stockStatus: deriveStatus(newQty, product.stockStatus),
         },

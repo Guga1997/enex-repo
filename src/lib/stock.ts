@@ -56,22 +56,21 @@ export function deriveStatus(qty: number, current: string): string {
   return StockStatus.OUT_OF_STOCK;
 }
 
-/* ------------------------------ ხელით კორექცია ------------------------------ */
+/* -------------------------------- ჩემი მარაგი -------------------------------- */
 
-/** ნაშთი = მიმწოდებლების ჯამი + ჩვენი კორექცია; უარყოფითი ვერ იქნება */
-export function rolledUpQty(supplyQtys: number[], stockAdjust: number): number {
-  return Math.max(0, supplyQtys.reduce((sum, q) => sum + q, 0) + stockAdjust);
+/** სულ = მიმწოდებლების ჯამი + ჩემი ჩაწერილი მარაგი (Product.stockAdjust) */
+export function rolledUpQty(supplyQtys: number[], ownQty: number): number {
+  return Math.max(0, supplyQtys.reduce((sum, q) => sum + q, 0) + ownQty);
 }
 
-/**
- * რა კორექცია სჭირდება, რომ ნაშთი ზუსტად target გახდეს. მიმწოდებლის გარეშე პროდუქტს
- * კორექცია არ სჭირდება — სინქი მას არ ეხება და ნაშთი პირდაპირ იწერება.
- */
-export function planStockAdjust(supplyQtys: number[], target: number): number {
-  return supplyQtys.length ? target - supplyQtys.reduce((sum, q) => sum + q, 0) : 0;
-}
-
-/** გაყიდვა ჯერ ჩვენს დამატებულ მარაგს ხარჯავს; მინუს-კორექციას (გადადებულს) არ ეხება */
-export function adjustAfterSale(stockAdjust: number, soldQty: number): number {
-  return stockAdjust > 0 ? Math.max(0, stockAdjust - soldQty) : stockAdjust;
+/** გაყიდვა: ჯერ ჩემი მარაგი აკლდება, სანამ არ განულდება, დარჩენილი — მიმწოდებლებს */
+export function splitSale(ownQty: number, supplyQtys: number[], soldQty: number) {
+  const fromOwn = Math.min(Math.max(0, ownQty), soldQty);
+  let rest = soldQty - fromOwn;
+  const supplies = supplyQtys.map((q) => {
+    const take = Math.min(Math.max(0, q), rest);
+    rest -= take;
+    return q - take;
+  });
+  return { own: ownQty - fromOwn, supplies };
 }

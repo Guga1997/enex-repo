@@ -28,7 +28,7 @@ export function productFilter(f: {
   else if (f.stock === "low") AND.push({ stockQty: { gt: 0, lte: 5 } });
   else if (f.stock === "out") AND.push({ stockQty: { lte: 0 } });
   else if (f.stock === "reserved") AND.push({ reservedQty: { gt: 0 } });
-  else if (f.stock === "adjusted") AND.push({ stockAdjust: { not: 0 } });
+  else if (f.stock === "own") AND.push({ OR: [{ stockAdjust: { gt: 0 } }, { supplies: { none: {} }, stockQty: { gt: 0 } }] });
 
   if (AND.length) where.AND = AND;
   return where;

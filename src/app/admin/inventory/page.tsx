@@ -6,7 +6,6 @@ import { STOCK_LABELS } from "@/lib/constants";
 import { productFilter } from "@/lib/admin-filters";
 import { availableQty } from "@/lib/stock";
 import StockControl from "@/components/admin/StockControl";
-import { resetAdjust } from "./actions";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "მარაგი" };
@@ -24,7 +23,7 @@ const TABS = [
   { key: "low", label: "ცოტაა (1–5)" },
   { key: "out", label: "არ არის" },
   { key: "reserved", label: "დაკავებული" },
-  { key: "adjusted", label: "ხელით შეცვლილი" },
+  { key: "own", label: "ჩემი მარაგი" },
 ];
 
 /** სვეტი → დალაგება; სათაურზე დაჭერა მიმართულებას ცვლის */
@@ -33,7 +32,7 @@ const SORTS: Record<string, (d: Prisma.SortOrder) => Prisma.ProductOrderByWithRe
   category: (d) => ({ category: { nameKa: d } }),
   qty: (d) => ({ stockQty: d }),
   reserved: (d) => ({ reservedQty: d }),
-  adjust: (d) => ({ stockAdjust: d }),
+  own: (d) => ({ stockAdjust: d }),
   price: (d) => ({ price: d }),
 };
 const TEXT_SORTS = new Set(["name", "category"]);
@@ -91,7 +90,8 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
         <div>
           <h1 className="text-2xl font-bold">მარაგი</h1>
           <p className="mt-1 text-sm text-muted">
-            ნაშთი = მიმწოდებლების ჯამი + ხელით კორექცია. კორექცია სინქზე არ იშლება.
+            სულ = მიმწოდებლის მარაგი + ჩემი მარაგი. სინქი მიმწოდებლის ციფრს ცვლის, შენს ჩაწერილს არა.
+            გაყიდვისას ჯერ შენი აკლდება, სანამ არ განულდება, მერე მიმწოდებლისა.
           </p>
         </div>
         <Link href="/admin/stock" className="text-sm font-medium text-brand-600 hover:underline">
@@ -158,10 +158,10 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
               <Th id="name">დასახელება</Th>
               <Th id="category">კატეგორია</Th>
               <th className="p-3 font-medium">მიმწოდებელი</th>
-              <Th id="adjust" right>კორექცია</Th>
+              <Th id="own">ჩემი მარაგი</Th>
+              <Th id="qty" right>სულ</Th>
               <Th id="reserved" right>დაკავებული</Th>
               <Th id="price" right>ფასი</Th>
-              <Th id="qty">ნაშთი</Th>
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
@@ -192,25 +192,11 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
                     </div>
                   ))}
                 </td>
-                <td className="p-3 text-right">
-                  {p.stockAdjust !== 0 ? (
-                    <form action={resetAdjust} className="inline-flex items-center justify-end gap-1.5">
-                      <input type="hidden" name="id" value={p.id} />
-                      <span className={`font-semibold ${p.stockAdjust > 0 ? "text-emerald-600" : "text-rose-600"}`}>
-                        {p.stockAdjust > 0 ? `+${p.stockAdjust}` : p.stockAdjust}
-                      </span>
-                      <button
-                        title="კორექციის მოხსნა — ნაშთი მიმწოდებლების ჯამი გახდება"
-                        aria-label="კორექციის მოხსნა"
-                        className="text-xs text-muted hover:text-rose-600"
-                      >
-                        ✕
-                      </button>
-                    </form>
-                  ) : (
-                    <span className="text-muted">—</span>
-                  )}
+                <td className="p-3">
+                  {/* მიმწოდებლის გარეშე პროდუქტის მთელი ნაშთი ჩვენია */}
+                  <StockControl productId={p.id} qty={p.supplies.length ? p.stockAdjust : p.stockQty} />
                 </td>
+                <td className="p-3 text-right font-semibold">{p.stockQty}</td>
                 <td className="p-3 text-right">
                   {p.reservedQty > 0 ? (
                     <span title={`ხელმისაწვდომი: ${availableQty(p)}`} className="font-medium text-amber-600">
@@ -221,9 +207,6 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
                   )}
                 </td>
                 <td className="whitespace-nowrap p-3 text-right">{gel(p.price)}</td>
-                <td className="p-3">
-                  <StockControl productId={p.id} qty={p.stockQty} />
-                </td>
               </tr>
             ))}
             {items.length === 0 && (

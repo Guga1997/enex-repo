@@ -51,7 +51,7 @@ export default function Gallery({
                 i === active ? "border-brand-500" : "border-line"
               }`}
             >
-              <Image src={img.url} alt={img.alt} fill className="object-contain p-1.5" />
+              <Image src={img.url} alt={img.alt} fill sizes="80px" className="object-contain p-1.5" />
             </button>
           ))}
         </div>

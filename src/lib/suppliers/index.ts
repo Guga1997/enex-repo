@@ -213,7 +213,7 @@ export function isSpecificModel(model: string): boolean {
   return model.length >= 4 && /\d/.test(model);
 }
 
-/** ნაშთი პროდუქტზე = მისი ყველა მიმწოდებლის ჯამი + ხელით კორექცია (ადმინის „მარაგი“) */
+/** ნაშთი პროდუქტზე = მისი ყველა მიმწოდებლის ჯამი + ჩემი მარაგი (ადმინი → მარაგი) */
 export async function rollupStock(productId: string) {
   const [supplies, product] = await Promise.all([
     db.productSupply.findMany({ where: { productId } }),

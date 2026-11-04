@@ -1,32 +1,27 @@
 /**
- * ხელით კორექცია მარაგზე: სინქი ნაშთს თავიდან ითვლის, კორექცია უნდა გადარჩეს.
+ * „ჩემი მარაგი“: მიმწოდებლის ნაშთს ემატება, სინქს გადაურჩება, გაყიდვისას პირველი აკლდება.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { adjustAfterSale, planStockAdjust, rolledUpQty } from "../src/lib/stock";
+import { rolledUpQty, splitSale } from "../src/lib/stock";
 
-test("კორექცია მიმწოდებლების ჯამს ემატება და სინქის შემდეგაც რჩება", () => {
-  const adjust = planStockAdjust([10, 2], 15);
-  assert.equal(adjust, 3);
-  assert.equal(rolledUpQty([10, 2], adjust), 15);
-  // მიმწოდებელმა ნაშთი შეცვალა — ჩვენი +3 იგივეა
-  assert.equal(rolledUpQty([4, 2], adjust), 9);
+test("სულ = მიმწოდებელი + ჩემი; სინქზე მიმწოდებლის ციფრი იცვლება, ჩემი რჩება", () => {
+  assert.equal(rolledUpQty([10], 4), 14);
+  assert.equal(rolledUpQty([6], 4), 10);
+  assert.equal(rolledUpQty([10, 2], 0), 12);
 });
 
-test("მოკლება: უარყოფითი კორექცია, ნაშთი ნულზე დაბლა ვერ ჩავა", () => {
-  const adjust = planStockAdjust([10], 7);
-  assert.equal(adjust, -3);
-  assert.equal(rolledUpQty([10], adjust), 7);
-  assert.equal(rolledUpQty([1], adjust), 0);
+test("გაყიდვა: ჯერ ჩემი მარაგი, სანამ არ განულდება", () => {
+  assert.deepEqual(splitSale(4, [10], 1), { own: 3, supplies: [10] });
+  assert.deepEqual(splitSale(4, [10], 4), { own: 0, supplies: [10] });
 });
 
-test("მიმწოდებლის გარეშე პროდუქტს კორექცია არ აქვს", () => {
-  assert.equal(planStockAdjust([], 8), 0);
+test("გაყიდვა: ჩემი რომ არ ყოფნის, დარჩენილი მიმწოდებელს აკლდება", () => {
+  assert.deepEqual(splitSale(4, [10], 6), { own: 0, supplies: [8] });
+  assert.deepEqual(splitSale(0, [10], 2), { own: 0, supplies: [8] });
 });
 
-test("გაყიდვა ჯერ ჩვენს დამატებულ მარაგს ხარჯავს", () => {
-  assert.equal(adjustAfterSale(5, 2), 3);
-  assert.equal(adjustAfterSale(2, 5), 0);
-  assert.equal(adjustAfterSale(-3, 2), -3);
-  assert.equal(adjustAfterSale(0, 2), 0);
+test("რამდენიმე მიმწოდებელი — რიგრიგობით; მიმწოდებლის გარეშე პროდუქტი არ ვარდება", () => {
+  assert.deepEqual(splitSale(1, [3, 2], 5), { own: 0, supplies: [0, 1] });
+  assert.deepEqual(splitSale(0, [], 2), { own: 0, supplies: [] });
 });

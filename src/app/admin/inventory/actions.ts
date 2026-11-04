@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
-import { clearStockAdjust, setStock } from "@/lib/inventory";
+import { setOwnStock } from "@/lib/inventory";
 
 async function requireAdmin() {
   const session = await getSession();
@@ -12,16 +12,10 @@ async function requireAdmin() {
   return session;
 }
 
-export async function saveStock(productId: string, target: number, note: string): Promise<{ error?: string }> {
+export async function saveOwnStock(productId: string, ownQty: number, note: string): Promise<{ error?: string }> {
   const session = await requireAdmin();
-  if (!Number.isInteger(target) || target < 0) return { error: "ნაშთი მთელი, არაუარყოფითი რიცხვი უნდა იყოს" };
-  await setStock(productId, target, `ადმინი: ${session.name}`, note.slice(0, 200));
+  if (!Number.isInteger(ownQty) || ownQty < 0) return { error: "მარაგი მთელი, არაუარყოფითი რიცხვი უნდა იყოს" };
+  await setOwnStock(productId, ownQty, `ადმინი: ${session.name}`, note.slice(0, 200));
   revalidatePath("/admin/inventory");
   return {};
-}
-
-export async function resetAdjust(formData: FormData) {
-  const session = await requireAdmin();
-  await clearStockAdjust(String(formData.get("id")), `ადმინი: ${session.name}`);
-  revalidatePath("/admin/inventory");
 }

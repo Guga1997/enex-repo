@@ -9,9 +9,13 @@ import { useLocale } from "./LocaleProvider";
  * next/link-ის შემცვლელი: შიდა ბმულს მიმდინარე ენის პრეფიქსს ადებს
  * (/catalog → /en/catalog). ქართულზე მისამართი უცვლელი რჩება.
  * გარე ბმული, mailto:, tel: და #ღუზა ხელუხლებელი გადის.
+ *
+ * prefetch ნაგულისხმევად გამორთულია: გვერდები დინამიკურია და მენიუს ბმულები ასეულობითაა —
+ * ერთი ჩატვირთვა სერვერს ასობით მოთხოვნას უგზავნიდა (ტრაფიკის 75%) და restart-ის მერე
+ * ფოტოები რიგში იჭედებოდა.
  */
-export default function Link({ href, ...rest }: ComponentProps<typeof NextLink>) {
+export default function Link({ href, prefetch = false, ...rest }: ComponentProps<typeof NextLink>) {
   const locale = useLocale();
   const h = typeof href === "string" && href.startsWith("/") ? withLocale(href, locale) : href;
-  return <NextLink href={h} {...rest} />;
+  return <NextLink href={h} prefetch={prefetch} {...rest} />;
 }
