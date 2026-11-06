@@ -1,11 +1,9 @@
-import { Children, cloneElement, Fragment, isValidElement, type ReactElement, type ReactNode } from "react";
+import type { ReactNode } from "react";
 
 /**
  * მენიუს ქვეჯგუფის ხატულა — ხაზოვანი, 24×24, ზოლის ხატულების სტილში.
  *
- * ანიმაცია CSS-ითაა (globals.css → .cat-ico): მენიუს გახსნისას ხაზები რიგრიგობით
- * „ეხატება“, მაუსის მიტანაზე — თავიდან. ამისთვის თითო ფიგურას pathLength=1
- * ეწერება, რომ ნებისმიერი სიგრძის ხაზი ერთნაირად დაიხატოს.
+ * ანიმაცია CSS-ითაა (globals.css → .cat-ico): ხატულა არასდროს ქრება.
  *
  * ხატულა slug-ით ირჩევა; ახალ კატეგორიას სახელით ეძებნება ყველაზე ახლო.
  */
@@ -571,16 +569,6 @@ export function subcategoryIconKey(name: string, slug: string): string {
   return FALLBACKS.find(([re]) => re.test(s))?.[1] ?? "box";
 }
 
-/** თითო ფიგურას pathLength=1 — ხატვის ანიმაცია ყველა ხაზზე ერთ დროში სრულდება */
-function measured(node: ReactNode): ReactNode {
-  return Children.map(node, (child) => {
-    if (!isValidElement(child)) return child;
-    const el = child as ReactElement<{ children?: ReactNode }>;
-    if (el.type === Fragment) return measured(el.props.children);
-    return cloneElement(el as ReactElement<{ pathLength?: number }>, { pathLength: 1 });
-  });
-}
-
 export default function SubcategoryIcon({
   name,
   slug,
@@ -605,7 +593,7 @@ export default function SubcategoryIcon({
       style={{ "--d": `${delayMs}ms` } as React.CSSProperties}
       aria-hidden
     >
-      {measured(I[subcategoryIconKey(name, slug)])}
+      {I[subcategoryIconKey(name, slug)]}
     </svg>
   );
 }

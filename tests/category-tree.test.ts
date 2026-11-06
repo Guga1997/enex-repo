@@ -53,3 +53,22 @@ test("გამორთული მშობლის შვილი მე�
   const { roots } = buildTree([cat("root", null, 0), cat("orphan", "missing-parent", 0)], new Map());
   assert.deepEqual(roots.map((r) => r.id), ["root"]);
 });
+
+test("ქვეჯგუფები: მეტი ქვეპუნქტი წინ, ტოლებში — მეტი პროდუქტი", () => {
+  const { byId } = buildTree(
+    [
+      cat("root", null, 0),
+      cat("one-small", "root", 0),
+      cat("x1", "one-small", 0),
+      cat("one-big", "root", 1),
+      cat("x2", "one-big", 0),
+      cat("two", "root", 2),
+      cat("x3", "two", 0),
+      cat("x4", "two", 1),
+      cat("leaf-small", "root", 3),
+      cat("leaf-big", "root", 4),
+    ],
+    new Map([["x1", 1], ["x2", 9], ["x3", 1], ["leaf-small", 2], ["leaf-big", 5]])
+  );
+  assert.deepEqual(byId.get("root")!.children.map((c) => c.id), ["two", "one-big", "one-small", "leaf-big", "leaf-small"]);
+});

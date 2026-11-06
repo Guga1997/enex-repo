@@ -47,11 +47,11 @@ export function byFullness(
 }
 
 /**
- * ქვეჯგუფების რიგი: ჯერ ყველაზე მეტქვეპუნქტიანი, კლებით — მენიუში გრძელი სია წინაა,
- * ცალსტრიქონიანი ბოლოს. ძირეულ სეგმენტებს არ ეხება: მათ რიგს ადმინის sortOrder წყვეტს.
+ * ქვეჯგუფების რიგი: ჯერ ყველაზე მეტქვეპუნქტიანი, კლებით; ტოლებში — მეტპროდუქტიანი.
+ * მენიუში გრძელი სია წინაა, ცალსტრიქონიანი ბოლოს. ძირეულ სეგმენტებს არ ეხება: მათ რიგს ადმინის sortOrder წყვეტს.
  */
 export function bySize(a: Parameters<typeof byFullness>[0], b: Parameters<typeof byFullness>[0]): number {
-  return b.children.length - a.children.length || byFullness(a, b);
+  return b.children.length - a.children.length || b.visible - a.visible || byFullness(a, b);
 }
 
 export function buildTree(

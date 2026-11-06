@@ -58,7 +58,7 @@ export default async function Header() {
 
       {/* სეგმენტების ზოლი — hover-ზე იშლება ქვეჯგუფები და მათი ქვეჯგუფები */}
       <div className="border-t border-line bg-surface">
-        <div className="container-x flex items-stretch gap-1 overflow-x-auto">
+        <div className="container-x flex items-stretch gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {/* ფასდაკლებები — ზედა ნავიგაციაში ადგილი მხოლოდ დიდ ეკრანზეა, პატარაზე ზოლის თავშია */}
           <Link
             href="/sale"
@@ -75,7 +75,7 @@ export default async function Header() {
           {categories.map((segment) => {
             const theme = segmentTheme(segment.nameKa, segment.slug);
             return (
-            <div key={segment.id} className="group static">
+            <div key={segment.id} className="group static lg:min-w-0 lg:flex-1">
               <NavSegment name={nameOf(segment, locale)} slug={segment.slug} />
 
               {segment.children.length > 0 && (
@@ -84,9 +84,12 @@ export default async function Header() {
                    ორი რამ: დახურვა ოდნავ ყოვნდება და ზემოთ უხილავი „ხიდია“,
                    რომელიც სწორედ ამ ზოლს ფარავს. */
                 <div className="invisible absolute left-0 right-0 top-full z-50 border-b border-line bg-surface opacity-0 shadow-xl transition-[opacity,visibility] delay-200 duration-150 before:absolute before:inset-x-0 before:-top-5 before:h-5 before:content-[''] group-hover:visible group-hover:opacity-100 group-hover:delay-0">
-                  <div className="container-x grid gap-x-8 gap-y-7 py-7 sm:grid-cols-2 lg:grid-cols-4">
+                  {/* სვეტებად (და არა რიგებად), რომ გრძელმა სიამ დანარჩენები არ ჩამოწიოს;
+                      ჰედერი ფიქსირებულია — რაც ეკრანს სცდება, მენიუს შიგნით გადაიხვევა */}
+                  <div className="max-h-[calc(100dvh-10rem)] overflow-y-auto">
+                  <div className="container-x gap-x-8 pt-7 pb-1 sm:columns-2 lg:columns-4">
                     {segment.children.map((group, i) => (
-                      <div key={group.id} className="group/item flex items-start gap-3">
+                      <div key={group.id} className="group/item mb-6 flex break-inside-avoid items-start gap-3">
                         <Link
                           href={`/catalog/${group.slug}`}
                           tabIndex={-1}
@@ -119,6 +122,7 @@ export default async function Header() {
                         </div>
                       </div>
                     ))}
+                  </div>
                   </div>
                 </div>
               )}
