@@ -18,7 +18,7 @@ export default function NavSegment({ name, slug }: { name: string; slug: string 
   return (
     <Link
       href={`/catalog/${slug}`}
-      className={`flex h-full min-w-20 flex-col items-center justify-start gap-1 whitespace-nowrap border-b-2 px-4 pt-1.5 pb-1.5 text-center text-xs leading-tight transition lg:min-w-0 lg:whitespace-normal lg:px-1 ${
+      className={`flex h-full min-w-20 flex-col items-center justify-start gap-1 whitespace-nowrap border-b-2 px-4 pt-1.5 pb-1.5 text-center text-xs leading-tight transition lg:min-w-0 lg:whitespace-normal lg:px-0.5 lg:text-[11px] xl:px-1 xl:text-xs ${
         active ? `${t.line} text-ink` : `border-transparent text-muted ${t.lineHover} group-hover:text-ink`
       }`}
     >
