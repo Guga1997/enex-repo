@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { normalizeQty } from "@/lib/stock";
 
 export type CartLine = {
   productId: string;
@@ -10,6 +11,10 @@ export type CartLine = {
   price: number;
   image?: string;
   qty: number;
+  /** შეკვეთის წესი; ძველ კალათაში შეიძლება არ იყოს */
+  minQty?: number;
+  qtyStep?: number;
+  unit?: string | null;
   maxQty: number; // 0 = ლიმიტის გარეშე (წინასწარი შეკვეთა / გზაშია)
 };
 
@@ -51,20 +56,19 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [lines, ready]);
 
   const value = useMemo<CartCtx>(() => {
-    const cap = (l: CartLine, qty: number) =>
-      l.maxQty > 0 ? Math.min(qty, l.maxQty) : qty;
+    const cap = (l: CartLine, qty: number) => (qty <= 0 ? 0 : normalizeQty(qty, l, l.maxQty));
 
     return {
       lines,
       ready,
-      count: lines.reduce((s, l) => s + l.qty, 0),
+      count: lines.reduce((s, l) => s + (l.unit ? 1 : l.qty), 0),
       subtotal: lines.reduce((s, l) => s + l.qty * l.price, 0),
       add: (line, qty = 1) =>
         setLines((prev) => {
           const existing = prev.find((l) => l.productId === line.productId);
           if (existing) {
             return prev.map((l) =>
-              l.productId === line.productId ? { ...l, qty: cap(l, l.qty + qty) } : l
+              l.productId === line.productId ? { ...l, ...line, qty: cap({ ...l, ...line }, l.qty + qty) } : l
             );
           }
           return [...prev, { ...line, qty: cap({ ...line, qty }, qty) }];
@@ -72,7 +76,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       setQty: (productId, qty) =>
         setLines((prev) =>
           prev
-            .map((l) => (l.productId === productId ? { ...l, qty: cap(l, Math.max(0, qty)) } : l))
+            .map((l) => (l.productId === productId ? { ...l, qty: cap(l, qty) } : l))
             .filter((l) => l.qty > 0)
         ),
       remove: (productId) => setLines((prev) => prev.filter((l) => l.productId !== productId)),

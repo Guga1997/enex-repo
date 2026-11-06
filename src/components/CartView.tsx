@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "@/components/Link";
 import { useCart } from "./CartProvider";
 import { gel } from "@/lib/format";
+import { normalizeQty } from "@/lib/stock";
 import { FREE_DELIVERY_FROM } from "@/lib/constants";
 import { useT } from "@/components/LocaleProvider";
 
@@ -50,15 +51,37 @@ export default function CartView() {
               <div className="mt-3 flex flex-wrap items-center gap-3">
                 <div className="flex items-center rounded-lg border border-line">
                   <button
-                    onClick={() => setQty(l.productId, l.qty - 1)}
+                    onClick={() => {
+                      const next = l.qty - Math.max(1, l.qtyStep ?? 1);
+                      if (next < Math.max(1, l.minQty ?? 1)) remove(l.productId);
+                      else setQty(l.productId, next);
+                    }}
                     className="px-3 py-1.5 text-muted hover:text-ink"
                     aria-label={t("შემცირება")}
                   >
                     −
                   </button>
-                  <span className="w-10 border-x border-line py-1.5 text-center text-sm">{l.qty}</span>
+                  {l.unit ? (
+                    /* მეტრები ხელით იწერება — 100-დან 500-მდე ღილაკით ვერ მივა */
+                    <input
+                      key={l.qty}
+                      type="number"
+                      defaultValue={l.qty}
+                      aria-label={t(l.unit)}
+                      onBlur={(e) => {
+                        // ველმა ზუსტად ის უნდა აჩვენოს, რაც ჩაითვლება: 700 მ შეკვრებით 915 ხდება
+                        const q = normalizeQty(Number(e.target.value) || l.qty, l, l.maxQty) || l.qty;
+                        e.target.value = String(q);
+                        setQty(l.productId, q);
+                      }}
+                      onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
+                      className="w-20 border-x border-line bg-transparent py-1.5 text-center text-sm outline-none"
+                    />
+                  ) : (
+                    <span className="w-10 border-x border-line py-1.5 text-center text-sm">{l.qty}</span>
+                  )}
                   <button
-                    onClick={() => setQty(l.productId, l.qty + 1)}
+                    onClick={() => setQty(l.productId, l.qty + Math.max(1, l.qtyStep ?? 1))}
                     disabled={l.maxQty > 0 && l.qty >= l.maxQty}
                     className="px-3 py-1.5 text-muted hover:text-ink disabled:opacity-30"
                     aria-label={t("გაზრდა")}
@@ -66,8 +89,9 @@ export default function CartView() {
                     +
                   </button>
                 </div>
+                {l.unit && <span className="text-xs text-muted">{t(l.unit)}</span>}
                 {l.maxQty > 0 && l.qty >= l.maxQty && (
-                  <span className="text-xs text-amber-600">{t("მარაგშია მხოლოდ {0} ცალი", l.maxQty)}</span>
+                  <span className="text-xs text-amber-600">{l.unit ? t("მარაგშია მხოლოდ {0} {1}", l.maxQty, t(l.unit)) : t("მარაგშია მხოლოდ {0} ცალი", l.maxQty)}</span>
                 )}
                 <button
                   onClick={() => remove(l.productId)}
@@ -80,7 +104,11 @@ export default function CartView() {
 
             <div className="text-right">
               <div className="font-bold">{gel(l.price * l.qty)}</div>
-              {l.qty > 1 && <div className="text-xs text-muted">{gel(l.price)} × {l.qty}</div>}
+              {l.qty > 1 && (
+                <div className="text-xs text-muted">
+                  {gel(l.price)} × {l.qty}{l.unit ? ` ${t(l.unit)}` : ""}
+                </div>
+              )}
             </div>
           </div>
         ))}

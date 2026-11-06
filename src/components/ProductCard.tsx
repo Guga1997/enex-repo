@@ -23,6 +23,9 @@ export type CardProduct = {
   stockStatus: string;
   incomingDate: Date | null;
   lowStockAt: number;
+  minQty?: number;
+  qtyStep?: number;
+  unit?: string | null;
   isNew: boolean;
   images: { url: string; alt: string | null }[];
   brand: { name: string; slug: string } | null;
@@ -96,6 +99,7 @@ export default async function ProductCard({ p, viewer }: { p: CardProduct; viewe
                   {price.isDealer ? t("სადილერო:") : t("თქვენი ფასი:")}
                 </span>
                 <span className="text-lg font-bold text-brand-600">{gel(price.value)}</span>
+                {p.unit && <span className="text-xs text-muted">/ {t(p.unit)}</span>}
               </div>
               <div className="flex items-baseline gap-2 text-xs text-muted">
                 <span>{t("საცალო:")}</span>
@@ -105,12 +109,18 @@ export default async function ProductCard({ p, viewer }: { p: CardProduct; viewe
           ) : (
             <div className="flex items-baseline gap-2">
               <span className="text-lg font-bold text-ink">{gel(price.value)}</span>
+              {p.unit && <span className="text-xs text-muted">/ {t(p.unit)}</span>}
               {p.oldPrice && p.oldPrice > p.price && (
                 <span className="text-sm text-muted line-through">{gel(p.oldPrice)}</span>
               )}
             </div>
           )}
 
+          {p.unit && ((p.minQty ?? 1) > 1 || (p.qtyStep ?? 1) > 1) && (
+            <div className="mt-0.5 text-xs text-muted">
+              {(p.qtyStep ?? 1) > 1 ? t("შეკვრა: {0} {1}", p.qtyStep ?? 1, t(p.unit)) : t("მინ. {0} {1}", p.minQty ?? 1, t(p.unit))}
+            </div>
+          )}
           <div className={`mt-1 text-xs font-medium ${TONE[stock.tone]}`}>{stock.text}</div>
         </div>
       </div>

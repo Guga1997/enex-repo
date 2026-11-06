@@ -21,6 +21,9 @@ type ProductData = {
   stockStatus: string;
   incomingDate: Date | null;
   lowStockAt: number;
+  minQty: number;
+  qtyStep: number;
+  unit: string | null;
   categoryId: string;
   isActive: boolean;
   isNew: boolean;
@@ -157,6 +160,26 @@ export default function ProductForm({
               type="number"
               defaultValue={product?.lowStockAt ?? 5}
               hint='ამ ზღვარს ქვემოთ ჩნდება "დარჩენილია N ცალი"'
+            />
+            <Field
+              name="minQty"
+              label="მინიმალური შეკვეთა"
+              type="number"
+              defaultValue={product?.minQty ?? 1}
+              hint="ნაშთი ამაზე ნაკლები თუ არის, პროდუქტი ვერ იყიდება"
+            />
+            <Field
+              name="qtyStep"
+              label="ბიჯი (შეკვრა)"
+              type="number"
+              defaultValue={product?.qtyStep ?? 1}
+              hint="მაგ. 305 — ქსელის კაბელი მხოლოდ მთლიანი შეკვრით"
+            />
+            <Field
+              name="unit"
+              label="ფასის ერთეული"
+              defaultValue={product?.unit ?? ""}
+              hint='მაგ. „მ“ — მეტრზე დაფასებულისთვის. ცარიელი = ცალი'
             />
           </section>
 

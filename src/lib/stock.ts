@@ -9,6 +9,8 @@ type StockLike = {
   stockStatus: string;
   incomingDate?: Date | string | null;
   lowStockAt?: number;
+  /** შეკვეთის მინიმუმი — ამაზე ნაკლები ნაშთი ვეღარ იყიდება */
+  minQty?: number;
 };
 
 /** რაც მართლა იყიდება: ნაშთს გამოკლებული სხვისი რეზერვაცია */
@@ -24,7 +26,7 @@ export function stockLabel(
   const low = p.lowStockAt ?? 5;
   const qty = availableQty(p);
 
-  if (p.stockStatus === StockStatus.IN_STOCK && qty > 0) {
+  if (p.stockStatus === StockStatus.IN_STOCK && qty >= Math.max(1, p.minQty ?? 1)) {
     if (qty <= 2) return { text: t("დარჩენილია ბოლო ერთეულები"), tone: "low" };
     if (qty <= low) return { text: t("დარჩენილია {0} ცალი", qty), tone: "low" };
     return { text: t("მარაგშია"), tone: "ok" };
@@ -42,7 +44,7 @@ export function stockLabel(
 /** შეიძლება თუ არა კალათაში დამატება */
 export function isPurchasable(p: StockLike): boolean {
   return (
-    (p.stockStatus === StockStatus.IN_STOCK && availableQty(p) > 0) ||
+    (p.stockStatus === StockStatus.IN_STOCK && availableQty(p) >= Math.max(1, p.minQty ?? 1)) ||
     p.stockStatus === StockStatus.IN_TRANSIT ||
     p.stockStatus === StockStatus.PREORDER
   );
@@ -73,4 +75,18 @@ export function splitSale(ownQty: number, supplyQtys: number[], soldQty: number)
     return q - take;
   });
   return { own: ownQty - fromOwn, supplies };
+}
+
+/* ------------------------------ შეკვეთის წესი ------------------------------- */
+
+/**
+ * რაოდენობა წესში ჩასმული: მინიმუმი + ბიჯის ჯერადი (ზემოთ ამრგვალებს), მაქსიმუმამდე.
+ * 0 — ნაშთი მინიმუმსაც არ ყოფნის. maxQty 0 = ლიმიტის გარეშე.
+ */
+export function normalizeQty(qty: number, rule: { minQty?: number; qtyStep?: number }, maxQty = 0): number {
+  const min = Math.max(1, rule.minQty ?? 1);
+  const step = Math.max(1, rule.qtyStep ?? 1);
+  const up = qty <= min ? min : min + Math.ceil((qty - min) / step) * step;
+  if (maxQty <= 0 || up <= maxQty) return up;
+  return maxQty < min ? 0 : min + Math.floor((maxQty - min) / step) * step;
 }

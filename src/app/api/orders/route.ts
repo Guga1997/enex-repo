@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { isPurchasable, availableQty } from "@/lib/stock";
+import { isPurchasable, availableQty, normalizeQty } from "@/lib/stock";
 import { reservationDeadline } from "@/lib/orders";
 import { createPayment } from "@/lib/payments/bog";
 import { canPayWithTbc, createFlittPayment } from "@/lib/payments/flitt";
@@ -28,7 +28,7 @@ const schema = z.object({
   paymentMethod: z.enum(["BOG", "TBC", "BANK_TRANSFER", "POS"]),
   organizationId: z.string().optional(),
   items: z
-    .array(z.object({ productId: z.string(), qty: z.number().int().min(1).max(999) }))
+    .array(z.object({ productId: z.string(), qty: z.number().int().min(1).max(100000) }))
     .min(1, "კალათა ცარიელია"),
 });
 
@@ -107,6 +107,18 @@ export async function POST(req: Request) {
     if (p.stockStatus === "IN_STOCK" && item.qty > availableQty(p)) {
       return NextResponse.json(
         { error: t("„{0}“ — ხელმისაწვდომია მხოლოდ {1} ცალი", nameOf(p, locale), availableQty(p)) },
+        { status: 409 }
+      );
+    }
+    // წესს ბრაუზერს არ ვანდობთ: ძველი კალათა ან ხელით გაგზავნილი მოთხოვნა გვერდს აუვლიდა
+    if (normalizeQty(item.qty, p) !== item.qty) {
+      const unit = p.unit ? t(p.unit) : "";
+      return NextResponse.json(
+        {
+          error: p.qtyStep > 1
+            ? t("„{0}“ — იყიდება მხოლოდ შეკვრით, {1} {2}", nameOf(p, locale), p.qtyStep, unit)
+            : t("„{0}“ — მინიმალური რაოდენობა {1} {2}", nameOf(p, locale), p.minQty, unit),
+        },
         { status: 409 }
       );
     }

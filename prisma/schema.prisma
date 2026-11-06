@@ -145,6 +145,10 @@ model Product {
   reservedQty  Int       @default(0)
   stockStatus  String    @default("IN_STOCK")
   incomingDate DateTime? // "გზაშია, სავარაუდო ჩამოსვლა: 11.09.2026"
+  /// შეკვეთის წესი: მინიმუმი და ბიჯი (შეკვრა). unit — ფასის ერთეული („მ“), ცარიელი = ცალი.
+  minQty       Int       @default(1)
+  qtyStep      Int       @default(1)
+  unit         String?
   lowStockAt   Int       @default(5) // ამ ზღვარს ქვემოთ ვწერთ "დარჩენილია N ცალი"
 
   /// ტრანსპორტირების ანგარიშისთვის — კალათა წონასა და მოცულობას აჯამებს

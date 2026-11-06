@@ -1,6 +1,7 @@
 import { db } from "../db";
 import { slugify } from "../format";
 import { rolledUpQty } from "../stock";
+import { cableOrderRule } from "../order-rules";
 import { localizeMedia } from "../media";
 import { genericRest } from "./generic-rest";
 import { intellcom } from "./intellcom";
@@ -153,6 +154,22 @@ async function recategorizeIfVague(productId: string, path: string[] | undefined
   const cat = await db.category.findUnique({ where: { id: next }, select: { nameKa: true, parentId: true } });
   if (!cat || cat.nameKa === FALLBACK || cat.parentId === null) return; // უკეთესი არ არის
   await db.product.update({ where: { id: productId }, data: { categoryId: next } });
+}
+
+/** კატეგორიის სახელები ძირიდან */
+async function categoryChain(id: string): Promise<string[]> {
+  const out: string[] = [];
+  let cur: string | null = id;
+  while (cur) {
+    const c: { nameKa: string; parentId: string | null } | null = await db.category.findUnique({
+      where: { id: cur },
+      select: { nameKa: true, parentId: true },
+    });
+    if (!c) break;
+    out.unshift(c.nameKa);
+    cur = c.parentId;
+  }
+  return out;
 }
 
 async function resolveBrandId(name: string | null | undefined): Promise<string | null> {
@@ -328,6 +345,7 @@ export async function syncSupplier(supplierId: string): Promise<SyncResult> {
               warrantyMonths: item.warrantyMonths ?? null,
               categoryId,
               brandId: await resolveBrandId(item.brand),
+              ...cableOrderRule(await categoryChain(categoryId), prices.price, item.name),
               isActive: false,
             },
           });

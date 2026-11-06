@@ -14,7 +14,7 @@ import { nameOf } from "@/lib/i18n/content";
  */
 const schema = z.object({
   items: z
-    .array(z.object({ productId: z.string(), qty: z.number().int().min(1).max(999) }))
+    .array(z.object({ productId: z.string(), qty: z.number().int().min(1).max(100000) }))
     .max(200),
   deliveryMethod: z.enum(["COURIER", "PICKUP"]).optional(),
 });

@@ -14,7 +14,7 @@ import { effectivePrice } from "@/lib/pricing";
 import AddToCart from "@/components/AddToCart";
 import Gallery from "@/components/Gallery";
 import { gel } from "@/lib/format";
-import { isPurchasable, stockLabel } from "@/lib/stock";
+import { availableQty, isPurchasable, stockLabel } from "@/lib/stock";
 import { productCardSelect } from "@/lib/catalog";
 import { StockStatus } from "@/lib/constants";
 import { getI18n } from "@/lib/i18n/server";
@@ -192,6 +192,7 @@ export default async function ProductPage({ params }: Props) {
                       {price.isDealer ? t("სადილერო:") : t("თქვენი ფასი:")}
                     </span>
                     <span className="text-3xl font-bold text-brand-600">{gel(price.value)}</span>
+                    {p.unit && <span className="text-sm text-muted">/ {t(p.unit)}</span>}
                     <span className="rounded bg-rose-500 px-2 py-0.5 text-xs font-bold text-white">
                       -{Math.round(price.savedPercent)}%
                     </span>
@@ -204,6 +205,7 @@ export default async function ProductPage({ params }: Props) {
               ) : (
                 <div className="flex items-baseline gap-3">
                   <span className="text-3xl font-bold">{gel(price.value)}</span>
+                  {p.unit && <span className="text-sm text-muted">/ {t(p.unit)}</span>}
                   {p.oldPrice && p.oldPrice > p.price && (
                     <>
                       <span className="text-lg text-muted line-through">{gel(p.oldPrice)}</span>
@@ -243,7 +245,10 @@ export default async function ProductPage({ params }: Props) {
                     slug: p.slug,
                     price: price.value,
                     image: p.images[0]?.url,
-                    maxQty: p.stockStatus === StockStatus.IN_STOCK ? p.stockQty : 0,
+                    minQty: p.minQty,
+                    qtyStep: p.qtyStep,
+                    unit: p.unit,
+                    maxQty: p.stockStatus === StockStatus.IN_STOCK ? availableQty(p) : 0,
                   }}
                 />
               </div>
