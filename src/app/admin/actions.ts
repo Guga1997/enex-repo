@@ -11,6 +11,7 @@ import { slugify } from "@/lib/format";
 import { invalidateCategoryTree } from "@/lib/category-tree";
 import { generateApiKey } from "@/lib/api-auth";
 import { StockStatus } from "@/lib/constants";
+import { setOwnStock } from "@/lib/inventory";
 
 /**
  * ყველა action-ის წინაპირობა — middleware იცავს როუტს, ეს იცავს თვით ქმედებას.
@@ -60,6 +61,12 @@ export async function saveProduct(formData: FormData) {
 
   const stockQty = Number(str(formData, "stockQty") || 0);
   const incoming = str(formData, "incomingDate");
+  // მიმწოდებლის პროდუქტზე ნაშთი სინქიდან იკრიბება: პირდაპირ ჩაწერილს მომდევნო სინქი
+  // გადააწერდა. ფორმიდან მხოლოდ „ჩემი მარაგი“ მოდის და setOwnStock-ით იწერება.
+  const current = id
+    ? await db.product.findUnique({ where: { id }, select: { stockAdjust: true, _count: { select: { supplies: true } } } })
+    : null;
+  const supplied = (current?._count.supplies ?? 0) > 0;
 
   const data = {
     nameKa,
@@ -68,9 +75,13 @@ export async function saveProduct(formData: FormData) {
     descriptionKa: str(formData, "descriptionKa") || null,
     // ფასი, ძველი ფასი და თვითღირებულება აქ არ იწერება — მხოლოდ
     // „პროდუქციის ფასებიდან“. ფორმაში ველები აღარ არის.
-    stockQty,
-    stockStatus: str(formData, "stockStatus") || StockStatus.IN_STOCK,
-    incomingDate: incoming ? new Date(incoming) : null,
+    ...(supplied
+      ? {}
+      : {
+          stockQty,
+          stockStatus: str(formData, "stockStatus") || StockStatus.IN_STOCK,
+          incomingDate: incoming ? new Date(incoming) : null,
+        }),
     lowStockAt: Number(str(formData, "lowStockAt") || 5),
     minQty: Math.max(1, Math.floor(Number(str(formData, "minQty")) || 1)),
     qtyStep: Math.max(1, Math.floor(Number(str(formData, "qtyStep")) || 1)),
@@ -88,6 +99,14 @@ export async function saveProduct(formData: FormData) {
   const product = id
     ? await db.product.update({ where: { id }, data })
     : await db.product.create({ data: { ...data, price: 0, sku, slug: `${slugify(nameKa)}-${sku}` } });
+
+  if (supplied) {
+    const own = Math.trunc(Number(str(formData, "ownQty")) || 0);
+    if (own !== current!.stockAdjust) {
+      const session = await getSession();
+      await setOwnStock(product.id, own, `ადმინი: ${session?.name ?? "?"} (პროდუქტის ფორმა)`);
+    }
+  }
 
   // სურათები — მძიმით/ახალი ხაზით გამოყოფილი URL-ების სია
   const imageList = str(formData, "images")

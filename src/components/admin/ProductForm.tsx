@@ -18,6 +18,9 @@ type ProductData = {
   oldPrice: number | null;
   cost: number | null;
   stockQty: number;
+  stockAdjust: number;
+  /** მიმწოდებლების ნაშთები — თუ არის, ნაშთი სინქიდან იკრიბება */
+  supplies?: { qty: number }[];
   stockStatus: string;
   incomingDate: Date | null;
   lowStockAt: number;
@@ -43,6 +46,8 @@ export default function ProductForm({
   categories: Category[];
   brandNames: string[];
 }) {
+  const supplyQty = product?.supplies?.reduce((s, x) => s + x.qty, 0) ?? 0;
+  const supplied = (product?.supplies?.length ?? 0) > 0;
   const byId = new Map(categories.map((c) => [c.id, c]));
   const label = (c: Category) =>
     c.parentId && byId.has(c.parentId) ? `${byId.get(c.parentId)!.nameKa} → ${c.nameKa}` : c.nameKa;
@@ -134,26 +139,43 @@ export default function ProductForm({
 
           <section className="card space-y-4 p-5">
             <h2 className="font-semibold">მარაგი</h2>
-            <Field name="stockQty" label="რაოდენობა" type="number" defaultValue={product?.stockQty ?? 0} />
-            <label className="block">
-              <span className="mb-1.5 block text-sm font-medium">სტატუსი</span>
-              <select
-                name="stockStatus"
-                defaultValue={product?.stockStatus ?? "IN_STOCK"}
-                className="w-full rounded-lg border border-line px-3 py-2.5 text-sm outline-none focus:border-brand-500"
-              >
-                {Object.entries(STOCK_LABELS).map(([k, v]) => (
-                  <option key={k} value={k}>{v}</option>
-                ))}
-              </select>
-            </label>
-            <Field
-              name="incomingDate"
-              label="ჩამოსვლის თარიღი"
-              type="date"
-              defaultValue={product?.incomingDate?.toISOString().slice(0, 10) ?? ""}
-              hint='ჩანს "გზაშია" სტატუსზე'
-            />
+            {supplied ? (
+              /* მიმწოდებლის პროდუქტი: ნაშთს, სტატუსს და თარიღს სინქი ითვლის. აქ მხოლოდ
+                 „ჩემი მარაგი“ იწერება, რომელიც მას ემატება და სინქი არ ეხება */
+              <>
+                <Field
+                  name="ownQty"
+                  label="ჩემი მარაგი"
+                  type="number"
+                  defaultValue={product!.stockAdjust}
+                  hint={`მიმწოდებელი ${supplyQty} + ჩემი ${product!.stockAdjust} = სულ ${product!.stockQty}. სინქი ჩემს მარაგს არ ცვლის; გაყიდვისას ჯერ ეს აკლდება.`}
+                />
+                <p className="text-xs text-muted">სტატუსი და ჩამოსვლის თარიღი მიმწოდებლის მონაცემით ავტომატურად ითვლება.</p>
+              </>
+            ) : (
+              <>
+                <Field name="stockQty" label="რაოდენობა" type="number" defaultValue={product?.stockQty ?? 0} />
+                <label className="block">
+                  <span className="mb-1.5 block text-sm font-medium">სტატუსი</span>
+                  <select
+                    name="stockStatus"
+                    defaultValue={product?.stockStatus ?? "IN_STOCK"}
+                    className="w-full rounded-lg border border-line px-3 py-2.5 text-sm outline-none focus:border-brand-500"
+                  >
+                    {Object.entries(STOCK_LABELS).map(([k, v]) => (
+                      <option key={k} value={k}>{v}</option>
+                    ))}
+                  </select>
+                </label>
+                <Field
+                  name="incomingDate"
+                  label="ჩამოსვლის თარიღი"
+                  type="date"
+                  defaultValue={product?.incomingDate?.toISOString().slice(0, 10) ?? ""}
+                  hint='ჩანს "გზაშია" სტატუსზე'
+                />
+              </>
+            )}
             <Field
               name="lowStockAt"
               label="მცირე მარაგის ზღვარი"
