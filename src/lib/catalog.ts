@@ -336,6 +336,10 @@ export const productCardSelect = {
   model: true,
   price: true,
   dealerPrice: true,
+  // მხოლოდ სერვერზე, ფასის დასათვლელად: ProductCard სერვერის კომპონენტია და
+  // ეს ველები კლიენტს არ გადაეცემა. ამ სიას კლიენტის კომპონენტს ნუ გადასცემ.
+  cost: true,
+  listPrice: true,
   oldPrice: true,
   stockQty: true,
   reservedQty: true,

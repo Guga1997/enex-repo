@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { MAX_PARTNER_SHARE, TIERS } from "@/lib/pricing";
+import { MAX_PARTNER_SHARE, TIER_COST_PLUS, TIERS } from "@/lib/pricing";
 import { getTierShares } from "@/lib/pricing-settings";
 import SupplierPricingRow from "@/components/admin/SupplierPricingRow";
 import PricesTabs from "@/components/admin/PricesTabs";
@@ -39,7 +39,8 @@ export default async function PricesPage({
   // საფეხურების მაგალითი: მისი საცალო 1000, ქოსთი 800 → M = 200
   const EX_LIST = 1000;
   const EX_COST = 800;
-  const partners = TIERS.filter((t) => t.code !== "RETAIL");
+  const partners = TIERS.filter((t) => t.code !== "RETAIL" && !(t.code in TIER_COST_PLUS));
+  const ceoPrice = EX_COST * (1 + TIER_COST_PLUS.CEO);
 
   return (
     <div className="space-y-5">
@@ -94,6 +95,9 @@ export default async function PricesPage({
           რამდენ პროცენტს იღებს თითოეული საფეხური მოგებიდან (M). მაქსიმუმ {Math.round(MAX_PARTNER_SHARE * 100)}%.
           დონეს მომხმარებელს „მომხმარებლების“ გვერდზე ანიჭებ.
         </p>
+        <p className="mt-1 text-sm text-muted">
+          CEO: ქოსთი +{Math.round(TIER_COST_PLUS.CEO * 100)}%, მოგების წილის გარეშე. ფასი საცალოზე მაღალი არ იქნება; ქოსთის გარეშე პროდუქტზე საცალო მოქმედებს.
+        </p>
 
         <form action={saveTiersAction} className="mt-4 space-y-4">
           <div className="grid gap-3 sm:grid-cols-4">
@@ -120,6 +124,7 @@ export default async function PricesPage({
                 {partners.map((t) => (
                   <th key={t.code} className="py-1.5 pr-4 text-right font-medium">{t.label}</th>
                 ))}
+                <th className="py-1.5 pr-4 text-right font-medium">CEO</th>
               </tr>
             </thead>
             <tbody>
@@ -130,6 +135,7 @@ export default async function PricesPage({
                     {(EX_LIST - (shares[t.code] ?? t.share) * (EX_LIST - EX_COST)).toFixed(2)}₾
                   </td>
                 ))}
+                <td className="py-1.5 pr-4 text-right tabular-nums">{ceoPrice.toFixed(2)}₾</td>
               </tr>
               <tr className="border-t border-line">
                 <td className="py-1.5 pr-4 text-muted">ჩვენ გვრჩება</td>
@@ -138,6 +144,7 @@ export default async function PricesPage({
                     {((1 - (shares[t.code] ?? t.share)) * (EX_LIST - EX_COST)).toFixed(2)}₾
                   </td>
                 ))}
+                <td className="py-1.5 pr-4 text-right tabular-nums">{(ceoPrice - EX_COST).toFixed(2)}₾</td>
               </tr>
             </tbody>
           </table>

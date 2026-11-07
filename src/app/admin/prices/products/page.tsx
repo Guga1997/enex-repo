@@ -164,6 +164,7 @@ export default async function ProductPricesPage({
               <div className="text-right text-sm tabular-nums text-muted">{money(p.listPrice)}</div>
               <div className="text-right text-xs tabular-nums text-muted">
                 {p.cost ? `${at(p, "DEALER").toFixed(2)} / ${at(p, "PLATINUM").toFixed(2)}` : "—"}
+                {p.cost ? <div>CEO {at(p, "CEO").toFixed(2)}</div> : null}
               </div>
 
               <div className="flex items-center gap-2">

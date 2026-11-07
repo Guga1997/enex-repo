@@ -23,9 +23,17 @@ export const TIERS = [
   { code: "SILVER", label: "ვერცხლი", share: 0.2 },
   { code: "GOLD", label: "ოქრო", share: 0.3 },
   { code: "PLATINUM", label: "პლატინა", share: 0.4 },
+  { code: "CEO", label: "CEO", share: 0 },
 ] as const;
 
 export type TierCode = (typeof TIERS)[number]["code"];
+
+/**
+ * მოგების წილის ნაცვლად პირდაპირ თვითღირებულებას + პროცენტი. 60%-ის ზღვარი და
+ * ინდივიდუალური ფასდაკლება აქ არ მოქმედებს, საცალოზე ძვირი კი ისევ არ იქნება.
+ * თვითღირებულება უცნობია → საცალო.
+ */
+export const TIER_COST_PLUS: Record<string, number> = { CEO: 0.05 };
 
 export const TIER_LABEL: Record<string, string> = Object.fromEntries(
   TIERS.map((t) => [t.code, t.label])
@@ -111,23 +119,28 @@ export function effectivePrice(p: PricedProduct, viewer: Viewer): EffectivePrice
 
   let value = retail;
   const base = baseOf(p);
+  const costPlus = TIER_COST_PLUS[tier];
 
-  const byMargin = marginPrice(base, p.cost, share);
-  if (byMargin !== null) {
-    value = byMargin;
-  } else if (partner && p.dealerPrice != null && p.dealerPrice > 0) {
-    // თვითღირებულება უცნობია — ხელით დაწერილი სადილერო ფასი რჩება ძალაში
-    value = p.dealerPrice;
+  if (costPlus !== undefined && p.cost != null && p.cost > 0) {
+    value = p.cost * (1 + costPlus);
+  } else {
+    const byMargin = marginPrice(base, p.cost, share);
+    if (byMargin !== null) {
+      value = byMargin;
+    } else if (partner && p.dealerPrice != null && p.dealerPrice > 0) {
+      // თვითღირებულება უცნობია — ხელით დაწერილი სადილერო ფასი რჩება ძალაში
+      value = p.dealerPrice;
+    }
+
+    // ინდივიდუალური ფასდაკლება — ცალკე ბერკეტი; რომელიც მომხმარებელს ურჩევნია
+    if (viewer && viewer.discountPercent > 0) {
+      value = Math.min(value, retail * (1 - viewer.discountPercent / 100));
+    }
+
+    // მოგების 60% ყოველთვის ჩვენსკენ — ინდივიდუალური პროცენტიც ამას ემორჩილება
+    const floor = marginPrice(base, p.cost, MAX_PARTNER_SHARE);
+    if (floor !== null) value = Math.max(value, floor);
   }
-
-  // ინდივიდუალური ფასდაკლება — ცალკე ბერკეტი; რომელიც მომხმარებელს ურჩევნია
-  if (viewer && viewer.discountPercent > 0) {
-    value = Math.min(value, retail * (1 - viewer.discountPercent / 100));
-  }
-
-  // მოგების 60% ყოველთვის ჩვენსკენ — ინდივიდუალური პროცენტიც ამას ემორჩილება
-  const floor = marginPrice(base, p.cost, MAX_PARTNER_SHARE);
-  if (floor !== null) value = Math.max(value, floor);
 
   // პარტნიორი საცალოზე ძვირს არასდროს იხდის — მაგალითად, თუ ჩვენი საცალო
   // ხელით დაბლა ჩამოიწია და საფეხურის ფორმულამ მასზე მაღალი გამოიყვანა

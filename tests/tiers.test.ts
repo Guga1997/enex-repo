@@ -20,11 +20,24 @@ const buyer = (priceTier: string, discountPercent = 0) => ({ priceTier, discount
 
 test("საფეხურები ათ-ათი პუნქტით იზრდება და 40%-ზე ჩერდება", () => {
   assert.deepEqual(
-    TIERS.map((t) => t.share),
+    TIERS.filter((t) => t.code !== "CEO").map((t) => t.share),
     [0, 0.1, 0.2, 0.3, 0.4]
   );
   assert.equal(MAX_PARTNER_SHARE, 0.4, "მოგების 60% ყოველთვის ჩვენსკენ");
   for (const t of TIERS) assert.ok(t.share <= MAX_PARTNER_SHARE, t.code);
+});
+
+test("CEO: თვითღირებულება +5%, მოგების წილის და 60%-ის ზღვრის გარეშე", () => {
+  assert.equal(effectivePrice(P, buyer("CEO")).value, 63);
+  assert.equal(effectivePrice(P, { ...buyer("CEO"), share: 0 }).value, 63, "ფანჯრის წილი არ ცვლის");
+  assert.equal(effectivePrice({ price: 1000, listPrice: 1000, cost: 800 }, buyer("CEO")).value, 840);
+  assert.equal(effectivePrice(P, buyer("CEO", 50)).value, 63, "ინდივიდუალური პროცენტი ქვემოთ ვერ ჩამოიყვანს");
+});
+
+test("CEO: საცალოზე ძვირი არ არის, ქოსთის გარეშე საცალოა", () => {
+  assert.equal(effectivePrice({ price: 100, cost: 100 }, buyer("CEO")).value, 100);
+  assert.equal(effectivePrice({ price: 100, cost: null, dealerPrice: 80 }, buyer("CEO")).value, 100);
+  assert.equal(effectivePrice({ price: 90, oldPrice: 120, cost: 95 }, buyer("CEO")).value, 90, "აქციის ფასი რჩება");
 });
 
 test("ფასი მოგების წილით ითვლება, არა საცალოზე პროცენტით", () => {
@@ -35,9 +48,10 @@ test("ფასი მოგების წილით ითვლება, 
   assert.equal(effectivePrice(P, buyer("PLATINUM")).value, 84);
 });
 
-test("მოგების 60% ყოველთვის ჩვენთან რჩება", () => {
+test("მოგების 60% პარტნიორებთან ყოველთვის ჩვენთან რჩება (CEO განზრახ გამონაკლისია)", () => {
   const margin = P.price - P.cost;
   for (const t of TIERS) {
+    if (t.code === "CEO") continue;
     const left = ourMargin(P, buyer(t.code))!;
     assert.ok(left >= margin * 0.6 - 0.001, `${t.code}: დაგვრჩა ${left}, მინიმუმი ${margin * 0.6}`);
   }

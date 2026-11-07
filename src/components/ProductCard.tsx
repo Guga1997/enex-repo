@@ -17,6 +17,8 @@ export type CardProduct = {
   model: string | null;
   price: number;
   dealerPrice?: number | null;
+  cost?: number | null;
+  listPrice?: number | null;
   oldPrice: number | null;
   stockQty: number;
   reservedQty?: number;
