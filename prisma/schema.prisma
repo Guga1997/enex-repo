@@ -19,6 +19,8 @@ model Admin {
   role         String   @default("ADMIN")
   /// გათიშულ ანგარიშს შესვლა არ შეუძლია — წაშლის ნაცვლად, რომ ისტორია დარჩეს
   active       Boolean  @default(true)
+  /// პაროლის ბოლო შეცვლა — უფრო ადრე გაცემული სესიები აღარ მოქმედებს
+  passwordChangedAt DateTime?
   createdAt    DateTime @default(now())
 
   steps OrderStep[]
@@ -130,6 +132,8 @@ model Product {
   dealerPrice Float? // სადილერო ფასი; ხედავს მხოლოდ DEALER დონის მომხმარებელი
   /// ფასი ხელით შეიცვალა — სინქმა და გადათვლამ არ უნდა გადააწეროს
   priceLocked Boolean @default(false)
+  /// აქციამდეც ხელით იყო ჩაკეტილი — აქციის მოხსნისას ძველი ფასი და ჩაკეტვა ბრუნდება
+  promoKeepsLock Boolean @default(false)
   oldPrice    Float? // ფასდაკლებამდე ფასი; თუ არსებობს — პროდუქტი "ფასდაკლებაშია"
   cost        Float? // თვითღირებულება (მხოლოდ ადმინისთვის)
   /// მიმწოდებლის საცალო — მხოლოდ „მოგების წილით“ დაფასებულზე. პარტნიორების
@@ -229,6 +233,8 @@ model User {
   email        String @unique
   phone        String @unique
   passwordHash String
+  /// პაროლის ბოლო შეცვლა/აღდგენა — უფრო ადრე გაცემული სესიები აღარ მოქმედებს
+  passwordChangedAt DateTime?
 
   type    String // INDIVIDUAL | COMPANY
   name    String // სახელი გვარი ან კომპანიის დასახელება
@@ -344,6 +350,8 @@ model OrderItem {
   name  String
   price Float
   qty   Int
+  /// რამდენი ცალი უჭირავს ამ ხაზს Product.reservedQty-ში ახლა — გათავისუფლებისას ზუსტად ეს იხსნება და ნულდება
+  reservedQty Int @default(0)
 
   /// მიწოდებისას ივსება — კაბინეტში "სერიული ნომრები" და "გარანტია" აქედან იკითხება
   serialNumbers  String? // თითო ხაზზე ერთი
@@ -351,6 +359,12 @@ model OrderItem {
   warrantyUntil  DateTime?
 
   @@index([orderId])
+}
+
+/// თანმიმდევრული ნომრები (ORD-2026, INV-2026) — count+1 ერთდროულ შეკვეთებზე და წაშლის შემდეგ მეორდებოდა
+model Counter {
+  key   String @id
+  value Int
 }
 
 /// გარე სისტემის (ORIS/1C/...) წვდომის გასაღები სტოკის API-სთვის

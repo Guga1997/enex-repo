@@ -43,7 +43,7 @@ export const returns: Record<Locale, { title: string; body: string }> = {
 
 4.2. **რა ბრუნდება.** ნივთის ღირებულება და სტანდარტული მიწოდების ღირებულება, თუ გადაიხადეთ. თუ სტანდარტულზე ძვირი მიწოდება აირჩიეთ (მაგ., ექსპრესი), სხვაობა არ ბრუნდება.
 
-4.3. **დაბრუნების წესი.** თანხა ბრუნდება იმავე საშუალებით, რომლითაც გადაიხადეთ (საქართველოს ბანკის გადახდის გვერდით გადახდისას – იმავე ბარათზე), თუ სხვა წესზე არ შევთანხმდებით. ბარათზე თანხის ასახვა შესაძლოა ბანკის მხრიდან რამდენიმე სამუშაო დღე დასჭირდეს.
+4.3. **დაბრუნების წესი.** თანხა ბრუნდება იმავე საშუალებით, რომლითაც გადაიხადეთ (საქართველოს ბანკის ან თიბისი ბანკის გადახდის გვერდით გადახდისას – იმავე ბარათზე), თუ სხვა წესზე არ შევთანხმდებით. ბარათზე თანხის ასახვა შესაძლოა ბანკის მხრიდან რამდენიმე სამუშაო დღე დასჭირდეს.
 
 4.4. **თანხის შეჩერება.** კომპანიას უფლება აქვს თანხა დააბრუნოს მას შემდეგ, რაც ნივთს მიიღებს ან თქვენგან გაგზავნის დამადასტურებელ დოკუმენტს (რომელიც უფრო ადრე მოხდება).
 
@@ -141,7 +141,7 @@ export const returns: Record<Locale, { title: string; body: string }> = {
 
 4.2. **What is refunded.** The price of the item and the cost of standard delivery, if you paid for it. If you chose a delivery option more expensive than standard (e.g. express), the difference is not refunded.
 
-4.3. **Refund method.** The refund is made using the same means of payment you used (for payment via the Bank of Georgia payment page – to the same card), unless we agree otherwise. It may take the bank several business days for the amount to appear on your card.
+4.3. **Refund method.** The refund is made using the same means of payment you used (for payment via the Bank of Georgia or TBC Bank payment page – to the same card), unless we agree otherwise. It may take the bank several business days for the amount to appear on your card.
 
 4.4. **Withholding the refund.** The Company may withhold the refund until it has received the item or you have provided proof of having sent it back, whichever comes first.
 
@@ -239,7 +239,7 @@ Last updated: 10.10.2026`,
 
 4.2. **Что возвращается.** Стоимость товара и стоимость стандартной доставки, если вы её оплатили. Если вы выбрали доставку дороже стандартной (например, экспресс), разница не возвращается.
 
-4.3. **Способ возврата.** Деньги возвращаются тем же способом, которым вы оплатили (при оплате через платёжную страницу Банка Грузии – на ту же карту), если мы не договоримся иначе. Зачисление на карту может занять у банка несколько рабочих дней.
+4.3. **Способ возврата.** Деньги возвращаются тем же способом, которым вы оплатили (при оплате через платёжную страницу Банка Грузии или ТБС Банка – на ту же карту), если мы не договоримся иначе. Зачисление на карту может занять у банка несколько рабочих дней.
 
 4.4. **Удержание возврата.** Компания вправе вернуть деньги после получения товара или документа, подтверждающего его отправку, – в зависимости от того, что произойдёт раньше.
 

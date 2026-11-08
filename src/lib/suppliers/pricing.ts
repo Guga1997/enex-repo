@@ -167,11 +167,10 @@ export async function repriceProduct(productId: string, pricer?: Pricer): Promis
       listPrice: true,
       priceLocked: true,
       categoryId: true,
-      supplies: { select: { supplierId: true, cost: true, listPrice: true } },
+      supplies: { select: { supplierId: true, cost: true, listPrice: true, qty: true } },
     },
   });
   if (!product) return "skipped";
-  if (product.priceLocked) return "locked";
 
   const p = pricer ?? (await Pricer.load());
 
@@ -180,8 +179,19 @@ export async function repriceProduct(productId: string, pricer?: Pricer): Promis
   const priced = product.supplies
     .filter((s) => s.cost && s.cost > 0)
     .map((s) => ({ ...s, real: realCost(s.cost, p.discountFor(s.supplierId), s.listPrice)! }));
-  if (!priced.length) return "skipped";
-  const cheapest = priced.reduce((a, b) => (b.real < a.real ? b : a));
+  if (!priced.length) return product.priceLocked ? "locked" : "skipped";
+  // ყველაზე იაფი იმათგან, ვისაც მარაგი აქვს — თორემ ფასი უმარაგო იაფი მიმწოდებლით
+  // დაითვლებოდა, გაყიდვა კი ძვირიდან წავიდოდა (ზარალზე). მარაგი არავის — ყველაზე იაფი.
+  const live = priced.filter((s) => s.qty > 0);
+  const cheapest = (live.length ? live : priced).reduce((a, b) => (b.real < a.real ? b : a));
+
+  // ჩაკეტილ ფასს არ ვეხებით, მაგრამ თვითღირებულება ახალი უნდა იყოს — მასზე დგას CEO-ს
+  // ფასი, პარტნიორის მარჟა და „ფასი < თვითღირებულება“ შემოწმება
+  if (product.priceLocked) {
+    const real = Math.round(cheapest.real * 100) / 100;
+    if (product.cost !== real) await db.product.update({ where: { id: productId }, data: { cost: real } });
+    return "locked";
+  }
 
   const rule = p.ruleFor(cheapest.supplierId, product.categoryId);
   if (!rule) return "skipped";

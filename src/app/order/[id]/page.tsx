@@ -1,5 +1,7 @@
 import Link from "@/components/Link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { orderAccess } from "@/lib/order-access";
+import PendingCart from "@/components/PendingCart";
 import { Suspense } from "react";
 import { db } from "@/lib/db";
 import { fetchPaymentStatus } from "@/lib/payments/bog";
@@ -7,7 +9,8 @@ import { markOrderFailed, markOrderPaid } from "@/lib/orders";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { gel, formatDate } from "@/lib/format";
-import { getLocale, getT, titleMeta } from "@/lib/i18n/server";
+import { getLocale, getT, privateMeta } from "@/lib/i18n/server";
+import { withLocale } from "@/lib/i18n/config";
 import { nameOf } from "@/lib/i18n/content";
 import {
   ORDER_STATUS_LABELS,
@@ -16,7 +19,7 @@ import {
 } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
-export const generateMetadata = titleMeta("შეკვეთა");
+export const generateMetadata = privateMeta("შეკვეთა");
 
 export default async function OrderPage({
   params,
@@ -34,6 +37,10 @@ export default async function OrderPage({
   const include = { items: { include: { product: { select: { nameKa: true, nameEn: true, nameRu: true } } } } } as const;
   let order = await db.order.findUnique({ where: { id }, include });
   if (!order) notFound();
+
+  const access = await orderAccess(order);
+  if (access === "login") redirect(withLocale(`/login?next=${encodeURIComponent(`/order/${id}`)}`, locale));
+  if (access === "denied") notFound();
 
   // ბანკიდან დაბრუნდა, callback კი ჯერ არ მოსულა — სტატუსს პირდაპირ ბანკს ვკითხავთ
   if ((flags.paid || flags.failed) && order.paymentStatus === "UNPAID" && order.paymentId && order.paymentMethod === "BOG") {
@@ -55,6 +62,7 @@ export default async function OrderPage({
       </Suspense>
 
       <main className="container-x max-w-3xl py-8">
+        <PendingCart orderId={order.id} outcome={paid ? "paid" : failed || expired ? "lost" : "open"} />
         <div
           className={`card p-6 text-center ${
             paid ? "border-emerald-200 bg-emerald-50" : failed || expired ? "border-rose-200 bg-rose-50" : ""
@@ -65,13 +73,15 @@ export default async function OrderPage({
             {t(
               paid
                 ? "შეკვეთა წარმატებით გაფორმდა"
-                : expired
-                  ? order.status === "EXPIRED"
-                    ? "შეკვეთის ვადა გავიდა"
-                    : "შეკვეთა გაუქმებულია"
-                  : failed
-                    ? "გადახდა ვერ შესრულდა"
-                    : "შეკვეთა მიღებულია"
+                : order.paymentStatus === "FAILED"
+                  ? "გადახდა ვერ შესრულდა"
+                  : expired
+                    ? order.status === "EXPIRED"
+                      ? "შეკვეთის ვადა გავიდა"
+                      : "შეკვეთა გაუქმებულია"
+                    : failed
+                      ? "გადახდა ვერ შესრულდა"
+                      : "შეკვეთა მიღებულია"
             )}
           </h1>
           {!paid && !expired && order.reservedUntil && (
@@ -86,9 +96,11 @@ export default async function OrderPage({
               )}
             </p>
           )}
-          {order.status === "EXPIRED" && (
+          {(order.status === "EXPIRED" || order.paymentStatus === "FAILED") && !paid && (
             <p className="mt-2 text-sm text-muted">
-              {t("გადახდა დროულად არ დადასტურდა და ნაშთი გათავისუფლდა. კალათა შენახულია — თავიდან გააფორმე.")}
+              {order.paymentStatus === "FAILED"
+                ? t("გადახდა არ შესრულდა და ნაშთი გათავისუფლდა. კალათა შენახულია — სცადე თავიდან.")
+                : t("გადახდა დროულად არ დადასტურდა და ნაშთი გათავისუფლდა. კალათა შენახულია — თავიდან გააფორმე.")}
             </p>
           )}
           <p className="mt-1 text-sm text-muted">

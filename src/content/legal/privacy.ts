@@ -32,7 +32,7 @@ export const privacy: Record<Locale, { title: string; body: string }> = {
 | კატეგორია | მონაცემები | საიდან ვიღებთ |
 | რეგისტრაციის მონაცემები | სახელი, გვარი, მობილური ტელეფონის ნომერი, ელ.ფოსტა, პაროლი (დაშიფრული სახით) | თქვენგან, რეგისტრაციის ფორმით |
 | შეკვეთის და მიწოდების მონაცემები | მიწოდების მისამართი, მიმღების სახელი, გვარი და ტელეფონი, შეძენილი პროდუქცია, თანხა, შეკვეთის ისტორია | თქვენგან, შეკვეთის გაფორმებისას |
-| გადახდის მონაცემები | გადახდის სტატუსი და ტრანზაქციის ნომერი. ბარათის მონაცემებს ამუშავებს სს „საქართველოს ბანკი“; კომპანია მათ არ იღებს და არ ინახავს | სს „საქართველოს ბანკიდან“ |
+| გადახდის მონაცემები | გადახდის სტატუსი და ტრანზაქციის ნომერი. ბარათის მონაცემებს ამუშავებს სს „საქართველოს ბანკი“ ან სს „თიბისი ბანკი“ (გადახდის პლატფორმა Flitt); კომპანია მათ არ იღებს და არ ინახავს | ბანკიდან, რომლითაც გადაიხადეთ |
 | კომუნიკაციის მონაცემები | მომხმარებელთა მხარდაჭერასთან მიმოწერა, საჩივრები და დაბრუნების მოთხოვნები. სატელეფონო ზარები არ იწერება | თქვენგან |
 | ტექნიკური მონაცემები | IP მისამართი, ბრაუზერის და მოწყობილობის ტიპი, ვიზიტის თარიღი და დრო, აუცილებელი ქუქი-ფაილები | ავტომატურად, ვებგვერდის გამოყენებისას |
 
@@ -48,6 +48,7 @@ export const privacy: Record<Locale, { title: string; body: string }> = {
 | თქვენთან დაკავშირება შეკვეთის დადასტურების ან მიწოდების დაზუსტების მიზნით | ხელშეკრულების შესრულება |
 | მომხმარებლის მოთხოვნებისა და საჩივრების განხილვა | ხელშეკრულების შესრულება; მომხმარებლის უფლებათა დაცვის კანონმდებლობით დადგენილი ვალდებულება |
 | საგადასახადო და ბუღალტრული აღრიცხვა, სახელმწიფო ორგანოების მოთხოვნები | კანონით დაკისრებული ვალდებულება |
+| ვებგვერდის სტატისტიკა — გვერდების ნახვების რაოდენობა (Umami, ჩვენსავე სერვერზე; ქუქი-ფაილებს არ იყენებს, IP მისამართს არ ინახავს, თქვენს იდენტიფიცირებას არ ახდენს) | კომპანიის ლეგიტიმური ინტერესი — ვებგვერდის გაუმჯობესება |
 | ვებგვერდის უსაფრთხოება, თაღლითობის თავიდან აცილება, ტექნიკური გამართულობა | კომპანიის მნიშვნელოვანი ლეგიტიმური ინტერესი |
 
 კომპანია არ იღებს თქვენთვის მნიშვნელოვანი შედეგის მქონე გადაწყვეტილებას მხოლოდ ავტომატური დამუშავების (პროფაილინგის) საფუძველზე.
@@ -63,7 +64,9 @@ export const privacy: Record<Locale, { title: string; body: string }> = {
 | მიმღები | რა მიზნით | რომელი მონაცემები |
 | შპს „ონვეი“ (onway.ge) – ლოჯისტიკური კომპანია, ს/კ 402059419, ქ. თბილისი, სოფელი დიღომი, როსტევანის ქ. #8 | შეკვეთის მიწოდება | მიმღების სახელი, გვარი, ტელეფონი, მიწოდების მისამართი |
 | სს „საქართველოს ბანკი“ | ონლაინ გადახდის დამუშავება | შეკვეთის ნომერი, თანხა |
-| ჰოსტინგის პროვაიდერი Hetzner Online GmbH (გერმანია) | ვებგვერდის და მონაცემთა ბაზის განთავსება | ვებგვერდზე შენახული მონაცემები |
+| სს „თიბისი ბანკი“ და მისი გადახდის პლატფორმა Flitt (flitt.com) | ონლაინ გადახდის დამუშავება | შეკვეთის ნომერი, თანხა, ელ.ფოსტა |
+| SMS სერვისის პროვაიდერი uBill (ubill.ge) | დადასტურებისა და პაროლის აღდგენის კოდების გაგზავნა | მობილური ტელეფონის ნომერი |
+| ჰოსტინგის პროვაიდერი Hetzner Online GmbH (გერმანია) | ვებგვერდის, მონაცემთა ბაზის და ელ.ფოსტის გაგზავნის სერვისის განთავსება | ვებგვერდზე შენახული მონაცემები |
 | სახელმწიფო ორგანოები (შემოსავლების სამსახური, სამართალდამცავი ორგანოები, სასამართლო) | კანონით გათვალისწინებული მოთხოვნის შესრულება | მოთხოვნით გათვალისწინებული |
 
 დამუშავებაზე უფლებამოსილ პირებთან გვაქვს წერილობითი ხელშეკრულება, რომლითაც ისინი ვალდებულნი არიან დაიცვან მონაცემთა უსაფრთხოება და გამოიყენონ ისინი მხოლოდ ჩვენი დავალებით.
@@ -155,7 +158,7 @@ We process only the data necessary to provide the service. We do not collect spe
 | Category | Data | Source |
 | Registration data | First name, last name, mobile phone number, email, password (stored encrypted) | From you, via the registration form |
 | Order and delivery data | Delivery address, recipient's name and phone, products purchased, amount, order history | From you, when placing an order |
-| Payment data | Payment status and transaction number. Card data is processed by JSC Bank of Georgia; the Company neither receives nor stores it | From JSC Bank of Georgia |
+| Payment data | Payment status and transaction number. Card data is processed by JSC Bank of Georgia or JSC TBC Bank (payment platform Flitt); the Company neither receives nor stores it | From the bank you paid through |
 | Communication data | Correspondence with customer support, complaints and return requests. Phone calls are not recorded | From you |
 | Technical data | IP address, browser and device type, date and time of visit, essential cookies | Automatically, when you use the Website |
 
@@ -171,6 +174,7 @@ Each purpose has a legal ground under Article 5 of the Law. We do not use data f
 | Contacting you to confirm an order or clarify delivery | Performing a contract |
 | Handling customer requests and complaints | Performing a contract; obligation under consumer protection law |
 | Tax and accounting records, requests from public authorities | Legal obligation |
+| Website statistics — page view counts (Umami, on our own server; uses no cookies, does not store IP addresses, does not identify you) | The Company's legitimate interest in improving the Website |
 | Website security, fraud prevention, technical operation | The Company's substantial legitimate interest |
 
 The Company does not make decisions with significant effects for you based solely on automated processing (profiling).
@@ -186,7 +190,9 @@ We do not sell or rent your data. We share it only with the recipients listed be
 | Recipient | Purpose | Data |
 | Onway LLC (onway.ge) – logistics company, ID 402059419, 8 Rostevani St., Dighomi village, Tbilisi | Order delivery | Recipient's name, phone, delivery address |
 | JSC Bank of Georgia | Online payment processing | Order number, amount |
-| Hosting provider Hetzner Online GmbH (Germany) | Hosting the Website and database | Data stored on the Website |
+| JSC TBC Bank and its payment platform Flitt (flitt.com) | Online payment processing | Order number, amount, email |
+| SMS service provider uBill (ubill.ge) | Sending verification and password reset codes | Mobile phone number |
+| Hosting provider Hetzner Online GmbH (Germany) | Hosting the Website, database and email sending service | Data stored on the Website |
 | Public authorities (Revenue Service, law enforcement, courts) | Complying with requests provided for by law | As required by the request |
 
 We have written contracts with our processors obliging them to keep data secure and use it only on our instructions.
@@ -278,7 +284,7 @@ Last updated: 10.10.2026`,
 | Категория | Данные | Источник |
 | Регистрационные данные | Имя, фамилия, номер мобильного телефона, эл. почта, пароль (в зашифрованном виде) | От вас, через форму регистрации |
 | Данные заказа и доставки | Адрес доставки, имя, фамилия и телефон получателя, купленные товары, сумма, история заказов | От вас, при оформлении заказа |
-| Платёжные данные | Статус оплаты и номер транзакции. Данные карты обрабатывает АО «Банк Грузии»; Компания их не получает и не хранит | От АО «Банк Грузии» |
+| Платёжные данные | Статус оплаты и номер транзакции. Данные карты обрабатывает АО «Банк Грузии» или АО «ТБС Банк» (платёжная платформа Flitt); Компания их не получает и не хранит | От банка, через который вы оплатили |
 | Данные переписки | Переписка со службой поддержки, жалобы и запросы на возврат. Телефонные звонки не записываются | От вас |
 | Технические данные | IP-адрес, тип браузера и устройства, дата и время посещения, необходимые файлы cookie | Автоматически, при использовании Сайта |
 
@@ -294,6 +300,7 @@ Last updated: 10.10.2026`,
 | Связь с вами для подтверждения заказа или уточнения доставки | Исполнение договора |
 | Рассмотрение запросов и жалоб клиентов | Исполнение договора; обязанность по законодательству о защите прав потребителей |
 | Налоговый и бухгалтерский учёт, запросы государственных органов | Обязанность, возложенная законом |
+| Статистика Сайта — количество просмотров страниц (Umami, на нашем сервере; не использует cookie, не хранит IP-адреса, не идентифицирует вас) | Законный интерес Компании — улучшение Сайта |
 | Безопасность Сайта, предотвращение мошенничества, техническая исправность | Существенный законный интерес Компании |
 
 Компания не принимает решений, имеющих для вас существенные последствия, исключительно на основе автоматизированной обработки (профилирования).
@@ -309,7 +316,9 @@ Last updated: 10.10.2026`,
 | Получатель | Цель | Данные |
 | ООО «Онвей» (onway.ge) – логистическая компания, ИК 402059419, Тбилиси, село Дигоми, ул. Ростевани, 8 | Доставка заказа | Имя, фамилия, телефон получателя, адрес доставки |
 | АО «Банк Грузии» | Обработка онлайн-платежей | Номер заказа, сумма |
-| Хостинг-провайдер Hetzner Online GmbH (Германия) | Размещение Сайта и базы данных | Данные, хранящиеся на Сайте |
+| АО «ТБС Банк» и его платёжная платформа Flitt (flitt.com) | Обработка онлайн-платежей | Номер заказа, сумма, эл. почта |
+| Провайдер SMS-услуг uBill (ubill.ge) | Отправка кодов подтверждения и восстановления пароля | Номер мобильного телефона |
+| Хостинг-провайдер Hetzner Online GmbH (Германия) | Размещение Сайта, базы данных и сервиса отправки эл. почты | Данные, хранящиеся на Сайте |
 | Государственные органы (Служба доходов, правоохранительные органы, суд) | Исполнение требований, предусмотренных законом | В объёме требования |
 
 С уполномоченными обработчиками у нас заключены письменные договоры, обязывающие их обеспечивать безопасность данных и использовать их только по нашему поручению.

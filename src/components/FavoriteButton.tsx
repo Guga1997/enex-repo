@@ -3,7 +3,8 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toggleFavoriteAction } from "@/app/actions/customer";
-import { useT } from "@/components/LocaleProvider";
+import { useLocale, useT } from "@/components/LocaleProvider";
+import { withLocale } from "@/lib/i18n/config";
 
 export default function FavoriteButton({
   productId,
@@ -15,12 +16,13 @@ export default function FavoriteButton({
   signedIn: boolean;
 }) {
   const t = useT();
+  const locale = useLocale();
   const [on, setOn] = useState(initial);
   const [pending, start] = useTransition();
   const router = useRouter();
 
   function toggle() {
-    if (!signedIn) return router.push("/login?next=/account/favorites");
+    if (!signedIn) return router.push(withLocale(`/login?next=${encodeURIComponent(withLocale("/account/favorites", locale))}`, locale));
 
     // ოპტიმისტური გადართვა — სერვერის პასუხს ღილაკი არ ელოდება
     setOn((v) => !v);

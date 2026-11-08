@@ -1,0 +1,10 @@
+# /etc/systemd/system/enex-backup.service — ბაზის ღამის ასლი (pg_dump)
+# Hetzner-ის სნეპშოტი მთელ დისკს ინახავს; ეს ფაილი კი ბაზის თანმიმდევრული ასლია,
+# რომელიც სნეპშოტშიც ხვდება და ცალკეც აღდგება: gunzip -c … | sudo -u postgres psql enex
+[Unit]
+Description=Enex ბაზის ასლი
+After=postgresql.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash -c 'set -euo pipefail; d=/var/backups/enex; mkdir -p $d; chmod 700 $d; f=$d/enex-$(date +%%F).sql.gz; sudo -u postgres pg_dump --no-owner enex | gzip -9 > $f.tmp; mv $f.tmp $f; find $d -name "enex-*.sql.gz" -mtime +14 -delete'

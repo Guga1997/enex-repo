@@ -121,10 +121,10 @@ test("შეკვეთების სია მიწოდებას ა�
   assert.equal(canOpen("DELIVERY", "/admin/orders"), false);
 });
 
-test("ადმინი ყველგან შედის, უცნობი როლიც ადმინად ითვლება", () => {
+test("ადმინი ყველგან შედის, უცნობი როლი — არსად (შესვლისა და ანგარიშის გარდა)", () => {
   for (const path of ["/admin", "/admin/products", "/admin/staff", "/admin/api-keys"]) {
     assert.equal(canOpen("ADMIN", path), true, path);
-    assert.equal(canOpen("რაღაც", path), true, path);
+    assert.equal(canOpen("რაღაც", path), false, path);
   }
 });
 

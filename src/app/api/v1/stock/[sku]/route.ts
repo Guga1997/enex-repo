@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { authenticateApiKey } from "@/lib/api-auth";
-import { deriveStatus } from "@/lib/stock";
+import { checkPrice, writeApiQty } from "@/lib/api-write";
 import { StockStatus } from "@/lib/constants";
 import { inScope, OUT_OF_SCOPE } from "@/lib/api-scope";
 
@@ -82,15 +82,23 @@ export async function PUT(req: Request, { params }: Ctx) {
   }
   const input = parsed.data;
 
-  const newQty = input.qty ?? current.stockQty;
-  const newStatus = input.status ?? deriveStatus(newQty, current.stockStatus);
+  if (input.price !== undefined) {
+    const bad = checkPrice(input.price, current.cost);
+    if (bad) return NextResponse.json({ error: bad }, { status: 400 });
+  }
+
+  let newQty = current.stockQty;
+  let newStatus = current.stockStatus;
+  if (input.qty !== undefined || input.status !== undefined) {
+    const after = await writeApiQty(current.id, input.qty ?? current.stockQty, input.status);
+    newQty = after.stockQty;
+    newStatus = after.stockStatus;
+  }
 
   const updated = await db.product.update({
     where: { sku },
     data: {
-      stockQty: newQty,
-      stockStatus: newStatus,
-      ...(input.price !== undefined ? { price: input.price } : {}),
+      ...(input.price !== undefined ? { price: input.price, priceLocked: true } : {}),
       ...(input.oldPrice !== undefined ? { oldPrice: input.oldPrice } : {}),
       ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),
       ...(input.incomingDate !== undefined

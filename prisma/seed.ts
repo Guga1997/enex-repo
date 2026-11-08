@@ -240,6 +240,11 @@ function slugFor(name: string, sku: string) {
 }
 
 async function main() {
+  // სერვერზე ცნობილი პაროლით ადმინი არასდროს — ეს ფაილი და README საჯაროა
+  if (process.env.NODE_ENV === "production" || (process.env.DATABASE_URL ?? "").startsWith("postgres")) {
+    console.error("seed სერვერის ბაზაზე არ ეშვება (ცნობილი ადმინის პაროლი). ადმინი: npx tsx scripts/admin-user.ts");
+    process.exit(1);
+  }
   console.log("→ ადმინის შექმნა");
   await db.admin.upsert({
     where: { email: ADMIN_EMAIL },

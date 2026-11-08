@@ -1,0 +1,10 @@
+# /etc/systemd/system/enex-backup.timer — ყოველ ღამე 03:30 (UTC)
+[Unit]
+Description=Enex ბაზის ღამის ასლი
+
+[Timer]
+OnCalendar=*-*-* 03:30:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

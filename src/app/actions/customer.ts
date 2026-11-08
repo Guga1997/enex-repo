@@ -1,6 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
+import { createHmac } from "crypto";
 import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
@@ -20,25 +21,37 @@ import {
   type RegisterInput,
 } from "@/lib/customer-auth";
 import { rateLimit, clientIp, retryText, LIMITS } from "@/lib/rate-limit";
-import { getT } from "@/lib/i18n/server";
+import { getLocale, getT } from "@/lib/i18n/server";
+import { withLocale } from "@/lib/i18n/config";
 import { createSession, verifyLogin } from "@/lib/auth";
 import { homeFor } from "@/lib/workflow";
 
 const PENDING = "pending_user";
+import { safePath } from "@/lib/safe-path";
+
 const AFTER_LOGIN = "after_login";
 const PENDING_TTL = 60 * 30;
 
 /** მხოლოდ საიტის შიდა გზა — გარე მისამართზე გადამისამართება არ უნდა მოხდეს */
-const safeNext = (v: unknown) => {
-  const s = String(v ?? "");
-  return s.startsWith("/") && !s.startsWith("//") ? s : "";
-};
+const safeNext = (v: unknown) => safePath(v, "");
 
 export type FormState = { error?: string; field?: string; ok?: string } | null;
 
+/**
+ * cookie-ში id ხელმოწერით ინახება — უბრალო id ხელით ჩასმის საშუალებას იძლეოდა და
+ * „კოდის ხელახლა გაგზავნა“ სხვის ანგარიშზე (სხვის ტელეფონზე SMS) წავიდოდა.
+ */
+const signId = (id: string) =>
+  `${id}.${createHmac("sha256", process.env.AUTH_SECRET || "dev-only-insecure-secret-change-me!!").update("pending:" + id).digest("base64url")}`;
+function readSigned(v: string | undefined): string | null {
+  if (!v) return null;
+  const id = v.slice(0, v.lastIndexOf("."));
+  return id && signId(id) === v ? id : null;
+}
+
 /** დასადასტურებელი ანგარიში cookie-ში ინახება — id URL-ში არ გადის */
 async function setPending(userId: string) {
-  (await cookies()).set(PENDING, userId, {
+  (await cookies()).set(PENDING, signId(userId), {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
@@ -48,7 +61,7 @@ async function setPending(userId: string) {
 }
 
 export async function getPendingUserId(): Promise<string | null> {
-  return (await cookies()).get(PENDING)?.value ?? null;
+  return readSigned((await cookies()).get(PENDING)?.value);
 }
 
 async function clearPending() {
@@ -101,7 +114,7 @@ export async function registerAction(_prev: FormState, formData: FormData): Prom
       path: "/", maxAge: PENDING_TTL,
     });
   }
-  redirect("/verify");
+  redirect(withLocale("/verify", await getLocale()));
 }
 
 /* ─────────────────────── ვერიფიკაცია ─────────────────────── */
@@ -131,7 +144,7 @@ export async function verifyAction(_prev: FormState, formData: FormData): Promis
     const jar = await cookies();
     const after = safeNext(jar.get(AFTER_LOGIN)?.value);
     jar.delete(AFTER_LOGIN);
-    redirect(after || "/account");
+    redirect(withLocale(after || "/account", await getLocale()));
   }
 
   return { ok: t(channel === "EMAIL" ? "ელფოსტა დადასტურდა" : "ნომერი დადასტურდა") };
@@ -182,7 +195,7 @@ export async function loginAction(_prev: FormState, formData: FormData): Promise
       if (quick.ok) {
         await Promise.all([issueCode(res.userId, "EMAIL"), issueCode(res.userId, "SMS")]);
       }
-      redirect("/verify");
+      redirect(withLocale("/verify", await getLocale()));
     }
 
     // თანამშრომელი საიტის ჩვეულებრივ „შესვლას“ აჭერს და არა /admin/login-ს —
@@ -203,19 +216,19 @@ export async function loginAction(_prev: FormState, formData: FormData): Promise
     name: res.user.name,
     priceTier: res.user.priceTier,
   });
-  redirect(next.startsWith("/") ? next : "/account");
+  redirect(withLocale(safePath(next, "/account"), await getLocale()));
 }
 
 export async function logoutAction() {
   await destroyCustomerSession();
-  redirect("/");
+  redirect(withLocale("/", await getLocale()));
 }
 
 /* ─────────────────────────── კაბინეტი ─────────────────────────── */
 
 export async function toggleFavoriteAction(formData: FormData) {
   const user = await getCurrentUser();
-  if (!user) redirect("/login?next=/account/favorites");
+  if (!user) redirect(withLocale("/login?next=/account/favorites", await getLocale()));
 
   const productId = String(formData.get("productId") ?? "");
   if (!productId) return;
@@ -230,7 +243,7 @@ export async function toggleFavoriteAction(formData: FormData) {
 
 export async function setNewsletterAction(formData: FormData) {
   const user = await getCurrentUser();
-  if (!user) redirect("/login");
+  if (!user) redirect(withLocale("/login", await getLocale()));
   await db.user.update({
     where: { id: user.id },
     data: { newsletter: formData.get("newsletter") === "on" },
@@ -240,7 +253,7 @@ export async function setNewsletterAction(formData: FormData) {
 export async function addOrganizationAction(_prev: FormState, formData: FormData): Promise<FormState> {
   const t = await getT();
   const user = await getCurrentUser();
-  if (!user) redirect("/login?next=/account/organizations");
+  if (!user) redirect(withLocale("/login?next=/account/organizations", await getLocale()));
 
   const name = String(formData.get("name") ?? "").trim();
   const taxId = String(formData.get("taxId") ?? "").replace(/\D/g, "");
@@ -263,7 +276,7 @@ export async function addOrganizationAction(_prev: FormState, formData: FormData
 export async function changePasswordAction(_prev: FormState, formData: FormData): Promise<FormState> {
   const t = await getT();
   const user = await getCurrentUser();
-  if (!user) redirect("/login?next=/account/password");
+  if (!user) redirect(withLocale("/login?next=/account/password", await getLocale()));
 
   const current = String(formData.get("current") ?? "");
   const next = String(formData.get("next") ?? "");
@@ -274,10 +287,12 @@ export async function changePasswordAction(_prev: FormState, formData: FormData)
   if (!(await bcrypt.compare(current, user.passwordHash)))
     return { error: t("მიმდინარე პაროლი არასწორია"), field: "current" };
 
-  await db.user.update({
+  const updated = await db.user.update({
     where: { id: user.id },
-    data: { passwordHash: await bcrypt.hash(next, 10) },
+    data: { passwordHash: await bcrypt.hash(next, 10), passwordChangedAt: new Date() },
   });
+  // სხვა მოწყობილობების სესიები უქმდება, ამ ბრაუზერს ახალი ეძლევა
+  await createCustomerSession({ id: updated.id, email: updated.email, name: updated.name, priceTier: updated.priceTier });
   return { ok: t("პაროლი შეიცვალა") };
 }
 
@@ -286,7 +301,7 @@ export async function changePasswordAction(_prev: FormState, formData: FormData)
 const RESETTING = "resetting_user";
 
 export async function getResettingUserId(): Promise<string | null> {
-  return (await cookies()).get(RESETTING)?.value ?? null;
+  return readSigned((await cookies()).get(RESETTING)?.value);
 }
 
 /**
@@ -309,7 +324,7 @@ export async function requestResetAction(_prev: FormState, formData: FormData): 
   const user = await findUserByLogin(login);
   if (user && user.isActive) {
     await issueResetCode(user.id);
-    (await cookies()).set(RESETTING, user.id, {
+    (await cookies()).set(RESETTING, signId(user.id), {
       httpOnly: true,
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
@@ -317,7 +332,7 @@ export async function requestResetAction(_prev: FormState, formData: FormData): 
       maxAge: PENDING_TTL,
     });
   }
-  redirect("/reset");
+  redirect(withLocale("/reset", await getLocale()));
 }
 
 export async function resetPasswordAction(_prev: FormState, formData: FormData): Promise<FormState> {
@@ -344,7 +359,7 @@ export async function resetPasswordAction(_prev: FormState, formData: FormData):
       name: res.user.name,
       priceTier: res.user.priceTier,
     });
-    redirect("/account");
+    redirect(withLocale("/account", await getLocale()));
   }
-  redirect("/login");
+  redirect(withLocale("/login", await getLocale()));
 }

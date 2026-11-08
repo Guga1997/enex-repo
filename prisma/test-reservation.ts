@@ -1,6 +1,7 @@
 /** რეზერვაციის ციკლი: დაკავება → ჩავარდნა/გადახდა/ვადა → ნაშთი სწორადაა? */
 import { PrismaClient } from "@prisma/client";
-import { markOrderFailed, markOrderPaid, releaseExpiredReservations, cancelOrder } from "../src/lib/orders";
+import { markOrderFailed, markOrderPaid, cancelOrder } from "../src/lib/orders";
+import { releaseExpiredReservations } from "../src/lib/expiry";
 import { availableQty } from "../src/lib/stock";
 
 const db = new PrismaClient();

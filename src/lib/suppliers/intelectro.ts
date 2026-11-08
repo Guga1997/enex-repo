@@ -209,6 +209,7 @@ export function toItem(row: IeRow, detail?: IeDetail | null): SupplierItem | nul
 
 async function post(url: string, cfg: SupplierConfig): Promise<unknown> {
   const res = await fetch(url, {
+    signal: AbortSignal.timeout(60_000),
     method: "POST",
     headers: { Accept: "application/json", ...authHeaders(cfg) },
     redirect: "manual", // გადამისამართება = „ასეთი არ არის“, მთავარი გვერდის HTML არ გვინდა

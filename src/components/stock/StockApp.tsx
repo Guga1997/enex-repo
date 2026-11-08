@@ -323,7 +323,8 @@ function Editor({
     if (isNew && !form.sku.trim()) return setErr("კოდი (SKU) სავალდებულოა");
     setSaving(true);
     try {
-      await api("/api/v1/products", {
+      if (!(Number(form.price) > 0)) throw new Error("ფასი 0-ზე მეტი უნდა იყოს");
+      const res = (await api("/api/v1/products", {
         method: "POST",
         body: JSON.stringify({
           items: [
@@ -340,7 +341,9 @@ function Editor({
             },
           ],
         }),
-      });
+      })) as { failed?: { reason: string }[] };
+      // სერვერმა პოზიცია არ მიიღო (ფასი ქოსთზე დაბლა, სხვა კატეგორია…) — მიზეზი ჩანს
+      if (res?.failed?.length) throw new Error(res.failed[0].reason);
       onSaved();
     } catch (e) {
       setErr(e instanceof Error ? e.message : "ვერ შეინახა");

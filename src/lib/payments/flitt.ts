@@ -2,6 +2,7 @@ import { createHash } from "crypto";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { markOrderFailed, markOrderPaid } from "@/lib/orders";
+import { notifySalesPaymentProblem } from "@/lib/notify/sales";
 import type { CreatePaymentInput, CreatePaymentResult } from "./bog";
 
 /**
@@ -81,7 +82,7 @@ export async function createFlittPayment(input: CreatePaymentInput & { lang?: st
     lang: input.lang ?? "ka",
     merchant_data: input.orderId,
     sender_email: input.buyer?.email,
-    response_url: `${input.siteUrl}/api/payments/tbc/return?order=${input.orderId}`,
+    response_url: `${input.siteUrl}/api/payments/tbc/return?order=${input.orderId}&lang=${input.locale ?? "ka"}`,
     server_callback_url: `${input.siteUrl}/api/payments/tbc/callback`,
   });
   if (typeof r.checkout_url !== "string") throw new Error("Flitt: checkout_url არ დაბრუნდა");
@@ -111,10 +112,20 @@ export async function applyFlittResult(r: Params): Promise<"paid" | "failed" | "
   const status = r.order_status as FlittOrderStatus | undefined;
   if (status === "approved") {
     if (Number(r.amount) !== Math.round(order.total * 100) || r.currency !== "GEL") {
-      console.error(`Flitt: ${order.number} — თანხა არ ემთხვევა (${r.amount} ${r.currency}, შეკვეთა ${order.total} GEL)`);
+      if (order.paymentStatus !== "PAID") {
+        await notifySalesPaymentProblem(
+          order.number,
+          `თიბისი: დადასტურებული თანხა ${Number(r.amount) / 100} ${r.currency}, შეკვეთის თანხა ${order.total} GEL`
+        ).catch(() => {});
+      }
       return "mismatch";
-    }    await markOrderPaid(order.id, r);
+    }
+    await markOrderPaid(order.id, r);
     return "paid";
+  }
+  if (status === "reversed") {
+    await db.order.updateMany({ where: { id: order.id, paymentStatus: "PAID" }, data: { paymentStatus: "REFUNDED" } });
+    return "pending";
   }
   if (status === "declined" || status === "expired") {
     await markOrderFailed(order.id, r);

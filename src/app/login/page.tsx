@@ -1,12 +1,13 @@
 import Link from "@/components/Link";
+import { safePath } from "@/lib/safe-path";
 import { redirect } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import LoginForm from "@/components/LoginForm";
 import { getCurrentUser } from "@/lib/customer-auth";
-import { getT, titleMeta } from "@/lib/i18n/server";
+import { getT, privateMeta } from "@/lib/i18n/server";
 
-export const generateMetadata = titleMeta("შესვლა");
+export const generateMetadata = privateMeta("შესვლა");
 
 export default async function LoginPage({
   searchParams,
@@ -15,7 +16,7 @@ export default async function LoginPage({
 }) {
   const t = await getT();
   const { next } = await searchParams;
-  if (await getCurrentUser()) redirect(next?.startsWith("/") ? next : "/account");
+  if (await getCurrentUser()) redirect(safePath(next, "/account"));
 
   return (
     <>

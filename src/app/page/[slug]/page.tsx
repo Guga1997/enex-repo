@@ -7,6 +7,8 @@ import type { Locale } from "@/lib/i18n/config";
 import LegalText from "@/components/LegalText";
 import { returns } from "@/content/legal/returns";
 import { privacy } from "@/content/legal/privacy";
+import { terms } from "@/content/legal/terms";
+import { alts } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
@@ -126,7 +128,7 @@ The warranty does not cover mechanical damage, faults caused by improper use, or
 };
 
 /** იურიდიული დოკუმენტები — სათაურებით, სიებით და ცხრილებით (LegalText) */
-const LEGAL: Record<string, Record<Locale, Page>> = { returns, privacy };
+const LEGAL: Record<string, Record<Locale, Page>> = { returns, privacy, terms };
 
 export function generateStaticParams() {
   return [...Object.keys(PAGES), ...Object.keys(LEGAL)].map((slug) => ({ slug }));
@@ -135,7 +137,10 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const locale = await getLocale();
-  return { title: (PAGES[slug] ?? LEGAL[slug])?.[locale]?.title ?? "Enex" };
+  return {
+    title: (PAGES[slug] ?? LEGAL[slug])?.[locale]?.title ?? "Enex",
+    alternates: alts(`/page/${slug}`, locale),
+  };
 }
 
 export default async function StaticPage({ params }: { params: Promise<{ slug: string }> }) {

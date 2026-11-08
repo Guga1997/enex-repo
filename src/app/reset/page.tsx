@@ -1,11 +1,11 @@
 import { redirect } from "next/navigation";
-import { titleMeta } from "@/lib/i18n/server";
+import { privateMeta } from "@/lib/i18n/server";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ResetForm from "@/components/ResetForm";
 import { getCurrentUser } from "@/lib/customer-auth";
 
-export const generateMetadata = titleMeta("ახალი პაროლი");
+export const generateMetadata = privateMeta("ახალი პაროლი");
 
 /**
  * გვერდი კოდის გამოთხოვის გარეშეც იხსნება — ასე არ ვამხელთ, არსებობს თუ არა

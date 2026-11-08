@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { getCurrentUser } from "@/lib/customer-auth";
+import { orderAccess } from "@/lib/order-access";
 import { buildInvoiceHtml, issueAndSendInvoice } from "@/lib/invoice";
 
 /**
@@ -15,9 +15,9 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
     return new Response("შეკვეთა ვერ მოიძებნა", { status: 404 });
   }
 
-  // სხვისი ანგარიშის შეკვეთას შესული მომხმარებელი ვერ გახსნის
-  const viewer = await getCurrentUser();
-  if (order.userId && viewer && order.userId !== viewer.id) {
+  // მფლობელი, თანამშრომელი ან „შეკვეთის მოძებნით“ დადასტურებული — სხვა ვერავინ
+  const access = await orderAccess(order);
+  if (access === "login" || access === "denied") {
     return new Response("წვდომა აკრძალულია", { status: 403 });
   }
 

@@ -1,3 +1,4 @@
+import { withLocale, type Locale } from "../i18n/config";
 /**
  * საქართველოს ბანკის (BOG) ონლაინ ეკვაირინგი — E-Commerce API v1.
  *
@@ -29,12 +30,18 @@ tcBuHV4f7qsynQT+f2UYbESX/TLHwT5qFWZDHZ0YUOUIvb8n7JujVSGZO9/+ll/g
 PwIDAQAB
 -----END PUBLIC KEY-----`;
 
+/**
+ * სატესტო „ბანკი“ მხოლოდ ცალსახად ჩართული PAYMENT_MOCK=1-ით და არასდროს production-ში.
+ * ადრე გასაღების არქონაც რთავდა — სერვერზე წაშლილი/შეცდომით ჩაწერილი გასაღები ნებისმიერ
+ * მყიდველს „გადახდილია“ ღილაკს აჩვენებდა.
+ */
 export function isMockMode(): boolean {
-  return (
-    process.env.PAYMENT_MOCK === "1" ||
-    !process.env.BOG_CLIENT_ID ||
-    !process.env.BOG_CLIENT_SECRET
-  );
+  return process.env.PAYMENT_MOCK === "1" && process.env.NODE_ENV !== "production";
+}
+
+/** ბარათით გადახდა (BOG) ხელმისაწვდომია: ნამდვილი გასაღებები ან სატესტო რეჟიმი */
+export function isBogEnabled(): boolean {
+  return isMockMode() || Boolean(process.env.BOG_CLIENT_ID && process.env.BOG_CLIENT_SECRET);
 }
 
 async function getAccessToken(): Promise<string> {
@@ -76,6 +83,8 @@ export type CreatePaymentInput = {
   /** რამდენ წუთში უნდა გადაიხადოს — რეზერვაციის ვადას ემთხვევა */
   ttlMinutes?: number;
   buyer?: { name: string; email: string; phone: string };
+  /** ბანკიდან დაბრუნება იმავე ენაზე */
+  locale?: Locale;
 };
 
 export type CreatePaymentResult = { paymentId: string; redirectUrl: string };
@@ -88,6 +97,7 @@ export async function createPayment(input: CreatePaymentInput): Promise<CreatePa
     };
   }
 
+  if (!isBogEnabled()) throw new Error("BOG: გასაღებები არ არის კონფიგურირებული");
   const token = await getAccessToken();
 
   const res = await fetch(ORDERS_URL, {
@@ -117,8 +127,8 @@ export async function createPayment(input: CreatePaymentInput): Promise<CreatePa
         })),
       },
       redirect_urls: {
-        success: `${input.siteUrl}/order/${input.orderId}?paid=1`,
-        fail: `${input.siteUrl}/order/${input.orderId}?failed=1`,
+        success: `${input.siteUrl}${withLocale(`/order/${input.orderId}?paid=1`, input.locale ?? "ka")}`,
+        fail: `${input.siteUrl}${withLocale(`/order/${input.orderId}?failed=1`, input.locale ?? "ka")}`,
       },
     }),
     cache: "no-store",

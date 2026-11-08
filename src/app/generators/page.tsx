@@ -147,7 +147,7 @@ export default async function GeneratorsPage({
                     <td className="p-3 text-right font-medium tabular-nums">{kva || "—"}</td>
                     <td className="p-3 text-muted">{p.category.nameKa.replace(/\s*[Ⴀ-ჿ]+/g, "")}</td>
                     <td className="p-3 text-right">
-                      <div className="font-bold tabular-nums">{gel(price.value)}</div>
+                      <div className="font-bold tabular-nums">{price.value > 0 ? gel(price.value) : t("ფასი მოთხოვნით")}</div>
                       {price.saved > 0 && <div className="text-xs text-emerald-700">{t("სადილერო ფასი")}</div>}
                     </td>
                     <td className="p-3">

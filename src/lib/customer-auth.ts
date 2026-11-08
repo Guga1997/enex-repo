@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
 import { randomInt } from "crypto";
 import { db } from "./db";
+import { CUSTOMER_AUD, authSecret, isCustomerPayload } from "./auth-secret";
 import { shareFor } from "./pricing-settings";
 import { sendEmail } from "./notify/email";
 import { sendSms, normalizeGeoPhone } from "./notify/sms";
@@ -11,16 +12,16 @@ const COOKIE = "user_session";
 const CODE_TTL_MIN = 10;
 const MAX_ATTEMPTS = 5;
 
-const secret = () =>
-  new TextEncoder().encode(process.env.AUTH_SECRET || "dev-only-insecure-secret-change-me!!");
+const secret = authSecret;
 
-export type CustomerSession = { id: string; email: string; name: string; priceTier: string };
+export type CustomerSession = { id: string; email: string; name: string; priceTier: string; iat?: number };
 
 /* ───────────────────────── სესია ───────────────────────── */
 
 export async function createCustomerSession(s: CustomerSession) {
   const token = await new SignJWT(s as unknown as Record<string, unknown>)
     .setProtectedHeader({ alg: "HS256" })
+    .setAudience(CUSTOMER_AUD)
     .setIssuedAt()
     .setExpirationTime("30d")
     .sign(secret());
@@ -39,8 +40,10 @@ export async function getCustomerSession(): Promise<CustomerSession | null> {
   if (!token) return null;
   try {
     const { payload } = await jwtVerify(token, secret());
+    if (!isCustomerPayload(payload)) return null;
     return {
       id: String(payload.id),
+      iat: payload.iat ?? 0,
       email: String(payload.email),
       name: String(payload.name),
       priceTier: String(payload.priceTier),
@@ -60,6 +63,8 @@ export async function getCurrentUser() {
   if (!s) return null;
   const user = await db.user.findUnique({ where: { id: s.id } });
   if (!user?.isActive) return null;
+  // პაროლის შეცვლის/აღდგენის შემდეგ ძველი ტოკენები (სხვა მოწყობილობებზე) აღარ მოქმედებს
+  if (user.passwordChangedAt && (s.iat ?? 0) * 1000 < user.passwordChangedAt.getTime() - 1000) return null;
   // საფეხურის წილი „პროდუქციის ფასებიდან“ — ფასის ყველა გამოთვლა ამას იყენებს
   return { ...user, share: await shareFor(user.priceTier) };
 }
@@ -133,9 +138,39 @@ export async function registerUser(input: RegisterInput): Promise<RegisterResult
 /* ─────────────────────── ვერიფიკაცია ─────────────────────── */
 
 /** ახალი კოდი; ძველი იმავე არხზე ბათილდება, რომ ორი ერთდროულად არ მუშაობდეს */
+/**
+ * SMS ფასიანია — ლიმიტი ბაზაშია (კოდების ცხრილი), არა მეხსიერებაში: deploy-ის შემდეგაც
+ * მოქმედებს და IP-ის ცვლით ვერ გადაივლის. ერთ ანგარიშზე საათში 5, დღეში 10 SMS;
+ * მთელ საიტზე დღეში 500 — მეტი ბოტის შეტევაა, SMS აღარ იგზავნება და ლოგში ჩანს.
+ */
+const SMS_PER_HOUR = 5;
+const SMS_PER_DAY = 10;
+const SMS_SITE_PER_DAY = 500;
+const SMS_CHANNELS = ["SMS", "RESET"];
+
+export async function smsAllowed(userId: string): Promise<boolean> {
+  const hour = new Date(Date.now() - 60 * 60_000);
+  const day = new Date(Date.now() - 24 * 60 * 60_000);
+  const [h, d, site] = await Promise.all([
+    db.verificationCode.count({ where: { userId, channel: { in: SMS_CHANNELS }, createdAt: { gt: hour } } }),
+    db.verificationCode.count({ where: { userId, channel: { in: SMS_CHANNELS }, createdAt: { gt: day } } }),
+    db.verificationCode.count({ where: { channel: { in: SMS_CHANNELS }, createdAt: { gt: day } } }),
+  ]);
+  if (site >= SMS_SITE_PER_DAY) {
+    console.error(`SMS: საიტის დღიური ლიმიტი (${SMS_SITE_PER_DAY}) ამოიწურა — SMS არ იგზავნება`);
+    return false;
+  }
+  return h < SMS_PER_HOUR && d < SMS_PER_DAY;
+}
+
 export async function issueCode(userId: string, channel: "EMAIL" | "SMS") {
   const user = await db.user.findUnique({ where: { id: userId } });
   if (!user) return { ok: false as const, error: "მომხმარებელი ვერ მოიძებნა" };
+
+  // ლიმიტის შემოწმება ახალ ჩანაწერამდე — ჩანაწერი თავად ითვლება ლიმიტში
+  if (channel === "SMS" && !(await smsAllowed(userId))) {
+    return { ok: false as const, error: "SMS-ის ლიმიტი ამოიწურა — სცადე მოგვიანებით ან დაადასტურე ელფოსტით" };
+  }
 
   await db.verificationCode.updateMany({
     where: { userId, channel, consumedAt: null },
@@ -233,6 +268,8 @@ export async function issueResetCode(userId: string) {
   const user = await db.user.findUnique({ where: { id: userId } });
   if (!user) return { ok: false as const };
 
+  const smsOk = await smsAllowed(userId);
+
   await db.verificationCode.updateMany({
     where: { userId, channel: RESET, consumedAt: null },
     data: { consumedAt: new Date() },
@@ -258,7 +295,8 @@ export async function issueResetCode(userId: string) {
              <p>კოდი ${CODE_TTL_MIN} წუთის განმავლობაშია ძალაში.</p>
              <p style="color:#666">თუ პაროლის აღდგენა შენ არ მოგითხოვია, უბრალოდ იგნორირება გაუკეთე — პაროლი არ შეცვლილა.</p>`,
     }),
-    sendSms(user.phone, `Enex: პაროლის აღდგენის კოდი ${code}. ძალაშია ${CODE_TTL_MIN} წუთი.`),
+    // SMS-ის ლიმიტზე მხოლოდ ელფოსტით — კოდი იგივეა
+    smsOk ? sendSms(user.phone, `Enex: პაროლის აღდგენის კოდი ${code}. ძალაშია ${CODE_TTL_MIN} წუთი.`) : Promise.resolve(),
   ]);
 
   return { ok: true as const };
@@ -283,7 +321,7 @@ export async function resetPassword(userId: string, code: string, password: stri
   await db.verificationCode.update({ where: { id: row.id }, data: { consumedAt: new Date() } });
   const user = await db.user.update({
     where: { id: userId },
-    data: { passwordHash: await bcrypt.hash(password, 10) },
+    data: { passwordHash: await bcrypt.hash(password, 10), passwordChangedAt: new Date() },
   });
   return { ok: true as const, user };
 }

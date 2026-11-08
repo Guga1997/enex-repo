@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { isLocale, withLocale } from "@/lib/i18n/config";
 import { applyFlittResult, fetchFlittStatus } from "@/lib/payments/flitt";
 
 /**
@@ -23,7 +24,9 @@ async function back(req: Request) {
     const result = status ? await applyFlittResult(status) : "pending";
     flag = result === "paid" ? "?paid=1" : result === "failed" ? "?failed=1" : "";
   }
-  return NextResponse.redirect(`${site}/order/${order.id}${flag}`, 303);
+  const lang = url.searchParams.get("lang") ?? "";
+  const locale = isLocale(lang) ? lang : "ka";
+  return NextResponse.redirect(`${site}${withLocale(`/order/${order.id}${flag}`, locale)}`, 303);
 }
 
 export const GET = back;

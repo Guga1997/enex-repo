@@ -105,7 +105,7 @@ function buildUrl(cfg: SupplierConfig, identCode: string, productCode = ""): str
 }
 
 async function fetchJson(url: string): Promise<Record<string, unknown>> {
-  const res = await fetch(url, { headers: { Accept: "application/json" }, cache: "no-store" });
+  const res = await fetch(url, { signal: AbortSignal.timeout(60_000), headers: { Accept: "application/json" }, cache: "no-store" });
   if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
 
   const body = (await res.json()) as Record<string, unknown>;

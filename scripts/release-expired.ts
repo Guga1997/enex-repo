@@ -3,7 +3,7 @@
  * სერვერზე systemd timer უშვებს წუთში ერთხელ (deploy/enex-release.timer).
  */
 import { PrismaClient } from "@prisma/client";
-import { releaseExpiredReservations } from "../src/lib/orders";
+import { releaseExpiredReservations } from "../src/lib/expiry";
 
 const db = new PrismaClient();
 

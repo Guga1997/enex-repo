@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { authenticateApiKey } from "@/lib/api-auth";
+import { PUBLIC_PRODUCT_SELECT, checkPrice, writeApiQty } from "@/lib/api-write";
 import { slugify } from "@/lib/format";
 import { StockStatus } from "@/lib/constants";
 import { categoryIdsWithDescendants } from "@/lib/catalog";
@@ -25,8 +26,8 @@ export async function GET(req: Request) {
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
   const url = new URL(req.url);
-  const page = Math.max(1, Number(url.searchParams.get("page")) || 1);
-  const limit = Math.min(500, Math.max(1, Number(url.searchParams.get("limit")) || 100));
+  const page = Math.min(100_000, Math.max(1, Math.floor(Number(url.searchParams.get("page")) || 1)));
+  const limit = Math.min(500, Math.max(1, Math.floor(Number(url.searchParams.get("limit")) || 100)));
   const categorySlug = url.searchParams.get("category");
   const since = url.searchParams.get("updated_since");
   const q = url.searchParams.get("q")?.trim();
@@ -36,7 +37,11 @@ export async function GET(req: Request) {
   const allowed = await scopeIds(auth.categorySlug);
   if (allowed) where.categoryId = { in: allowed };
   if (url.searchParams.get("active") === "1") where.isActive = true;
-  if (since) where.updatedAt = { gte: new Date(since) };
+  if (since) {
+    const d = new Date(since);
+    if (Number.isNaN(d.getTime())) return NextResponse.json({ error: "updated_since — არასწორი თარიღი" }, { status: 400 });
+    where.updatedAt = { gte: d };
+  }
   if (q) where.OR = [{ nameKa: ci(q) }, { nameEn: ci(q) }, { model: ci(q) }, { sku: ci(q) }];
   if (categorySlug) {
     const cat = await db.category.findUnique({ where: { slug: categorySlug }, select: { id: true } });
@@ -48,12 +53,8 @@ export async function GET(req: Request) {
   const [items, total] = await Promise.all([
     db.product.findMany({
       where,
-      include: {
-        brand: { select: { name: true, slug: true } },
-        category: { select: { nameKa: true, slug: true } },
-        images: { select: { url: true }, orderBy: { sortOrder: "asc" } },
-        attributes: { select: { name: true, value: true } },
-      },
+      // ქოსთი, მიმწოდებლის საცალო და სადილერო ფასი გარეთ არ გადის
+      select: PUBLIC_PRODUCT_SELECT,
       orderBy: { sku: "asc" },
       skip: (page - 1) * limit,
       take: limit,
@@ -73,7 +74,7 @@ const productSchema = z.object({
   nameEn: z.string().optional(),
   model: z.string().optional(),
   descriptionKa: z.string().optional(),
-  price: z.number().min(0),
+  price: z.number().positive(),
   oldPrice: z.number().min(0).nullable().optional(),
   qty: z.number().int().min(0).default(0),
   status: z
@@ -151,32 +152,48 @@ export async function POST(req: Request) {
     }
 
     const existing = await db.product.findUnique({ where: { sku: item.sku } });
+    // არსებული პროდუქტი სხვა კატეგორიიდან „გადმოტაცება“ არ შეიძლება
+    if (existing && !(await inScope(auth.categorySlug, existing.categoryId))) {
+      failed.push({ sku: item.sku, reason: OUT_OF_SCOPE });
+      continue;
+    }
+    const bad = checkPrice(item.price, existing?.cost ?? null);
+    if (bad) {
+      failed.push({ sku: item.sku, reason: bad });
+      continue;
+    }
 
-    const data = {
+    // არსებულზე მხოლოდ გადმოცემული ველები იცვლება — დანარჩენი (აღწერა, ბრენდი, თარგმანი) არ იშლება
+    const has = (k: string) => Object.prototype.hasOwnProperty.call(item, k);
+    const common = {
       nameKa: item.nameKa,
-      nameEn: item.nameEn ?? null,
-      model: item.model ?? null,
-      descriptionKa: item.descriptionKa ?? null,
       price: item.price,
-      oldPrice: item.oldPrice ?? null,
-      stockQty: item.qty,
-      stockStatus: item.status ?? (item.qty > 0 ? StockStatus.IN_STOCK : StockStatus.OUT_OF_STOCK),
-      incomingDate: item.incomingDate ? new Date(item.incomingDate) : null,
+      priceLocked: true,
       categoryId: category.id,
-      brandId,
-      isActive: item.isActive ?? existing?.isActive ?? false,
-      isNew: item.isNew ?? false,
+      ...(has("nameEn") ? { nameEn: item.nameEn ?? null } : {}),
+      ...(has("model") ? { model: item.model ?? null } : {}),
+      ...(has("descriptionKa") ? { descriptionKa: item.descriptionKa ?? null } : {}),
+      ...(has("oldPrice") ? { oldPrice: item.oldPrice ?? null } : {}),
+      ...(has("incomingDate") ? { incomingDate: item.incomingDate ? new Date(item.incomingDate) : null } : {}),
+      ...(has("brandName") ? { brandId } : {}),
+      ...(has("isActive") ? { isActive: item.isActive } : {}),
+      ...(has("isNew") ? { isNew: item.isNew } : {}),
     };
 
     const product = existing
-      ? await db.product.update({ where: { sku: item.sku }, data })
+      ? await db.product.update({ where: { sku: item.sku }, data: common })
       : await db.product.create({
           data: {
-            ...data,
+            ...common,
+            brandId,
+            isActive: item.isActive ?? false,
+            stockQty: item.qty,
+            stockStatus: item.status ?? (item.qty > 0 ? StockStatus.IN_STOCK : StockStatus.OUT_OF_STOCK),
             sku: item.sku,
             slug: `${slugify(item.nameKa)}-${item.sku}`,
           },
         });
+    if (existing && (has("qty") || has("status"))) await writeApiQty(product.id, item.qty, item.status);
 
     // სურათები და მახასიათებლები — გადმოცემისას სრულად ჩანაცვლდება
     if (item.images) {

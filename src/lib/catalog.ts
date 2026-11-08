@@ -1,5 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { db } from "./db";
+import { splitFilter } from "./filter-values";
 import { PAGE_SIZE } from "./constants";
 import { ci } from "./search-mode";
 import { searchTerms } from "./search-terms";
@@ -20,8 +21,10 @@ export type CatalogQuery = {
   attrs: Record<string, string[]>;
 };
 
+/** მისამართის მნიშვნელობა — null-ბაიტი Postgres-ს 500-ით აგდებდა */
+const clean = (s: string) => s.split(String.fromCharCode(0)).join("");
 const asArray = (v: string | string[] | undefined): string[] =>
-  v === undefined ? [] : Array.isArray(v) ? v.flatMap((x) => x.split(",")) : v.split(",");
+  v === undefined ? [] : (Array.isArray(v) ? v : [v]).flatMap((x) => splitFilter(clean(x)));
 
 const num = (v: string | string[] | undefined): number | undefined => {
   const s = Array.isArray(v) ? v[0] : v;
@@ -83,9 +86,10 @@ export function parseQuery(sp: SearchParams, categoryIds: string[]): CatalogQuer
     priceMax: num(sp.max),
     discount: sp.discount === "1",
     isNew: sp.new === "1",
-    q: (Array.isArray(sp.q) ? sp.q[0] : sp.q)?.trim() || undefined,
+    q: clean((Array.isArray(sp.q) ? sp.q[0] : sp.q) ?? "").trim() || undefined,
     sort: (Array.isArray(sp.sort) ? sp.sort[0] : sp.sort) || "default",
-    page: Math.max(1, num(sp.page) ?? 1),
+    // მთელი რიცხვი და გონივრული ზღვარი — 1e18 / 1.5 Prisma-ს skip-ს ტეხდა (500)
+    page: Math.min(10_000, Math.max(1, Math.floor(num(sp.page) ?? 1))),
     attrs,
   };
 }

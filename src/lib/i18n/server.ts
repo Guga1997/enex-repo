@@ -30,6 +30,14 @@ export function titleMeta(title: string) {
   return async (): Promise<{ title: string }> => ({ title: (await getT())(title) });
 }
 
+/** პირადი გვერდი (კალათა, შესვლა, შეკვეთა…) — სათაური + ინდექსში არ ხვდება, ყველა ენაზე */
+export function privateMeta(title: string) {
+  return async (): Promise<{ title: string; robots: { index: false; follow: false } }> => ({
+    title: (await getT())(title),
+    robots: { index: false, follow: false },
+  });
+}
+
 /** ენაც და მთარგმნელიც ერთად, როცა ორივე სჭირდება */
 export async function getI18n(): Promise<{ locale: Locale; t: T }> {
   const locale = await getLocale();

@@ -1,12 +1,12 @@
 import Link from "@/components/Link";
-import { getT, titleMeta } from "@/lib/i18n/server";
+import { getT, privateMeta } from "@/lib/i18n/server";
 import { redirect } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ForgotForm from "@/components/ForgotForm";
 import { getCurrentUser } from "@/lib/customer-auth";
 
-export const generateMetadata = titleMeta("პაროლის აღდგენა");
+export const generateMetadata = privateMeta("პაროლის აღდგენა");
 
 export default async function ForgotPage() {
   if (await getCurrentUser()) redirect("/account");

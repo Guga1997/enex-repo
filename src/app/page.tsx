@@ -11,6 +11,7 @@ import { cablesSegment } from "@/lib/cables";
 import { segmentTheme } from "@/lib/segment-theme";
 import { JsonLd, organizationJsonLd, websiteJsonLd } from "@/lib/seo";
 import { productCardSelect } from "@/lib/catalog";
+import { getCurrentUser } from "@/lib/customer-auth";
 import { getI18n } from "@/lib/i18n/server";
 import { nameOf } from "@/lib/i18n/content";
 import type { T } from "@/lib/i18n/dict";
@@ -27,6 +28,8 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function HomePage() {
   const { locale, t } = await getI18n();
+  // დილერი მთავარ გვერდზეც თავის ფასს ხედავს — ისევე, როგორც კატალოგსა და პროდუქტის გვერდზე
+  const viewer = await getCurrentUser();
   const [banners, rootCats, discounted, tree] = await Promise.all([
     db.banner.findMany({
       where: { isActive: true },
@@ -38,7 +41,7 @@ export default async function HomePage() {
       orderBy: { sortOrder: "asc" },
     }),
     db.product.findMany({
-      where: { isActive: true, oldPrice: { not: null } },
+      where: { isActive: true, price: { gt: 0 }, oldPrice: { not: null } },
       select: productCardSelect,
       orderBy: { updatedAt: "desc" },
       take: 8,
@@ -75,9 +78,9 @@ export default async function HomePage() {
           <HeroSlider slides={slides} />
         ) : (
         <section className="mb-10 overflow-hidden rounded-2xl bg-gradient-to-br from-brand-700 to-brand-500 px-8 py-14 text-white">
-          <h1 className="max-w-2xl text-3xl font-bold leading-tight sm:text-4xl">
+          <p className="max-w-2xl text-3xl font-bold leading-tight sm:text-4xl">
             {t("პროფესიონალური აღჭურვილობა — ერთ ადგილას")}
-          </h1>
+          </p>
           <p className="mt-3 max-w-xl text-brand-100">
             {t("ვიდეო-მეთვალყურეობა, ქსელური მოწყობილობები, ენერგო უზრუნველყოფა. ოფიციალური გარანტია და მიწოდება საქართველოს მასშტაბით.")}
           </p>
@@ -118,7 +121,7 @@ export default async function HomePage() {
           </section>
         )}
 
-        <ProductRow t={t} title={t("ფასდაკლებები")} href="/sale" products={discounted} />
+        <ProductRow t={t} title={t("ფასდაკლებები")} href="/sale" products={discounted} viewer={viewer} />
 
         {/* რა საიტია — ადამიანისთვისაც და საძიებო სისტემისთვისაც; სახელი საკურიერო კომპანიას ჰგავს */}
         <section className="mt-12 rounded-2xl border border-line bg-surface p-6 sm:p-8">
@@ -143,7 +146,9 @@ function ProductRow({
   title,
   href,
   products,
+  viewer,
 }: {
+  viewer: React.ComponentProps<typeof ProductCard>["viewer"];
   t: T;
   title: string;
   href: string;
@@ -160,7 +165,7 @@ function ProductRow({
       </div>
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
         {products.map((p) => (
-          <ProductCard key={p.id} p={p} />
+          <ProductCard key={p.id} p={p} viewer={viewer} />
         ))}
       </div>
     </section>

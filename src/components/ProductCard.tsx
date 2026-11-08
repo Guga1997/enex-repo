@@ -50,7 +50,8 @@ export default async function ProductCard({ p, viewer }: { p: CardProduct; viewe
   // ბეჯი ეყრდნობა ან ძველ ფასს, ან მომხმარებლის დონეს
   const listDiscount =
     p.oldPrice && p.oldPrice > p.price ? Math.round((1 - p.price / p.oldPrice) * 100) : null;
-  const discount = listDiscount ?? (price.saved > 0 ? Math.round(price.savedPercent) : null);
+  // იგივე წესი, რაც პროდუქტის გვერდზე: პარტნიორის ფასი პირველია, მერე აქციის ძველი ფასი
+  const discount = price.saved > 0 ? Math.round(price.savedPercent) : listDiscount;
 
   return (
     <Link

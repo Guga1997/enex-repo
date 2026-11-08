@@ -2,10 +2,12 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { useT } from "@/components/LocaleProvider";
+import { useLocale, useT } from "@/components/LocaleProvider";
+import { withLocale } from "@/lib/i18n/config";
 
 export default function SearchBox() {
   const t = useT();
+  const locale = useLocale();
   const router = useRouter();
   const sp = useSearchParams();
   const [q, setQ] = useState(sp.get("q") ?? "");
@@ -14,7 +16,7 @@ export default function SearchBox() {
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        router.push(q.trim() ? `/catalog?q=${encodeURIComponent(q.trim())}` : "/catalog");
+        router.push(withLocale(q.trim() ? `/catalog?q=${encodeURIComponent(q.trim())}` : "/catalog", locale));
       }}
       className="relative"
     >
@@ -22,6 +24,8 @@ export default function SearchBox() {
         value={q}
         onChange={(e) => setQ(e.target.value)}
         placeholder={t("ძებნა დასახელებით, მოდელით ან კოდით...")}
+        aria-label={t("ძებნა")}
+        type="search"
         className="w-full rounded-lg border border-line bg-canvas py-2.5 pl-4 pr-11 text-sm outline-none focus:border-brand-500 focus:bg-surface"
       />
       <button

@@ -65,13 +65,19 @@ export const DELIVERY_METHOD_LABELS: Record<string, string> = {
  * ონლაინ გადახდა წუთებში სრულდება; გადარიცხვას ბანკის ერთი-ორი დღე სჭირდება.
  */
 export const RESERVATION_MINUTES: Record<string, number> = {
-  BOG: 15,
-  TBC: 15,
-  BANK_TRANSFER: 48 * 60,
-  POS: 48 * 60,
-  INSTALLMENT: 48 * 60,
-  DEFAULT: 15,
+  // ბანკის გვერდი PAYMENT_TTL_MINUTES-ში იხურება; რეზერვაცია 5 წუთით მეტხანს ძლებს,
+  // რომ ბოლო წამს გადახდილის callback ნაშთს უკვე გათავისუფლებულს არ დაუხვდეს
+  BOG: 20,
+  TBC: 20,
+  // ინვოისზე გადახდის ვადა ამას ემთხვევა (3 დღე)
+  BANK_TRANSFER: 72 * 60,
+  POS: 72 * 60,
+  INSTALLMENT: 72 * 60,
+  DEFAULT: 20,
 };
+
+/** რამდენ წუთს რჩება ბანკის გადახდის გვერდი ღია */
+export const PAYMENT_TTL_MINUTES = 15;
 
 export const PAGE_SIZE = 24;
 export const DELIVERY_FEE_TBILISI = 0;

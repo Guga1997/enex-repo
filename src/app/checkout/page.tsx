@@ -5,17 +5,21 @@ import Footer from "@/components/Footer";
 import CheckoutForm from "@/components/CheckoutForm";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/customer-auth";
-import { getT, titleMeta } from "@/lib/i18n/server";
+import { getLocale, getT, privateMeta } from "@/lib/i18n/server";
+import { withLocale } from "@/lib/i18n/config";
 import { canPayWithTbc } from "@/lib/payments/flitt";
 
 export const dynamic = "force-dynamic";
-export const generateMetadata = titleMeta("შეკვეთის გაფორმება");
+export const generateMetadata = privateMeta("შეკვეთის გაფორმება");
 
 export default async function CheckoutPage() {
   const t = await getT();
   const user = await getCurrentUser();
   // შეკვეთა მხოლოდ ანგარიშით. კალათა localStorage-შია — შესვლის შემდეგ აქვე დაბრუნდება.
-  if (!user) redirect("/login?next=/checkout");
+  if (!user) {
+    const loc = await getLocale();
+    redirect(withLocale(`/login?next=${encodeURIComponent(withLocale("/checkout", loc))}`, loc));
+  }
 
   // შესულ მომხმარებელს ველები წინასწარ ევსება და ორგანიზაციას ირჩევს
   const organizations = user

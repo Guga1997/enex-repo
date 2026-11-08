@@ -2,6 +2,7 @@ import { LOCALES, withLocale, type Locale } from "./i18n/config";
 import { translate } from "./i18n/dict";
 import { descriptionOf, nameOf } from "./i18n/content";
 import { translateAttr } from "./i18n/attributes";
+import { isPurchasable } from "./stock";
 /**
  * SEO-ს საერთო ნაწილი: საიტის მისამართი, სტრუქტურირებული მონაცემები (JSON-LD),
  * აღწერის ავტომატური აწყობა იქ, სადაც ხელით არავის დაუწერია.
@@ -44,6 +45,9 @@ type ProductForSeo = {
   descriptionRu?: string | null;
   price: number;
   stockStatus: string;
+  stockQty?: number;
+  reservedQty?: number;
+  minQty?: number;
   slug: string;
   brand: { name: string } | null;
   category: { nameKa: string; slug: string; parent: { nameKa: string; slug: string } | null };
@@ -85,19 +89,28 @@ export function productJsonLd(p: ProductForSeo, locale: Locale = "ka") {
     ...(realBrand(p.brand) ? { brand: { "@type": "Brand", name: realBrand(p.brand) } } : {}),
     description: productDescription(p, locale),
     image: p.images.map((i) => abs(i.url)),
-    url: abs(`/product/${p.slug}`),
-    offers: {
-      "@type": "Offer",
-      priceCurrency: "GEL",
-      price: p.price.toFixed(2),
-      availability: AVAILABILITY[p.stockStatus] ?? AVAILABILITY.OUT_OF_STOCK,
-      url: abs(`/product/${p.slug}`),
-      seller: { "@type": "Organization", name: SITE_NAME },
-    },
+    url: abs(withLocale(`/product/${p.slug}`, locale)),
+    // ფასის გარეშე („ფასი მოთხოვნით“) Google-ს 0 ₾ არ უნდა მივაწოდოთ — offer საერთოდ არ იწერება
+    ...(p.price > 0
+      ? {
+          offers: {
+            "@type": "Offer",
+            priceCurrency: "GEL",
+            price: p.price.toFixed(2),
+            // ყველაფერი დაკავებულია → გვერდზე „არ გვაქვს“ ჩანს, Google-საც იგივე
+            availability:
+              p.stockStatus === "IN_STOCK" && p.stockQty !== undefined && !isPurchasable({ ...p, stockQty: p.stockQty })
+                ? AVAILABILITY.OUT_OF_STOCK
+                : AVAILABILITY[p.stockStatus] ?? AVAILABILITY.OUT_OF_STOCK,
+            url: abs(withLocale(`/product/${p.slug}`, locale)),
+            seller: { "@type": "Organization", name: SITE_NAME },
+          },
+        }
+      : {}),
   };
 }
 
-export function breadcrumbJsonLd(items: { name: string; path: string }[]) {
+export function breadcrumbJsonLd(items: { name: string; path: string }[], locale: Locale = "ka") {
   return {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -105,7 +118,7 @@ export function breadcrumbJsonLd(items: { name: string; path: string }[]) {
       "@type": "ListItem",
       position: i + 1,
       name: it.name,
-      item: abs(it.path),
+      item: abs(withLocale(it.path, locale)),
     })),
   };
 }
@@ -129,7 +142,8 @@ export function organizationJsonLd() {
     image: abs("/brand/og.png"),
     areaServed: { "@type": "Country", name: "Georgia" },
     currenciesAccepted: "GEL",
-    paymentAccepted: "Bank card, Bank transfer, Cash on pickup",
+    // ნაღდს არ ვიღებთ — გადახდის გვერდიც ამას წერს (ბარათი, გადარიცხვა, POS ტერმინალი)
+    paymentAccepted: "Bank card, Bank transfer, POS terminal",
     knowsAbout: ["ვიდეო-მეთვალყურეობა", "IP კამერები", "ქსელური მოწყობილობები", "UPS", "მზის ინვერტორები", "სახანძრო სიგნალიზაცია", "დაშვების კონტროლი"],
     ...(CONTACT.phone ? { telephone: CONTACT.phone } : {}),
     email: CONTACT.email,
@@ -170,6 +184,10 @@ export function JsonLd({ data }: { data: unknown }) {
 export function alts(path: string, locale: Locale) {
   return {
     canonical: withLocale(path, locale),
-    languages: Object.fromEntries(LOCALES.map((l) => [l, withLocale(path, l)])),
+    languages: {
+      ...Object.fromEntries(LOCALES.map((l) => [l, withLocale(path, l)])),
+      // ენის შესაბამისი ვერსია რომ არ ჰქონდეს — ქართული
+      "x-default": path,
+    },
   };
 }

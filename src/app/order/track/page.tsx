@@ -1,11 +1,15 @@
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { db } from "@/lib/db";
+import { grantOrderAccess } from "@/lib/order-access";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
+import { getLocale } from "@/lib/i18n/server";
+import { withLocale } from "@/lib/i18n/config";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { getT, titleMeta } from "@/lib/i18n/server";
+import { getT, privateMeta } from "@/lib/i18n/server";
 
-export const generateMetadata = titleMeta("შეკვეთის მოძებნა");
+export const generateMetadata = privateMeta("შეკვეთის მოძებნა");
 
 export default async function TrackPage({
   searchParams,
@@ -17,15 +21,21 @@ export default async function TrackPage({
 
   async function find(formData: FormData) {
     "use server";
-    const number = String(formData.get("number") ?? "").trim();
+    const number = String(formData.get("number") ?? "").trim().toUpperCase();
     const email = String(formData.get("email") ?? "").trim().toLowerCase();
+    const loc = await getLocale();
+
+    // ნომრები თანმიმდევრულია — ელფოსტის გამოცნობა ლიმიტით
+    const limited = !rateLimit(`track:${await clientIp()}`, 10, 15 * 60_000).ok;
+    if (limited) redirect(withLocale("/order/track?error=limit", loc));
 
     const order = await db.order.findUnique({ where: { number } });
     // ორივე უნდა დაემთხვეს — მხოლოდ ნომრით სხვისი შეკვეთა არ უნდა გაიხსნას
     if (!order || order.customerEmail.toLowerCase() !== email) {
-      redirect("/order/track?error=1");
+      redirect(withLocale("/order/track?error=1", loc));
     }
-    redirect(`/order/${order.id}`);
+    await grantOrderAccess(order.id);
+    redirect(withLocale(`/order/${order.id}`, loc));
   }
 
   return (
@@ -61,7 +71,9 @@ export default async function TrackPage({
 
           {error && (
             <p className="rounded-lg bg-rose-50 p-3 text-sm text-rose-700">
-              {t("შეკვეთა ვერ მოიძებნა. შეამოწმეთ ნომერი და ელფოსტა.")}
+              {error === "limit"
+                ? t("ძალიან ბევრი მცდელობა — სცადე 15 წუთში.")
+                : t("შეკვეთა ვერ მოიძებნა. შეამოწმეთ ნომერი და ელფოსტა.")}
             </p>
           )}
 

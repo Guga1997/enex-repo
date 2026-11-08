@@ -1,11 +1,12 @@
 import { redirect } from "next/navigation";
-import { titleMeta } from "@/lib/i18n/server";
+import { safePath } from "@/lib/safe-path";
+import { privateMeta } from "@/lib/i18n/server";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import RegisterForm from "@/components/RegisterForm";
 import { getCurrentUser } from "@/lib/customer-auth";
 
-export const generateMetadata = titleMeta("რეგისტრაცია");
+export const generateMetadata = privateMeta("რეგისტრაცია");
 
 export default async function RegisterPage({
   searchParams,
@@ -13,7 +14,7 @@ export default async function RegisterPage({
   searchParams: Promise<{ next?: string }>;
 }) {
   const { next } = await searchParams;
-  if (await getCurrentUser()) redirect(next?.startsWith("/") ? next : "/account");
+  if (await getCurrentUser()) redirect(safePath(next, "/account"));
 
   return (
     <>

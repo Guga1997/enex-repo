@@ -21,10 +21,11 @@ export default async function AccountButton() {
       href="/account"
       className="flex items-center gap-2 rounded-lg px-2 py-2 hover:bg-canvas sm:px-3"
       title={user.name}
+      aria-label={t("ჩემი ანგარიში")}
     >
       <span className="hidden sm:inline">{short}</span>
       {/* ტელეფონზე ჰედერში ადგილი არ არის — მხოლოდ ხატულა */}
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" className="size-5 sm:hidden" aria-label={t("ჩემი ანგარიში")}>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" className="size-5 sm:hidden" aria-hidden>
         <circle cx="12" cy="8" r="4" />
         <path d="M4.5 20.5c1.2-3.6 4-5.5 7.5-5.5s6.3 1.9 7.5 5.5" />
       </svg>

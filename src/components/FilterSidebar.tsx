@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { joinFilter, splitFilter } from "@/lib/filter-values";
 import { useState, useTransition } from "react";
 import { STOCK_LABELS } from "@/lib/constants";
 import { attrKey, type Facets } from "@/lib/catalog";
@@ -25,7 +26,7 @@ export default function FilterSidebar({
   const [min, setMin] = useState(sp.get("min") ?? "");
   const [max, setMax] = useState(sp.get("max") ?? "");
 
-  const selected = (key: string) => (sp.get(key) ?? "").split(",").filter(Boolean);
+  const selected = (key: string) => splitFilter(sp.get(key));
 
   function push(next: URLSearchParams) {
     next.delete("page"); // ფილტრის ცვლილებაზე ყოველთვის პირველ გვერდზე
@@ -39,7 +40,7 @@ export default function FilterSidebar({
     const cur = selected(key);
     const allOn = values.every((v) => cur.includes(v));
     const updated = allOn ? cur.filter((v) => !values.includes(v)) : [...new Set([...cur, ...values])];
-    if (updated.length) next.set(key, updated.join(","));
+    if (updated.length) next.set(key, joinFilter(updated));
     else next.delete(key);
     push(next);
   }
@@ -48,7 +49,7 @@ export default function FilterSidebar({
     const next = new URLSearchParams(sp.toString());
     const cur = selected(key);
     const updated = cur.includes(value) ? cur.filter((v) => v !== value) : [...cur, value];
-    if (updated.length) next.set(key, updated.join(","));
+    if (updated.length) next.set(key, joinFilter(updated));
     else next.delete(key);
     push(next);
   }

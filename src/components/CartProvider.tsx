@@ -26,6 +26,8 @@ type CartCtx = {
   setQty: (productId: string, qty: number) => void;
   remove: (productId: string) => void;
   clear: () => void;
+  /** ბანკზე წასვლისას შენახული კალათის დაბრუნება — გადახდა თუ ჩავარდა */
+  restore: (lines: CartLine[]) => void;
   ready: boolean;
 };
 
@@ -81,6 +83,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         ),
       remove: (productId) => setLines((prev) => prev.filter((l) => l.productId !== productId)),
       clear: () => setLines([]),
+      restore: (saved) => setLines((prev) => (prev.length ? prev : saved)),
     };
   }, [lines, ready]);
 
@@ -92,3 +95,6 @@ export function useCart() {
   if (!ctx) throw new Error("useCart უნდა გამოიყენებოდეს CartProvider-ის შიგნით");
   return ctx;
 }
+
+/** ბანკზე გადასვლისას კალათა აქ ინახება — წარმატებაზე იშლება, ჩავარდნაზე ბრუნდება */
+export const PENDING_CART_KEY = "cart_pending_v1";

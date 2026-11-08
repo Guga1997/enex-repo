@@ -14,11 +14,18 @@ type Entry = { path: string; changeFrequency: MetadataRoute.Sitemap[number]["cha
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [categories, products] = await Promise.all([
-    db.category.findMany({ where: { isActive: true }, select: { slug: true, parentId: true } }),
-    db.product.findMany({ where: { isActive: true }, select: { slug: true, updatedAt: true } }),
+    // მშობელი გამორთულია — ქვეკატეგორიაც და მისი პროდუქტებიც 404-ზე მიდის
+    db.category.findMany({
+      where: { isActive: true, OR: [{ parentId: null }, { parent: { isActive: true } }] },
+      select: { slug: true, parentId: true },
+    }),
+    db.product.findMany({
+      where: { isActive: true, category: { isActive: true } },
+      select: { slug: true, updatedAt: true },
+    }),
   ]);
 
-  const statics = ["about", "delivery", "payment", "warranty", "returns", "privacy"];
+  const statics = ["about", "delivery", "payment", "warranty", "returns", "privacy", "terms"];
 
   const entries: Entry[] = [
     { path: "/", changeFrequency: "daily", priority: 1 },
@@ -41,7 +48,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   return entries.flatMap((e) => {
-    const languages = Object.fromEntries(LOCALES.map((l) => [l, SITE_URL + withLocale(e.path, l)]));
+    const languages = {
+      ...Object.fromEntries(LOCALES.map((l) => [l, SITE_URL + withLocale(e.path, l)])),
+      "x-default": SITE_URL + e.path,
+    };
     return LOCALES.map((l) => ({
       url: SITE_URL + withLocale(e.path, l),
       lastModified: e.lastModified,

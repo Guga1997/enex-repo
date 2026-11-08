@@ -85,6 +85,7 @@ export const genericRest: SupplierAdapter = {
     const map: FieldMap = cfg.fieldMap ? (JSON.parse(cfg.fieldMap) as FieldMap) : {};
 
     const res = await fetch(requestUrl(cfg), {
+      signal: AbortSignal.timeout(60_000),
       headers: { Accept: "application/json", ...authHeaders(cfg) },
       cache: "no-store",
     });
@@ -122,7 +123,8 @@ export const genericRest: SupplierAdapter = {
       // „ხელმისაწვდომია: არა“ ნაშთის ციფრზე მაღლა დგას — კომპანიამ იცის, რატომ დაბლოკა
       const availKey = s(map, "available", "");
       const blocked = availKey ? pick(raw, availKey) === false : false;
-      const qty = blocked ? 0 : (numOrNull(pick(raw, s(map, "qty", "qty"))) ?? 0);
+      // უარყოფითი ან წილადი ნაშთი ჩვენს მარაგს გამოაკლებდა / Int-ში ვერ ჩაიწერებოდა
+      const qty = blocked ? 0 : Math.max(0, Math.floor(numOrNull(pick(raw, s(map, "qty", "qty"))) ?? 0));
 
       items.push({
         supplierSku: sku,

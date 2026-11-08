@@ -29,6 +29,7 @@ export default async function Footer() {
             <li><Link href="/order/track" className="hover:text-brand-600">{t("შეკვეთის სტატუსი")}</Link></li>
             <li><Link href="/page/returns" className="hover:text-brand-600">{t("დაბრუნების პოლიტიკა")}</Link></li>
             <li><Link href="/page/privacy" className="hover:text-brand-600">{t("კონფიდენციალურობა")}</Link></li>
+            <li><Link href="/page/terms" className="hover:text-brand-600">{t("წესები და პირობები")}</Link></li>
           </ul>
         </div>
         <div>

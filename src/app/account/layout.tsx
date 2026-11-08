@@ -4,7 +4,8 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { getCurrentUser } from "@/lib/customer-auth";
 import { logoutAction } from "@/app/actions/customer";
-import { getT } from "@/lib/i18n/server";
+import { getLocale, getT } from "@/lib/i18n/server";
+import { withLocale } from "@/lib/i18n/config";
 
 const LINKS: { href: string; label: string }[] = [
   { href: "/account/orders?tab=current", label: "მიმდინარე შეკვეთები" },
@@ -21,7 +22,10 @@ const LINKS: { href: string; label: string }[] = [
 export default async function AccountLayout({ children }: { children: React.ReactNode }) {
   const t = await getT();
   const user = await getCurrentUser();
-  if (!user) redirect("/login?next=/account");
+  if (!user) {
+    const loc = await getLocale();
+    redirect(withLocale(`/login?next=${encodeURIComponent(withLocale("/account", loc))}`, loc));
+  }
 
   return (
     <>

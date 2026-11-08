@@ -3,14 +3,15 @@ import { db } from "@/lib/db";
 import { gel } from "@/lib/format";
 import { markOrderFailed, markOrderPaid } from "@/lib/orders";
 import { isMockMode } from "@/lib/payments/bog";
-import { getT, titleMeta } from "@/lib/i18n/server";
+import { getLocale, getT, privateMeta } from "@/lib/i18n/server";
+import { withLocale } from "@/lib/i18n/config";
 
 /**
  * სატესტო "ბანკის გვერდი". მუშაობს მხოლოდ PAYMENT_MOCK რეჟიმში —
  * BOG-ის გასაღებების ჩაწერისთანავე ავტომატურად ითიშება.
  */
 export const dynamic = "force-dynamic";
-export const generateMetadata = titleMeta("გადახდა (სატესტო რეჟიმი)");
+export const generateMetadata = privateMeta("გადახდა (სატესტო რეჟიმი)");
 
 export default async function MockPaymentPage({
   searchParams,
@@ -29,14 +30,18 @@ export default async function MockPaymentPage({
 
   async function pay() {
     "use server";
+    // server action-ს გვერდის გარეშეც იძახებენ — რეჟიმი და შეკვეთა აქაც მოწმდება
+    const o = await db.order.findUnique({ where: { id: orderId! } });
+    if (!isMockMode() || !o || o.paymentMethod !== "BOG" || o.paymentStatus === "PAID") notFound();
     await markOrderPaid(orderId!);
-    redirect(`/order/${orderId}?paid=1`);
+    redirect(withLocale(`/order/${orderId}?paid=1`, await getLocale()));
   }
 
   async function fail() {
     "use server";
+    if (!isMockMode()) notFound();
     await markOrderFailed(orderId!);
-    redirect(`/order/${orderId}?failed=1`);
+    redirect(withLocale(`/order/${orderId}?failed=1`, await getLocale()));
   }
 
   return (

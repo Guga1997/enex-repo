@@ -3,10 +3,11 @@
 import Link from "@/components/Link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useCart } from "./CartProvider";
+import { PENDING_CART_KEY, useCart } from "./CartProvider";
 import { gel } from "@/lib/format";
 import { FREE_DELIVERY_FROM, PAYMENT_METHOD_LABELS } from "@/lib/constants";
-import { useT } from "@/components/LocaleProvider";
+import { useLocale, useT } from "@/components/LocaleProvider";
+import { withLocale } from "@/lib/i18n/config";
 
 const CITIES = ["თბილისი", "ბათუმი", "ქუთაისი", "რუსთავი", "გორი", "ზუგდიდი", "თელავი", "სხვა"];
 
@@ -50,6 +51,7 @@ export default function CheckoutForm({
   tbcEnabled?: boolean;
 }) {
   const t = useT();
+  const locale = useLocale();
   const { lines, subtotal, clear, ready } = useCart();
   const router = useRouter();
 
@@ -133,7 +135,7 @@ export default function CheckoutForm({
 
       if (!res.ok) {
         if (res.status === 401 && data.requireLogin) {
-          router.push("/login?next=/checkout");
+          router.push(withLocale(`/login?next=${encodeURIComponent(withLocale("/checkout", locale))}`, locale));
           return;
         }
         setError(t(data.error ?? "შეკვეთის გაფორმება ვერ მოხერხდა"));
@@ -141,9 +143,15 @@ export default function CheckoutForm({
         return;
       }
 
+      // ბანკზე გადასვლისას კალათა ინახება — გადახდა თუ ჩავარდა ან ვადა გავიდა, შეკვეთის გვერდი მას დააბრუნებს
+      try {
+        localStorage.setItem(PENDING_CART_KEY, JSON.stringify({ orderId: data.orderId, lines }));
+      } catch {
+        /* localStorage მიუწვდომელია */
+      }
       clear();
       if (data.redirectUrl.startsWith("http")) window.location.href = data.redirectUrl;
-      else router.push(data.redirectUrl);
+      else router.push(withLocale(data.redirectUrl, locale));
     } catch {
       setError(t("კავშირის შეცდომა. სცადეთ თავიდან."));
       setBusy(false);
@@ -339,10 +347,23 @@ export default function CheckoutForm({
           <p className="mt-4 rounded-lg bg-rose-50 p-3 text-sm text-rose-700">{error}</p>
         )}
 
+        {/* დისტანციური ვაჭრობა: პირობები შეკვეთამდე უნდა ჰქონდეს გაცნობილი — ბანკებიც ამას ითხოვენ */}
+        <label className="mt-4 flex items-start gap-2 text-xs leading-5 text-muted">
+          <input type="checkbox" name="acceptTerms" required className="mt-1 size-4 shrink-0 accent-brand-500" />
+          <span>
+            {t("ვეთანხმები")}{" "}
+            <Link href="/page/terms" target="_blank" className="font-medium text-brand-600 hover:underline">{t("წესებს და პირობებს")}</Link>
+            {", "}
+            <Link href="/page/returns" target="_blank" className="font-medium text-brand-600 hover:underline">{t("დაბრუნების პოლიტიკას")}</Link>
+            {" "}{t("და")}{" "}
+            <Link href="/page/privacy" target="_blank" className="font-medium text-brand-600 hover:underline">{t("კონფიდენციალურობის პოლიტიკას")}</Link>
+          </span>
+        </label>
+
         <button
           type="submit"
           disabled={busy}
-          className="btn btn-primary mt-5 w-full hover:bg-brand-600 disabled:opacity-60"
+          className="btn btn-primary mt-4 w-full hover:bg-brand-600 disabled:opacity-60"
         >
           {busy ? t("მუშავდება...") : paymentMethod === "BOG" || paymentMethod === "TBC" ? t("გადახდაზე გადასვლა") : t("შეკვეთის დადასტურება")}
         </button>

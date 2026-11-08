@@ -18,6 +18,9 @@ export const isLocale = (v: string): v is Locale => (LOCALES as readonly string[
 export function withLocale(path: string, locale: Locale): string {
   if (locale === DEFAULT_LOCALE) return path;
   if (!path.startsWith("/")) return path; // გარე ბმული ან #ღუზა
+  // უკვე აქვს პრეფიქსი (მაგ. ?next=/en/checkout) — ორჯერ არ ვადებთ
+  const seg = path.split(/[/?#]/)[1] ?? "";
+  if (isLocale(seg) && seg !== DEFAULT_LOCALE) return path;
   return path === "/" ? `/${locale}` : `/${locale}${path}`;
 }
 

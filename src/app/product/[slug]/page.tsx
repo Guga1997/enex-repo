@@ -4,7 +4,8 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { db } from "@/lib/db";
-import { JsonLd, breadcrumbJsonLd, productDescription, productJsonLd, realBrand, alts } from "@/lib/seo";
+import { returnNote } from "@/lib/return-terms";
+import { CONTACT, JsonLd, breadcrumbJsonLd, productDescription, productJsonLd, realBrand, alts } from "@/lib/seo";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
@@ -82,15 +83,21 @@ export default async function ProductPage({ params }: Props) {
       attributes: { orderBy: { sortOrder: "asc" } },
       documents: { orderBy: { sortOrder: "asc" } },
       brand: true,
-      category: { include: { parent: true } },
+      category: { include: { parent: { include: { parent: true } } } },
     },
   });
   if (!p || !p.isActive) notFound();
+  const returns = returnNote({
+    ...p,
+    categoryNames: [p.category.nameKa, p.category.parent?.nameKa, p.category.parent?.parent?.nameKa].filter(
+      (n): n is string => Boolean(n)
+    ),
+  });
   const name = nameOf(p, locale);
   const description = descriptionOf(p, locale);
 
   const related = await db.product.findMany({
-    where: { categoryId: p.categoryId, isActive: true, id: { not: p.id } },
+    where: { categoryId: p.categoryId, isActive: true, price: { gt: 0 }, id: { not: p.id } },
     select: productCardSelect,
     take: 4,
   });
@@ -104,7 +111,9 @@ export default async function ProductPage({ params }: Props) {
     : false;
 
   const stock = stockLabel(p, t);
-  const canBuy = isPurchasable(p);
+  // ფასის გარეშე პოზიცია (მიმწოდებელი ფასს არ აწვდის) — „ფასი მოთხოვნით“, ონლაინ არ იყიდება
+  const onRequest = !(p.price > 0);
+  const canBuy = !onRequest && isPurchasable(p);
   const discount =
     p.oldPrice && p.oldPrice > p.price ? Math.round((1 - p.price / p.oldPrice) * 100) : null;
 
@@ -118,7 +127,7 @@ export default async function ProductPage({ params }: Props) {
   return (
     <>
       <JsonLd data={productJsonLd(p, locale)} />
-      <JsonLd data={breadcrumbJsonLd(crumbs)} />
+      <JsonLd data={breadcrumbJsonLd(crumbs, locale)} />
       <Suspense>
         <Header />
       </Suspense>
@@ -185,7 +194,27 @@ export default async function ProductPage({ params }: Props) {
             )}
 
             <div className="card mt-6 p-5">
-              {price.saved > 0 ? (
+              {onRequest ? (
+                <div>
+                  <div className="text-2xl font-bold">{t("ფასი მოთხოვნით")}</div>
+                  <p className="mt-1 text-sm text-muted">
+                    {t("ფასს და მიწოდების ვადას გეტყვით — დაგვირეკეთ ან მოგვწერეთ.")}
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2 text-sm">
+                    {CONTACT.phone && (
+                      <a href={`tel:${CONTACT.phone.replace(/\s+/g, "")}`} className="btn btn-primary px-4 py-2">
+                        {CONTACT.phone}
+                      </a>
+                    )}
+                    <a
+                      href={`mailto:${CONTACT.email}?subject=${encodeURIComponent(`${p.sku} — ${p.model ?? p.nameKa}`)}`}
+                      className="btn btn-outline px-4 py-2"
+                    >
+                      {CONTACT.email}
+                    </a>
+                  </div>
+                </div>
+              ) : price.saved > 0 ? (
                 <div className="space-y-1">
                   <div className="flex items-baseline gap-3">
                     <span className="text-sm text-muted">
@@ -217,7 +246,7 @@ export default async function ProductPage({ params }: Props) {
                 </div>
               )}
 
-              {!viewer && (
+              {!viewer && !onRequest && (
                 <p className="mt-2 text-sm text-muted">
                   <Link href="/register" className="font-medium text-brand-600 hover:underline">
                     {t("დარეგისტრირდი")}
@@ -234,7 +263,7 @@ export default async function ProductPage({ params }: Props) {
                 <FavoriteButton productId={p.id} initial={isFavorite} signedIn={Boolean(viewer)} />
               </div>
 
-              <div className="mt-3">
+              {!onRequest && <div className="mt-3">
                 <AddToCart
                   withQty
                   disabled={!canBuy}
@@ -251,13 +280,24 @@ export default async function ProductPage({ params }: Props) {
                     maxQty: p.stockStatus === StockStatus.IN_STOCK ? availableQty(p) : 0,
                   }}
                 />
-              </div>
+              </div>}
 
               <ul className="mt-5 space-y-2 border-t border-line pt-4 text-sm text-muted">
                 <li>{t("✓ ოფიციალური გარანტია")}</li>
                 <li>{t("✓ მიწოდება საქართველოს მასშტაბით")}</li>
                 <li>{t("✓ გადახდა ბარათით ან განვადებით")}</li>
               </ul>
+              {(returns.restricted || returns.bulky) && (
+                <div className="mt-3 space-y-1 rounded-lg bg-amber-50 p-3 text-xs text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">
+                  {returns.restricted && (
+                    <p>{t("14-დღიანი დაბრუნება არ ვრცელდება: {0}.", t(returns.restricted))}</p>
+                  )}
+                  {returns.bulky && (
+                    <p>{t("დიდი გაბარიტის ნივთი — დაბრუნებისას ტრანსპორტირება მყიდველის ხარჯზეა; გატანის ღირებულებას შეკვეთამდე გეტყვით.")}</p>
+                  )}
+                  <Link href="/page/returns" className="font-medium underline">{t("დაბრუნების პოლიტიკა")}</Link>
+                </div>
+              )}
             </div>
           </div>
         </div>

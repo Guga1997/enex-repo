@@ -84,7 +84,7 @@ export async function setStaffPassword(formData: FormData) {
   if (!id) return back("role");
   if (password.length < 10) return back("short");
 
-  await db.admin.update({ where: { id }, data: { passwordHash: await bcrypt.hash(password, 10) } });
+  await db.admin.update({ where: { id }, data: { passwordHash: await bcrypt.hash(password, 10), passwordChangedAt: new Date() } });
   return back(undefined, "password");
 }
 

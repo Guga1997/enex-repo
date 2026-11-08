@@ -184,7 +184,8 @@ const ALWAYS = ["/admin/login", "/admin/account"];
 const under = (path: string, prefix: string) => path === prefix || path.startsWith(prefix + "/");
 
 function navFor(role: string): string[] {
-  return NAV_BY_ROLE[(role as Role) in NAV_BY_ROLE ? (role as Role) : "ADMIN"];
+  // უცნობი როლი — არაფერი (ადრე ადმინად ითვლებოდა: როლის გარეშე ტოკენი ყველაფერს ხსნიდა)
+  return (role as Role) in NAV_BY_ROLE ? NAV_BY_ROLE[role as Role] : [];
 }
 
 /** მენიუს პუნქტი უჩანს თუ არა */

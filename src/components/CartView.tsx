@@ -7,10 +7,33 @@ import { gel } from "@/lib/format";
 import { normalizeQty } from "@/lib/stock";
 import { FREE_DELIVERY_FROM } from "@/lib/constants";
 import { useT } from "@/components/LocaleProvider";
+import { useEffect, useState } from "react";
+
+type QuoteLine = { productId: string; name: string; unitPrice: number; purchasable: boolean; overStock: number | null };
+type Quote = { lines: QuoteLine[]; subtotal: number };
 
 export default function CartView() {
   const t = useT();
-  const { lines, subtotal, setQty, remove, ready } = useCart();
+  const { lines, subtotal: localSubtotal, setQty, remove, ready } = useCart();
+
+  // ფასი სერვერიდან (მომხმარებლის დონით, დღევანდელი) — localStorage-ში დამატების დროინდელია;
+  // დასახელებაც მიმდინარე ენაზე; გაყიდვიდან მოხსნილი პოზიცია აქვე ჩანს და არა checkout-ზე
+  const [quote, setQuote] = useState<Quote | null>(null);
+  useEffect(() => {
+    if (!ready || !lines.length) return;
+    let cancelled = false;
+    fetch("/api/cart/quote", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ items: lines.map((l) => ({ productId: l.productId, qty: l.qty })) }),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((q) => { if (!cancelled && q) setQuote(q as Quote); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [ready, lines]);
+  const byId = new Map((quote?.lines ?? []).map((q) => [q.productId, q]));
+  const subtotal = quote?.subtotal ?? localSubtotal;
 
   if (!ready) return <div className="card h-64 animate-pulse" />;
 
@@ -30,7 +53,13 @@ export default function CartView() {
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_20rem]">
       <div className="card divide-y divide-line">
-        {lines.map((l) => (
+        {lines.map((l) => {
+          const q = byId.get(l.productId);
+          const price = q?.unitPrice ?? l.price;
+          // სერვერმა პოზიცია საერთოდ არ დააბრუნა — აღარ იყიდება
+          const gone = Boolean(quote) && !q;
+          const unavailable = gone || q?.purchasable === false;
+          return (
           <div key={l.productId} className="flex gap-4 p-4">
             <Link href={`/product/${l.slug}`} className="relative size-20 shrink-0 rounded-lg bg-white">
               {l.image ? (
@@ -44,9 +73,19 @@ export default function CartView() {
 
             <div className="flex-1">
               <Link href={`/product/${l.slug}`} className="text-sm font-medium hover:text-brand-600">
-                {l.name}
+                {q?.name ?? l.name}
               </Link>
               <div className="mt-0.5 text-xs text-muted">#{l.sku}</div>
+              {unavailable && (
+                <div className="mt-1 text-xs font-medium text-rose-600">
+                  {t("ეს პროდუქტი ახლა აღარ იყიდება — წაშალე კალათიდან")}
+                </div>
+              )}
+              {!unavailable && q?.overStock != null && (
+                <div className="mt-1 text-xs font-medium text-amber-600">
+                  {t("მარაგშია მხოლოდ {0} ცალი", q.overStock)}
+                </div>
+              )}
 
               <div className="mt-3 flex flex-wrap items-center gap-3">
                 <div className="flex items-center rounded-lg border border-line">
@@ -103,15 +142,16 @@ export default function CartView() {
             </div>
 
             <div className="text-right">
-              <div className="font-bold">{gel(l.price * l.qty)}</div>
+              <div className="font-bold">{gel(price * l.qty)}</div>
               {l.qty > 1 && (
                 <div className="text-xs text-muted">
-                  {gel(l.price)} × {l.qty}{l.unit ? ` ${t(l.unit)}` : ""}
+                  {gel(price)} × {l.qty}{l.unit ? ` ${t(l.unit)}` : ""}
                 </div>
               )}
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
 
       <aside className="card h-fit p-5">

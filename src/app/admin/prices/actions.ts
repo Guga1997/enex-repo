@@ -185,7 +185,7 @@ export async function applyPromoAction(formData: FormData) {
 
   const products = await db.product.findMany({
     where: { id: { in: ids } },
-    select: { id: true, price: true, oldPrice: true, cost: true },
+    select: { id: true, price: true, oldPrice: true, cost: true, priceLocked: true },
   });
 
   let applied = 0;
@@ -198,7 +198,12 @@ export async function applyPromoAction(formData: FormData) {
       belowCost++;
       continue;
     }
-    await db.product.update({ where: { id: p.id }, data: { oldPrice: regular, price: sale, priceLocked: true } });
+    // უკვე აქციაში თუ არ არის და ხელით ჩაკეტილია — ეს ვიმახსოვრებთ, მოხსნისას ჩაკეტვა დარჩეს
+    const inPromo = Boolean(p.oldPrice && p.oldPrice > p.price);
+    await db.product.update({
+      where: { id: p.id },
+      data: { oldPrice: regular, price: sale, priceLocked: true, ...(inPromo ? {} : { promoKeepsLock: p.priceLocked }) },
+    });
     applied++;
   }
 
@@ -219,11 +224,14 @@ export async function endPromoAction(formData: FormData) {
 
   const products = await db.product.findMany({
     where: { oldPrice: { not: null }, ...(all ? {} : { id: { in: ids } }) },
-    select: { id: true, oldPrice: true, _count: { select: { supplies: true } } },
+    select: { id: true, oldPrice: true, promoKeepsLock: true, _count: { select: { supplies: true } } },
   });
 
   for (const p of products) {
-    if (p._count.supplies > 0) {
+    if (p.promoKeepsLock) {
+      // აქციამდე ხელით დაწერილი ფასი იყო — ის ბრუნდება და ისევ ჩაკეტილია
+      await db.product.update({ where: { id: p.id }, data: { price: p.oldPrice!, oldPrice: null, priceLocked: true, promoKeepsLock: false } });
+    } else if (p._count.supplies > 0) {
       await db.product.update({ where: { id: p.id }, data: { oldPrice: null, priceLocked: false } });
       await repriceProduct(p.id);
     } else {

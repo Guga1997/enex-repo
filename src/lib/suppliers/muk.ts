@@ -95,7 +95,7 @@ const parser = new XMLParser({
 async function usdRate(cfg: SupplierConfig): Promise<number> {
   const url = requestUrl(cfg).replace(/\/PRICE\b.*$/, "/CURRENCY");
   try {
-    const res = await fetch(url, { headers: authHeaders(cfg), cache: "no-store" });
+    const res = await fetch(url, { signal: AbortSignal.timeout(60_000), headers: authHeaders(cfg), cache: "no-store" });
     if (res.ok) {
       const doc = parser.parse(await res.text()) as Node;
       const values = list((doc.CURRENCY as Node)?.VALUE);
@@ -112,7 +112,7 @@ async function usdRate(cfg: SupplierConfig): Promise<number> {
 export const muk: SupplierAdapter = {
   async fetchItems(cfg: SupplierConfig): Promise<SupplierItem[]> {
     const map: Map = cfg.fieldMap?.trim() ? (JSON.parse(cfg.fieldMap) as Map) : {};
-    const res = await fetch(requestUrl(cfg), { headers: authHeaders(cfg), cache: "no-store" });
+    const res = await fetch(requestUrl(cfg), { signal: AbortSignal.timeout(60_000), headers: authHeaders(cfg), cache: "no-store" });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const xml = await res.text();
 

@@ -65,7 +65,7 @@ export async function POST(req: Request) {
       /* ეტალონ საიტის წითელი შენიშვნა — მოთხოვნილი რაოდენობა საწყობში არ არის */
       overStock:
         p.stockStatus === "IN_STOCK" && item.qty > availableQty(p) ? availableQty(p) : null,
-      purchasable: isPurchasable(p),
+      purchasable: p.price > 0 && isPurchasable(p),
     }];
   });
 

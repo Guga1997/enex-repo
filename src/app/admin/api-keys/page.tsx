@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { db } from "@/lib/db";
 import { formatDate } from "@/lib/format";
 import { createApiKey, deleteApiKey, revokeApiKey } from "../actions";
@@ -5,12 +6,9 @@ import { createApiKey, deleteApiKey, revokeApiKey } from "../actions";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "API გასაღებები" };
 
-export default async function ApiKeysPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ created?: string }>;
-}) {
-  const { created } = await searchParams;
+export default async function ApiKeysPage() {
+  // ახლახან შექმნილი გასაღები — 60 წამი ჩანს, მერე cookie თავისით ქრება
+  const created = (await cookies()).get("api_key_created")?.value;
   const [keys, categories] = await Promise.all([
     db.apiKey.findMany({ orderBy: { createdAt: "desc" } }),
     db.category.findMany({ orderBy: { nameKa: "asc" }, select: { slug: true, nameKa: true, parentId: true } }),
@@ -120,6 +118,7 @@ export default async function ApiKeysPage({
             >
               <option value="stock:read,stock:write">კითხვა + ჩაწერა</option>
               <option value="stock:read">მხოლოდ კითხვა</option>
+              <option value="stock:read,stock:write,orders:read">კითხვა + ჩაწერა + შეკვეთები (ბუღალტერია)</option>
             </select>
           </label>
           <label className="block">

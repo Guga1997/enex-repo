@@ -2,12 +2,19 @@ export function gel(amount: number): string {
   return `${amount.toFixed(2)}₾`;
 }
 
+const TBILISI_DATE = new Intl.DateTimeFormat("en-GB", {
+  timeZone: "Asia/Tbilisi",
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+});
+
+/** DD.MM.YYYY თბილისის დროით — სერვერი UTC-შია და შუაღამის თარიღი წინა დღედ ჩანდა */
 export function formatDate(d: Date | string | null | undefined): string {
   if (!d) return "";
   const date = typeof d === "string" ? new Date(d) : d;
-  return `${String(date.getDate()).padStart(2, "0")}.${String(
-    date.getMonth() + 1
-  ).padStart(2, "0")}.${date.getFullYear()}`;
+  if (Number.isNaN(date.getTime())) return "";
+  return TBILISI_DATE.format(date).split("/").join(".");
 }
 
 /** URL-safe slug — ქართული ასოები ტრანსლიტერაციით */

@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { authenticateApiKey } from "@/lib/api-auth";
-import { deriveStatus } from "@/lib/stock";
+import { checkPrice, writeApiQty } from "@/lib/api-write";
 import { StockStatus } from "@/lib/constants";
-import { scopeIds } from "@/lib/api-scope";
+import { scopeIds, OUT_OF_SCOPE } from "@/lib/api-scope";
 
 export const dynamic = "force-dynamic";
 
@@ -17,8 +17,8 @@ export async function GET(req: Request) {
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
   const url = new URL(req.url);
-  const page = Math.max(1, Number(url.searchParams.get("page")) || 1);
-  const limit = Math.min(1000, Math.max(1, Number(url.searchParams.get("limit")) || 200));
+  const page = Math.min(100_000, Math.max(1, Math.floor(Number(url.searchParams.get("page")) || 1)));
+  const limit = Math.min(1000, Math.max(1, Math.floor(Number(url.searchParams.get("limit")) || 200)));
   const since = url.searchParams.get("updated_since");
 
   const allowed = await scopeIds(auth.categorySlug);
@@ -106,14 +106,16 @@ export async function POST(req: Request) {
   }
 
   const skus = parsed.data.items.map((i) => i.sku);
+  const allowed = await scopeIds(auth.categorySlug);
   const existing = await db.product.findMany({
     where: { sku: { in: skus } },
-    select: { id: true, sku: true, stockQty: true, stockStatus: true },
+    select: { id: true, sku: true, stockQty: true, stockStatus: true, categoryId: true, cost: true },
   });
   const bySku = new Map(existing.map((p) => [p.sku, p]));
 
   const updated: string[] = [];
   const notFound: string[] = [];
+  const failed: { sku: string; reason: string }[] = [];
   const logs: {
     source: string;
     sku: string;
@@ -130,15 +132,31 @@ export async function POST(req: Request) {
       continue;
     }
 
-    const newQty = item.qty ?? current.stockQty;
-    const newStatus = item.status ?? deriveStatus(newQty, current.stockStatus);
+    // კატეგორიით შეზღუდული გასაღები სხვა პროდუქტს ვერ შეეხება
+    if (allowed && !allowed.includes(current.categoryId)) {
+      failed.push({ sku: item.sku, reason: OUT_OF_SCOPE });
+      continue;
+    }
+    if (item.price !== undefined) {
+      const bad = checkPrice(item.price, current.cost);
+      if (bad) {
+        failed.push({ sku: item.sku, reason: bad });
+        continue;
+      }
+    }
+
+    let newQty = current.stockQty;
+    let newStatus = current.stockStatus;
+    if (item.qty !== undefined || item.status !== undefined) {
+      const after = await writeApiQty(current.id, item.qty ?? current.stockQty, item.status);
+      newQty = after.stockQty;
+      newStatus = after.stockStatus;
+    }
 
     await db.product.update({
       where: { id: current.id },
       data: {
-        stockQty: newQty,
-        stockStatus: newStatus,
-        ...(item.price !== undefined ? { price: item.price } : {}),
+        ...(item.price !== undefined ? { price: item.price, priceLocked: true } : {}),
         ...(item.oldPrice !== undefined ? { oldPrice: item.oldPrice } : {}),
         ...(item.incomingDate !== undefined
           ? { incomingDate: item.incomingDate ? new Date(item.incomingDate) : null }
@@ -164,6 +182,7 @@ export async function POST(req: Request) {
   return NextResponse.json({
     updated: updated.length,
     notFound,
+    failed,
     skus: updated,
   });
 }

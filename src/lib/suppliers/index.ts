@@ -230,16 +230,26 @@ export function isSpecificModel(model: string): boolean {
   return model.length >= 4 && /\d/.test(model);
 }
 
+/** მიმწოდებლის ჩანაწერი, რომელიც ამდენ ხანს არ განახლებულა, ნაშთად აღარ ითვლება */
+const STALE_SUPPLY_MS = 48 * 60 * 60_000;
+
 /** ნაშთი პროდუქტზე = მისი ყველა მიმწოდებლის ჯამი + ჩემი მარაგი (ადმინი → მარაგი) */
 export async function rollupStock(productId: string) {
-  const [supplies, product] = await Promise.all([
-    db.productSupply.findMany({ where: { productId } }),
+  const [all, product] = await Promise.all([
+    db.productSupply.findMany({ where: { productId }, include: { supplier: { select: { isActive: true } } } }),
     db.product.findUnique({ where: { id: productId }, select: { stockAdjust: true } }),
   ]);
+  // გამორთული მიმწოდებლის ნაშთი აღარ ითვლება; ვინც დიდი ხანია არ განახლებულა (API გათიშულია),
+  // მისი ციფრი ძველია — ნაშთად აღარ ვყიდით, სანამ სინქი ისევ არ გაივლის
+  const staleBefore = Date.now() - STALE_SUPPLY_MS;
+  const supplies = all
+    .filter((s) => s.supplier.isActive)
+    .map((s) => (s.updatedAt.getTime() < staleBefore ? { ...s, qty: 0 } : s));
   const qty = rolledUpQty(supplies.map((s) => s.qty), product?.stockAdjust ?? 0);
 
+  const now = Date.now();
   const etas = supplies
-    .filter((s) => s.incomingDate && s.qty <= 0)
+    .filter((s) => s.incomingDate && s.qty <= 0 && s.incomingDate.getTime() >= now - 86_400_000)
     .map((s) => s.incomingDate!.getTime());
 
   /* ნაშთი ნულია, მაგრამ ეს ჯერ არ ნიშნავს „არ გვაქვს“:
@@ -247,7 +257,7 @@ export async function rollupStock(productId: string) {
   const status =
     qty > 0
       ? "IN_STOCK"
-      : etas.length
+      : etas.length || supplies.some((s) => s.status === "IN_TRANSIT")
         ? "IN_TRANSIT"
         : supplies.some((s) => s.status === "PREORDER")
           ? "PREORDER"
@@ -282,6 +292,22 @@ export async function syncSupplier(supplierId: string): Promise<SyncResult> {
   if (!supplier) {
     return { ok: false, created: 0, updated: 0, failed: 0, message: "მიმწოდებელი ვერ მოიძებნა" };
   }
+
+  // ერთ მიმწოდებელზე ერთდროულად ერთი სინქი (ტაიმერი + ადმინის ღილაკი) — თორემ ორივე ერთსა და
+  // იმავე პროდუქტს ქმნიდა და ნაშთს ერთმანეთს უნულებდნენ. 30 წუთზე ძველი „მიმდინარე“ მკვდარია.
+  const running = await db.supplierSyncLog.findFirst({
+    where: { supplierId, finishedAt: null, startedAt: { gt: new Date(Date.now() - 30 * 60_000) } },
+    select: { id: true },
+  });
+  if (running) {
+    return { ok: false, created: 0, updated: 0, failed: 0, message: "სინქი უკვე მიმდინარეობს — სცადე რამდენიმე წუთში" };
+  }
+  // წინა წარმატებული გაშვების ზომა — „გამქრალი პოზიციების“ დაცვისთვის
+  const lastOk = await db.supplierSyncLog.findFirst({
+    where: { supplierId, ok: true },
+    orderBy: { startedAt: "desc" },
+    select: { created: true, updated: true, failed: true },
+  });
 
   const log = await db.supplierSyncLog.create({ data: { supplierId } });
   let created = 0;
@@ -400,10 +426,11 @@ export async function syncSupplier(supplierId: string): Promise<SyncResult> {
             });
             filledImages.push(pid);
           }
+          // თვითღირებულებას აქ არ ვწერთ — ის ყველაზე იაფი მიმწოდებლის რეალური ფასია
+          // (ფასდაკლების შემდეგ) და repriceProduct-ში ითვლება, ჩაკეტილ ფასზეც
           await db.product.update({
             where: { id: productId },
             data: {
-              cost: item.cost ?? undefined,
               weightKg: item.weightKg ?? undefined,
               volumeM3: item.volumeM3 ?? undefined,
               warrantyMonths: item.warrantyMonths ?? undefined,
@@ -422,6 +449,15 @@ export async function syncSupplier(supplierId: string): Promise<SyncResult> {
           leadTimeDays: item.leadTimeDays ?? null,
         };
 
+        // ხელით დამატებული პროდუქტი პირველად უკავშირდება მიმწოდებელს: მისი ნაშთი ჩვენია
+        // (stockQty-ში იყო) — „ჩემ მარაგში“ გადადის, თორემ rollup-ი მას წაშლიდა
+        if (!(await db.productSupply.count({ where: { productId } }))) {
+          const own = await db.product.findUnique({ where: { id: productId }, select: { stockQty: true, stockAdjust: true } });
+          if (own && own.stockQty > 0 && own.stockAdjust === 0) {
+            await db.product.update({ where: { id: productId }, data: { stockAdjust: own.stockQty } });
+          }
+        }
+
         await db.productSupply.upsert({
           where: {
             supplierId_supplierSku: {
@@ -433,7 +469,9 @@ export async function syncSupplier(supplierId: string): Promise<SyncResult> {
           update: supplyData,
         });
 
-        touched.add(productId);
+        // ნაშთი და ფასი მაშინვე — სინქი შუაში რომ შეწყდეს, პროდუქტი ძველ ციფრზე არ დარჩეს
+        await rollupStock(productId);
+        await repriceProduct(productId, pricer);
       } catch {
         failed++;
       }
@@ -445,13 +483,20 @@ export async function syncSupplier(supplierId: string): Promise<SyncResult> {
     const seen = new Set(items.map((i) => i.supplierSku));
     const existing = await db.productSupply.findMany({
       where: { supplierId: supplier.id },
-      select: { id: true, supplierSku: true, qty: true, productId: true },
+      select: { id: true, supplierSku: true, qty: true, status: true, incomingDate: true, productId: true },
     });
-    const gone = existing.filter((s) => !seen.has(s.supplierSku) && s.qty > 0);
-    if (gone.length && items.length >= existing.length * 0.5) {
+    // გამქრალია ისიც, რაც წინასწარი შეკვეთით ან გზაში იყო — თორემ სამუდამოდ იყიდებოდა
+    const gone = existing.filter(
+      (s) => !seen.has(s.supplierSku) && (s.qty > 0 || s.status !== "OUT_OF_STOCK" || s.incomingDate)
+    );
+    // შედარება წინა წარმატებულ გაშვებასთან (არა ყველა ოდესმე ნანახ კოდთან — ის მხოლოდ იზრდება
+    // და დაცვა ბოლოს სამუდამოდ ჩაირთვებოდა). ნახევარზე მეტად შემცირებული ნუსხა ერთხელ გამოტოვდება;
+    // თუ შემდეგ გაშვებაზეც იგივეა, ნამდვილია და გაივლის.
+    const prevCount = lastOk ? lastOk.created + lastOk.updated + lastOk.failed : 0;
+    if (gone.length && items.length >= prevCount * 0.5) {
       await db.productSupply.updateMany({
         where: { id: { in: gone.map((g) => g.id) } },
-        data: { qty: 0, status: "OUT_OF_STOCK" },
+        data: { qty: 0, status: "OUT_OF_STOCK", incomingDate: null },
       });
       for (const g of gone) touched.add(g.productId);
     }
@@ -497,5 +542,29 @@ export async function syncSupplier(supplierId: string): Promise<SyncResult> {
       }),
     ]);
     return { ok: false, created, updated, failed, message };
+  }
+}
+
+/**
+ * მიწოდების ჩანაწერები წაიშალა (მიმწოდებლის წაშლა, გაყოფა) — პროდუქტის ნაშთი თავიდან.
+ * მიმწოდებელი აღარ დარჩა: ნაშთი = ჩემი მარაგი, ის stockQty-ში ბრუნდება (მიმწოდებლის გარეშე
+ * პროდუქტზე ასე ინახება). დარჩა: ჩვეულებრივი rollup.
+ */
+export async function restockAfterSupplyRemoval(productIds: string[]) {
+  for (const id of new Set(productIds)) {
+    const p = await db.product.findUnique({
+      where: { id },
+      select: { stockAdjust: true, stockStatus: true, _count: { select: { supplies: true } } },
+    });
+    if (!p) continue;
+    if (p._count.supplies) {
+      await rollupStock(id);
+    } else {
+      const own = Math.max(0, p.stockAdjust);
+      await db.product.update({
+        where: { id },
+        data: { stockQty: own, stockAdjust: 0, stockStatus: own > 0 ? "IN_STOCK" : "OUT_OF_STOCK", incomingDate: null },
+      });
+    }
   }
 }

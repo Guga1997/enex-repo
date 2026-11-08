@@ -1,13 +1,14 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { isPurchasable, availableQty, normalizeQty } from "@/lib/stock";
-import { reservationDeadline } from "@/lib/orders";
-import { createPayment } from "@/lib/payments/bog";
+import { reservationDeadline, reserveStock } from "@/lib/orders";
+import { orderNumber } from "@/lib/sequence";
+import { createPayment, isBogEnabled } from "@/lib/payments/bog";
 import { canPayWithTbc, createFlittPayment } from "@/lib/payments/flitt";
 import { getI18n } from "@/lib/i18n/server";
 import { nameOf } from "@/lib/i18n/content";
-import { FREE_DELIVERY_FROM, RESERVATION_MINUTES } from "@/lib/constants";
+import { FREE_DELIVERY_FROM, PAYMENT_TTL_MINUTES } from "@/lib/constants";
 import { getCurrentUser } from "@/lib/customer-auth";
 import { effectivePrice } from "@/lib/pricing";
 import { issueAndSendInvoice } from "@/lib/invoice";
@@ -29,14 +30,15 @@ const schema = z.object({
   organizationId: z.string().optional(),
   items: z
     .array(z.object({ productId: z.string(), qty: z.number().int().min(1).max(100000) }))
-    .min(1, "კალათა ცარიელია"),
+    .min(1, "კალათა ცარიელია")
+    .max(200, "კალათაში ძალიან ბევრი პოზიციაა"),
 });
 
-async function nextOrderNumber(): Promise<string> {
-  const year = new Date().getFullYear();
-  const count = await db.order.count();
-  return `ORD-${year}-${String(count + 1).padStart(5, "0")}`;
-}
+/** ჩვენი, მყიდველისთვის განკუთვნილი შეცდომა — დანარჩენი (ბაზის ტექსტი) გარეთ არ გადის */
+class OrderError extends Error {}
+
+/** ერთ მომხმარებელს ერთდროულად ამდენი გადაუხდელი შეკვეთა — მეტით ნაშთს „იპყრობდა“ */
+const MAX_OPEN_ORDERS = 3;
 
 export async function POST(req: Request) {
   // შეცდომა მყიდველის ენაზე — ენა checkout-ის გვერდიდან (referer) მოდის
@@ -57,6 +59,9 @@ export async function POST(req: Request) {
   }
   const input = parsed.data;
 
+  if (input.paymentMethod === "BOG" && !isBogEnabled()) {
+    return NextResponse.json({ error: t("ბარათით გადახდა დროებით მიუწვდომელია") }, { status: 400 });
+  }
   if (input.paymentMethod === "TBC" && !(await canPayWithTbc())) {
     return NextResponse.json({ error: t("თიბისის ბარათით გადახდა დროებით მიუწვდომელია") }, { status: 400 });
   }
@@ -101,6 +106,10 @@ export async function POST(req: Request) {
         { status: 409 }
       );
     }
+    // ფასის გარეშე პოზიცია („ფასი მოთხოვნით“) ონლაინ არ იყიდება
+    if (!(p.price > 0)) {
+      return NextResponse.json({ error: t("„{0}“ — ფასი მოთხოვნით, დაგვიკავშირდით", nameOf(p, locale)) }, { status: 409 });
+    }
     if (!isPurchasable(p)) {
       return NextResponse.json({ error: t("„{0}“ არ არის მარაგში", nameOf(p, locale)) }, { status: 409 });
     }
@@ -123,6 +132,16 @@ export async function POST(req: Request) {
       );
     }
     lines.push({ product: p, qty: item.qty });
+  }
+
+  const open = await db.order.count({
+    where: { userId: viewer.id, status: "PENDING", paymentStatus: { not: "PAID" }, reservedUntil: { gt: new Date() } },
+  });
+  if (open >= MAX_OPEN_ORDERS) {
+    return NextResponse.json(
+      { error: t("გაქვს {0} გადაუხდელი შეკვეთა — ჯერ ისინი გადაიხადე ან დაელოდე ვადის გასვლას", open) },
+      { status: 429 }
+    );
   }
 
   // ფასს მომხმარებლის დონის მიხედვით სერვერზე ვთვლით — კლიენტიდან მოსული ფასი იგნორირდება
@@ -152,25 +171,20 @@ export async function POST(req: Request) {
   const total = Number((subtotal + deliveryFee).toFixed(2));
 
   const order = await db.$transaction(async (tx) => {
+    // მარაგში მყოფი ხაზი ნაშთს იკავებს; შემოწმება და დაკავება ერთ SQL-შია — ორი მყიდველი
+    // ბოლო ცალს ერთდროულად ვეღარ დაიკავებს. წინასწარი შეკვეთა / გზაში — არაფერს იკავებს.
+    const reserved = new Map<string, number>();
     for (const l of priced) {
       if (l.product.stockStatus !== "IN_STOCK") continue;
-      // ტრანზაქციაში ხელახლა ვამოწმებთ — წამის წინ სხვამ შეიძლება დაიკავა
-      const fresh = await tx.product.findUnique({
-        where: { id: l.product.id },
-        select: { stockQty: true, reservedQty: true, nameKa: true },
-      });
-      if (!fresh || availableQty(fresh) < l.qty) {
-        throw new Error(t("„{0}“ ამ წუთას სხვამ დაიკავა — შეამცირე რაოდენობა", nameOf(l.product, locale)));
+      if (!(await reserveStock(tx, l.product.id, l.qty))) {
+        throw new OrderError(t("„{0}“ ამ წუთას სხვამ დაიკავა — შეამცირე რაოდენობა", nameOf(l.product, locale)));
       }
-      await tx.product.update({
-        where: { id: l.product.id },
-        data: { reservedQty: { increment: l.qty } },
-      });
+      reserved.set(l.product.id, (reserved.get(l.product.id) ?? 0) + l.qty);
     }
 
     return tx.order.create({
     data: {
-      number: await nextOrderNumber(),
+      number: await orderNumber(tx),
       userId: viewer.id,
       organizationId,
       reservedUntil: reservationDeadline(input.paymentMethod),
@@ -194,32 +208,41 @@ export async function POST(req: Request) {
           name: l.product.nameKa,
           price: l.unitPrice,
           qty: l.qty,
+          reservedQty: takeReserved(reserved, l.product.id, l.qty),
           warrantyMonths: l.product.warrantyMonths,
         })),
       },
     },
     });
   }).catch((e: unknown) => {
-    const msg = e instanceof Error ? e.message : t("შეკვეთის შექმნა ვერ მოხერხდა");
-    return { error: msg } as const;
+    if (e instanceof OrderError) return { error: e.message } as const;
+    console.error("შეკვეთის შექმნა ჩავარდა", e);
+    return { error: t("შეკვეთის შექმნა ვერ მოხერხდა — სცადე თავიდან") } as const;
   });
 
   if ("error" in order) {
     return NextResponse.json({ error: order.error }, { status: 409 });
   }
 
-  // საბანკო გადარიცხვაზე ინვოისი მაშინვე გამოიწერება და ელფოსტაზე მიდის
-  if (input.paymentMethod === "BANK_TRANSFER") {
-    const invoice = await issueAndSendInvoice(order.id);
-    if (!invoice.ok) console.error("ინვოისი ვერ გაიგზავნა", invoice.error);
-  }
-
-  // გაყიდვებს ყოველ შეკვეთაზე — ინვოისის ნომერი უკვე მინიჭებულია, წერილში ჩაჯდება
-  try {
-    await notifySalesNewOrder(order.id);
-  } catch (e) {
-    console.error("გაყიდვების შეტყობინება ჩავარდა", e);
-  }
+  // წერილები პასუხის შემდეგ — ფოსტის სერვერი რომ დააგვიანოს, მყიდველი ბანკზე მაინც მაშინვე გადადის
+  const paymentMethod = input.paymentMethod;
+  after(async () => {
+    // საბანკო გადარიცხვაზე ინვოისი მაშინვე გამოიწერება და ელფოსტაზე მიდის
+    if (paymentMethod === "BANK_TRANSFER") {
+      try {
+        const invoice = await issueAndSendInvoice(order.id);
+        if (!invoice.ok) console.error("ინვოისი ვერ გაიგზავნა", invoice.error);
+      } catch (e) {
+        console.error("ინვოისი ვერ გამოიწერა", e);
+      }
+    }
+    // გაყიდვებს ყოველ შეკვეთაზე — ინვოისის ნომერი უკვე მინიჭებულია, წერილში ჩაჯდება
+    try {
+      await notifySalesNewOrder(order.id);
+    } catch (e) {
+      console.error("გაყიდვების შეტყობინება ჩავარდა", e);
+    }
+  });
 
   // გადარიცხვა / POS — ბანკზე გადამისამართება არ ხდება
   if (input.paymentMethod !== "BOG" && input.paymentMethod !== "TBC") {
@@ -234,9 +257,10 @@ export async function POST(req: Request) {
       orderNumber: order.number,
       amount: total,
       deliveryFee,
-      ttlMinutes: RESERVATION_MINUTES[input.paymentMethod],
+      ttlMinutes: PAYMENT_TTL_MINUTES,
       buyer: { name: input.customerName, email: input.customerEmail, phone: input.customerPhone },
       siteUrl,
+      locale,
       items: priced.map((l) => ({
         productId: l.product.id,
         name: l.product.nameKa,
@@ -263,4 +287,12 @@ export async function POST(req: Request) {
       { status: 200 }
     );
   }
+}
+
+/** ერთი პროდუქტი კალათაში ორ ხაზად თუ მოვიდა — დაკავებული რაოდენობა ხაზებზე ნაწილდება */
+function takeReserved(reserved: Map<string, number>, productId: string, qty: number): number {
+  const left = reserved.get(productId) ?? 0;
+  const take = Math.min(left, qty);
+  reserved.set(productId, left - take);
+  return take;
 }

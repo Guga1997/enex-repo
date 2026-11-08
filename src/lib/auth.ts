@@ -2,10 +2,11 @@ import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
 import { db } from "./db";
+import { ADMIN_AUD, authSecret } from "./auth-secret";
+import { ROLES } from "./workflow";
 
 const COOKIE = "admin_session";
-const secret = () =>
-  new TextEncoder().encode(process.env.AUTH_SECRET || "dev-only-insecure-secret-change-me!!");
+const secret = authSecret;
 
 export type Session = { id: string; email: string; name: string; role: string };
 
@@ -24,6 +25,7 @@ export async function verifyLogin(email: string, password: string): Promise<Sess
 export async function createSession(session: Session) {
   const token = await new SignJWT(session as unknown as Record<string, unknown>)
     .setProtectedHeader({ alg: "HS256" })
+    .setAudience(ADMIN_AUD)
     .setIssuedAt()
     .setExpirationTime("7d")
     .sign(secret());
@@ -37,20 +39,24 @@ export async function createSession(session: Session) {
   });
 }
 
+/**
+ * თანამშრომლის სესია — ტოკენი + ბაზა. გამორთული ანგარიში მაშინვე კარგავს წვდომას,
+ * როლიც ბაზიდან მოდის (როლის შეცვლა ძველ ტოკენს არ ეხება), პაროლის შეცვლა კი წინა
+ * ტოკენებს აუქმებს.
+ */
 export async function getSession(): Promise<Session | null> {
   const token = (await cookies()).get(COOKIE)?.value;
   if (!token) return null;
+  let payload;
   try {
-    const { payload } = await jwtVerify(token, secret());
-    return {
-      id: String(payload.id),
-      email: String(payload.email),
-      name: String(payload.name),
-      role: String(payload.role),
-    };
+    ({ payload } = await jwtVerify(token, secret(), { audience: ADMIN_AUD }));
   } catch {
     return null;
   }
+  const admin = await db.admin.findUnique({ where: { id: String(payload.id) } });
+  if (!admin || !admin.active || !(ROLES as readonly string[]).includes(admin.role)) return null;
+  if (admin.passwordChangedAt && (payload.iat ?? 0) * 1000 < admin.passwordChangedAt.getTime() - 1000) return null;
+  return { id: admin.id, email: admin.email, name: admin.name, role: admin.role };
 }
 
 export async function destroySession() {

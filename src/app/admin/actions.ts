@@ -2,11 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { productFilter } from "@/lib/admin-filters";
 import { cancelOrder, markOrderPaid } from "@/lib/orders";
-import { getSession, destroySession } from "@/lib/auth";
+import { getSession, destroySession, createSession } from "@/lib/auth";
 import { slugify } from "@/lib/format";
 import { invalidateCategoryTree } from "@/lib/category-tree";
 import { generateApiKey } from "@/lib/api-auth";
@@ -101,7 +102,7 @@ export async function saveProduct(formData: FormData) {
     : await db.product.create({ data: { ...data, price: 0, sku, slug: `${slugify(nameKa)}-${sku}` } });
 
   if (supplied) {
-    const own = Math.trunc(Number(str(formData, "ownQty")) || 0);
+    const own = Math.max(0, Math.trunc(Number(str(formData, "ownQty")) || 0));
     if (own !== current!.stockAdjust) {
       const session = await getSession();
       await setOwnStock(product.id, own, `ადმინი: ${session?.name ?? "?"} (პროდუქტის ფორმა)`);
@@ -251,9 +252,16 @@ export async function createApiKey(formData: FormData) {
   const { raw, hash, prefix } = generateApiKey();
   await db.apiKey.create({ data: { name, keyHash: hash, prefix, scopes, categorySlug } });
 
-  // ღია გასაღები ერთხელ ჩანს — URL-ში გადავცემთ ჩვენებისთვის
+  // ღია გასაღები ერთხელ ჩანს — ხანმოკლე cookie-ით (URL-ში nginx-ის ლოგსა და ისტორიაში ჩაიწერებოდა)
+  (await cookies()).set("api_key_created", raw, {
+    httpOnly: true,
+    sameSite: "strict",
+    secure: process.env.NODE_ENV === "production",
+    path: "/admin/api-keys",
+    maxAge: 60,
+  });
   revalidatePath("/admin/api-keys");
-  redirect(`/admin/api-keys?created=${encodeURIComponent(raw)}`);
+  redirect("/admin/api-keys");
 }
 
 export async function revokeApiKey(formData: FormData) {
@@ -306,7 +314,14 @@ export async function saveSupplier(formData: FormData) {
 
   let supplier;
   if (id) {
+    const wasActive = (await db.supplier.findUnique({ where: { id }, select: { isActive: true } }))?.isActive;
     supplier = await db.supplier.update({ where: { id }, data });
+    // ჩართვა/გამორთვა მის ნაშთს მაშინვე ეხება — გამორთულის ციფრი აღარ იყიდება
+    if (wasActive !== supplier.isActive) {
+      const { rollupStock } = await import("@/lib/suppliers");
+      const supplies = await db.productSupply.findMany({ where: { supplierId: id }, select: { productId: true } });
+      for (const productId of new Set(supplies.map((s) => s.productId))) await rollupStock(productId);
+    }
   } else {
     let slug = slugify(name) || "supplier";
     if (await db.supplier.findUnique({ where: { slug } })) {
@@ -368,7 +383,13 @@ export async function deleteBanner(formData: FormData) {
 
 export async function deleteSupplier(formData: FormData) {
   await requireAdmin();
-  await db.supplier.delete({ where: { id: String(formData.get("id") ?? "") } });
+  const id = String(formData.get("id") ?? "");
+  // მისი პროდუქტების ნაშთი წაშლის შემდეგ თავიდან ითვლება — თორემ მიმწოდებლის ციფრი
+  // „ჩვენ მარაგად“ დარჩებოდა და გაიყიდებოდა
+  const affected = (await db.productSupply.findMany({ where: { supplierId: id }, select: { productId: true } })).map((s) => s.productId);
+  await db.supplier.delete({ where: { id } });
+  const { restockAfterSupplyRemoval } = await import("@/lib/suppliers");
+  await restockAfterSupplyRemoval(affected);
   revalidatePath("/admin/suppliers");
 }
 
@@ -376,7 +397,8 @@ export async function deleteSupplier(formData: FormData) {
 export async function runSupplierSync(formData: FormData) {
   await requireAdmin();
   const { syncSupplier } = await import("@/lib/suppliers");
-  await syncSupplier(String(formData.get("id") ?? ""));
+  const res = await syncSupplier(String(formData.get("id") ?? ""));
+  if (!res.ok && res.message) console.warn("ხელით სინქი:", res.message);
   revalidatePath("/admin/suppliers");
   revalidatePath("/admin/products");
   revalidatePath("/catalog");
@@ -520,7 +542,9 @@ export async function bulkSetActiveByFilter(formData: FormData) {
 /* ------------------------------ ადმინის ანგარიში ------------------------------ */
 
 export async function changeAdminPassword(formData: FormData) {
-  const session = await requireAdmin();
+  // საკუთარი პაროლი ყველა თანამშრომელს შეუძლია შეცვალოს, არა მარტო ადმინს
+  const session = await getSession();
+  if (!session) redirect("/admin/login");
   const current = String(formData.get("current") ?? "");
   const next = String(formData.get("next") ?? "");
   const next2 = String(formData.get("next2") ?? "");
@@ -533,10 +557,11 @@ export async function changeAdminPassword(formData: FormData) {
     redirect("/admin/account?error=current");
   }
 
-  await db.admin.update({
+  const updated = await db.admin.update({
     where: { id: admin.id },
-    data: { passwordHash: await bcrypt.hash(next, 10) },
+    data: { passwordHash: await bcrypt.hash(next, 10), passwordChangedAt: new Date() },
   });
+  await createSession({ id: updated.id, email: updated.email, name: updated.name, role: updated.role });
   redirect("/admin/account?ok=1");
 }
 

@@ -11,8 +11,13 @@ import { notifySalesPaid } from "./notify/sales";
  *   გადახდა დადასტურდა → reservedQty −= qty, stockQty −= qty
  *   ჩავარდა / გაუქმდა / ვადა გავიდა → reservedQty −= qty  (ნივთი ისევ იყიდება)
  *
- * stockQty-ს პირდაპირ არასდროს ვაკლებთ გადახდამდე — სინქი მას ისედაც
- * მიმწოდებლის ციფრით გადააწერს, რეზერვაცია კი ცალკე ველში გადარჩება.
+ * რამდენი ცალი უჭირავს თითო ხაზს, OrderItem.reservedQty-შია — იხსნება ზუსტად ეს და
+ * ნულდება. ასე წინასწარი შეკვეთის ხაზი (რომელიც არაფერს იკავებს) ან მეორედ მოსული
+ * callback სხვა მყიდველის რეზერვაციას ვეღარ „გაათავისუფლებს“.
+ *
+ * შეკვეთის მდგომარეობის ყოველი გადასვლა პირობითი updateMany-ით იწყება („მხოლოდ თუ ჯერ
+ * კიდევ გადაუხდელია“). ორი ერთდროული გამოძახებიდან (ბანკის callback + მყიდველის
+ * დაბრუნება) მეორე ბაზის რიგის ლოკზე ელოდება და 0 რიგს იღებს — ნაშთი ორჯერ აღარ ჩამოიწერება.
  */
 
 type Tx = Prisma.TransactionClient;
@@ -23,30 +28,77 @@ export function reservationDeadline(paymentMethod: string): Date {
   return new Date(Date.now() + minutes * 60_000);
 }
 
-async function releaseItems(tx: Tx, items: { productId: string | null; qty: number }[]) {
+/**
+ * პროდუქტის რიგის ჩაკეტვა ტრანზაქციის ბოლომდე (Postgres: row lock). ამის შემდეგ წაკითხული
+ * ციფრები ახალია და ერთდროული გაყიდვა/რეზერვაცია ერთმანეთს აღარ გადააწერს.
+ */
+export async function lockProduct(tx: Tx, productId: string) {
+  await tx.$executeRaw`UPDATE "Product" SET "reservedQty" = "reservedQty" WHERE "id" = ${productId}`;
+}
+
+/**
+ * ნაშთის დაკავება მხოლოდ თუ საკმარისია — ერთი SQL ბრძანება, შემოწმება და ჩაწერა ერთად.
+ * false — ამ წამს სხვამ დაიკავა.
+ */
+export async function reserveStock(tx: Tx, productId: string, qty: number): Promise<boolean> {
+  const n = await tx.$executeRaw`
+    UPDATE "Product" SET "reservedQty" = "reservedQty" + ${qty}
+    WHERE "id" = ${productId} AND "stockQty" - "reservedQty" >= ${qty}`;
+  return n > 0;
+}
+
+/** ხაზების რეზერვაციის მოხსნა — მხოლოდ ის, რაც ამ ხაზს მართლა უჭირავს */
+async function releaseItems(tx: Tx, orderId: string) {
+  const items = await tx.orderItem.findMany({
+    where: { orderId, reservedQty: { gt: 0 } },
+    select: { id: true, productId: true, reservedQty: true },
+  });
   for (const item of items) {
-    if (!item.productId) continue;
-    const p = await tx.product.findUnique({ where: { id: item.productId }, select: { reservedQty: true } });
-    if (!p) continue;
-    await tx.product.update({
-      where: { id: item.productId },
-      data: { reservedQty: Math.max(0, p.reservedQty - item.qty) },
-    });
+    if (item.productId) {
+      await lockProduct(tx, item.productId);
+      const p = await tx.product.findUnique({ where: { id: item.productId }, select: { reservedQty: true } });
+      if (p) {
+        await tx.product.update({
+          where: { id: item.productId },
+          data: { reservedQty: Math.max(0, p.reservedQty - item.reservedQty) },
+        });
+      }
+    }
+    await tx.orderItem.update({ where: { id: item.id }, data: { reservedQty: 0 } });
   }
 }
 
 /**
  * გადახდილად მონიშვნა + ნაშთის ჩამოწერა.
- * იდემპოტენტურია — გადახდის სისტემა callback-ს რამდენჯერმე აგზავნის.
+ * იდემპოტენტურია — გადახდის სისტემა callback-ს რამდენჯერმე აგზავნის, მყიდველის
+ * დაბრუნებაც იმავე წამს შეიძლება მოვიდეს.
  */
 export async function markOrderPaid(orderId: string, raw?: unknown, opts: { notify?: boolean } = {}) {
   const result = await db.$transaction(async (tx) => {
-    const order = await tx.order.findUnique({ where: { id: orderId }, include: { items: true } });
-    if (!order) return null;
-    if (order.paymentStatus === "PAID") return { order, changed: false };
+    const before = await tx.order.findUnique({ where: { id: orderId }, select: { status: true, reservedUntil: true } });
+    if (!before) return null;
 
-    for (const item of order.items) {
+    const claim = await tx.order.updateMany({
+      where: { id: orderId, paymentStatus: { not: "PAID" } },
+      data: {
+        paymentStatus: "PAID",
+        status: "PAID",
+        reservedUntil: null,
+        ...(raw ? { paymentRaw: JSON.stringify(raw) } : {}),
+      },
+    });
+    if (claim.count === 0) {
+      return { order: await tx.order.findUnique({ where: { id: orderId } }), changed: false, late: false };
+    }
+
+    // ვადა უკვე გასული იყო — ფული მოვიდა, მაგრამ ნაშთი შეიძლება სხვას მიჰყიდა
+    const late = !before.reservedUntil && (before.status === "EXPIRED" || before.status === "CANCELLED");
+
+    // ხაზებს მხოლოდ ახლა ვკითხულობთ — შეკვეთის რიგი ჩვენია, გაუქმება შუაში ვეღარ ჩაერევა
+    const items = await tx.orderItem.findMany({ where: { orderId } });
+    for (const item of items) {
       if (!item.productId) continue;
+      await lockProduct(tx, item.productId);
       const product = await tx.product.findUnique({
         where: { id: item.productId },
         include: { supplies: { select: { id: true, qty: true }, orderBy: { qty: "desc" } } },
@@ -67,29 +119,21 @@ export async function markOrderPaid(orderId: string, raw?: unknown, opts: { noti
         data: {
           stockQty: newQty,
           stockAdjust: split.own,
-          reservedQty: Math.max(0, product.reservedQty - item.qty),
+          reservedQty: Math.max(0, product.reservedQty - item.reservedQty),
           stockStatus: deriveStatus(newQty, product.stockStatus),
         },
       });
+      if (item.reservedQty) await tx.orderItem.update({ where: { id: item.id }, data: { reservedQty: 0 } });
     }
 
-    const updated = await tx.order.update({
-      where: { id: orderId },
-      data: {
-        paymentStatus: "PAID",
-        status: "PAID",
-        reservedUntil: null,
-        paymentRaw: raw ? JSON.stringify(raw) : order.paymentRaw,
-      },
-    });
-    return { order: updated, changed: true };
+    return { order: await tx.order.findUnique({ where: { id: orderId } }), changed: true, late };
   });
 
   // გაყიდვებს მხოლოდ რეალურ ცვლილებაზე — callback-ის გამეორება ორ წერილს არ აგზავნის.
   // ადმინი რომ ხელით ნიშნავს, თვითონვე იცის — notify: false.
-  if (result?.changed && opts.notify !== false) {
+  if (result?.changed && (opts.notify !== false || result.late)) {
     try {
-      await notifySalesPaid(orderId);
+      await notifySalesPaid(orderId, { late: result.late });
     } catch (e) {
       console.error("გაყიდვების შეტყობინება ჩავარდა", e);
     }
@@ -97,54 +141,44 @@ export async function markOrderPaid(orderId: string, raw?: unknown, opts: { noti
   return result?.order ?? null;
 }
 
-/** გადახდა ჩავარდა — რეზერვაცია იხსნება, შეკვეთა რჩება ხელახლა ცდისთვის */
+/**
+ * გადახდა ჩავარდა — რეზერვაცია იხსნება და შეკვეთა უქმდება (ბანკის მხარეს ეს
+ * გადახდა დასრულებულია; თავიდან ცდა ახალ შეკვეთად ფორმდება, კალათა ინახება).
+ */
 export async function markOrderFailed(orderId: string, raw?: unknown) {
   return db.$transaction(async (tx) => {
-    const order = await tx.order.findUnique({ where: { id: orderId }, include: { items: true } });
-    if (!order || order.paymentStatus === "PAID") return order;
-
-    // რეზერვაცია მხოლოდ ერთხელ იხსნება — reservedUntil ამის ნიშანია
-    if (order.reservedUntil) await releaseItems(tx, order.items);
-
-    return tx.order.update({
-      where: { id: orderId },
+    const claim = await tx.order.updateMany({
+      where: { id: orderId, paymentStatus: { notIn: ["PAID", "FAILED"] } },
       data: {
         paymentStatus: "FAILED",
         reservedUntil: null,
-        paymentRaw: raw ? JSON.stringify(raw) : undefined,
+        ...(raw ? { paymentRaw: JSON.stringify(raw) } : {}),
       },
     });
-  });
-}
-
-/** გაუქმება — ადმინიდან ან ვადის გასვლით. ნაშთი უბრუნდება. */
-export async function cancelOrder(orderId: string, status: "CANCELLED" | "EXPIRED" = "CANCELLED") {
-  return db.$transaction(async (tx) => {
-    const order = await tx.order.findUnique({ where: { id: orderId }, include: { items: true } });
-    if (!order || order.paymentStatus === "PAID") return order;
-
-    if (order.reservedUntil) await releaseItems(tx, order.items);
-
-    return tx.order.update({
-      where: { id: orderId },
-      data: { status, reservedUntil: null },
-    });
+    if (claim.count) {
+      await tx.order.updateMany({ where: { id: orderId, status: "PENDING" }, data: { status: "CANCELLED" } });
+      await releaseItems(tx, orderId);
+    }
+    return tx.order.findUnique({ where: { id: orderId } });
   });
 }
 
 /**
- * ვადაგასული რეზერვაციების გათავისუფლება — cron-იდან წუთში ერთხელ.
- * აბრუნებს, რამდენი შეკვეთა გაუქმდა.
+ * გაუქმება — ადმინიდან ან ვადის გასვლით. ნაშთი უბრუნდება.
+ * გადახდილს არ ეხება; ვადით მხოლოდ მოლოდინში მყოფი უქმდება (თანამშრომელმა თუ
+ * „მუშავდება“-ზე გადაიყვანა, ტაიმერი აღარ აუქმებს).
  */
-export async function releaseExpiredReservations(): Promise<number> {
-  const expired = await db.order.findMany({
-    where: {
-      reservedUntil: { lt: new Date() },
-      paymentStatus: { not: "PAID" },
-      status: "PENDING",
-    },
-    select: { id: true },
+export async function cancelOrder(orderId: string, status: "CANCELLED" | "EXPIRED" = "CANCELLED") {
+  return db.$transaction(async (tx) => {
+    const claim = await tx.order.updateMany({
+      where: {
+        id: orderId,
+        paymentStatus: { not: "PAID" },
+        status: status === "EXPIRED" ? "PENDING" : { notIn: ["CANCELLED", "EXPIRED"] },
+      },
+      data: { status, reservedUntil: null },
+    });
+    if (claim.count) await releaseItems(tx, orderId);
+    return tx.order.findUnique({ where: { id: orderId } });
   });
-  for (const o of expired) await cancelOrder(o.id, "EXPIRED");
-  return expired.length;
 }

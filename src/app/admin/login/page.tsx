@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
 import { createSession, verifyLogin } from "@/lib/auth";
+import { safePath } from "@/lib/safe-path";
+import { clientIp, rateLimit, LIMITS } from "@/lib/rate-limit";
 
 export const metadata = { title: "შესვლა" };
 
@@ -14,7 +16,14 @@ export default async function LoginPage({
     "use server";
     const email = String(formData.get("email") ?? "");
     const password = String(formData.get("password") ?? "");
-    const target = String(formData.get("next") ?? "/admin");
+    const target = safePath(formData.get("next"), "/admin");
+    const back = (err: string) => redirect(`/admin/login?error=${err}&next=${encodeURIComponent(target)}`);
+
+    // პაროლის გამოცნობის წინააღმდეგ — IP-ზე და ანგარიშზე, როგორც მყიდველის შესვლაზე
+    const ip = await clientIp();
+    const byIp = rateLimit(`admin-login-ip:${ip}`, LIMITS.loginPerIp.limit, LIMITS.loginPerIp.windowMs);
+    const byAcc = rateLimit(`admin-login:${email.toLowerCase().trim()}`, LIMITS.loginPerAccount.limit, LIMITS.loginPerAccount.windowMs);
+    if (!byIp.ok || !byAcc.ok) back("limit");
 
     const session = await verifyLogin(email, password);
     if (!session) redirect(`/admin/login?error=1&next=${encodeURIComponent(target)}`);
@@ -60,7 +69,9 @@ export default async function LoginPage({
 
         {error && (
           <p className="rounded-lg bg-rose-50 p-3 text-sm text-rose-700">
-            ელფოსტა ან პაროლი არასწორია.
+            {error === "limit"
+              ? "ძალიან ბევრი მცდელობა — სცადე 15 წუთში."
+              : "ელფოსტა ან პაროლი არასწორია."}
           </p>
         )}
 

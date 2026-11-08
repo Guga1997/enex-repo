@@ -39,7 +39,8 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
   const sp = await searchParams;
   // ფილტრიანი/დალაგებული/გვერდიანი ვარიანტები ერთი გვერდის ასლებია — კანონიკური ბაზისურია,
   // ინდექსში მხოლოდ ის მიდის
-  const filtered = Object.keys(sp).length > 0;
+  // სარეკლამო პარამეტრები (utm_*, fbclid…) ფილტრი არ არის — გვერდი ინდექსში რჩება
+  const filtered = Object.keys(sp).some((k) => !/^(utm_|fbclid$|gclid$|yclid$|_ga$)/.test(k));
   const base = slug?.length ? `/catalog/${slug[slug.length - 1]}` : "/catalog";
   const robots = filtered ? { index: false, follow: true } : undefined;
 

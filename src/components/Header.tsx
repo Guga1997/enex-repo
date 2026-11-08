@@ -132,8 +132,12 @@ export default async function Header() {
         </div>
       </div>
 
-      <div className="container-x pb-3 md:hidden">
-        <SearchBox />
+      {/* ტელეფონზე ზედა ზოლში ენის ადგილი არ არის — ძებნის გვერდით */}
+      <div className="container-x flex items-center gap-2 pb-3 md:hidden">
+        <div className="min-w-0 flex-1">
+          <SearchBox />
+        </div>
+        <LangSwitcher className="shrink-0 sm:hidden" />
       </div>
     </header>
   );

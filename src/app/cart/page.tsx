@@ -2,9 +2,9 @@ import { Suspense } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import CartView from "@/components/CartView";
-import { getT, titleMeta } from "@/lib/i18n/server";
+import { getT, privateMeta } from "@/lib/i18n/server";
 
-export const generateMetadata = titleMeta("კალათა");
+export const generateMetadata = privateMeta("კალათა");
 
 export default async function CartPage() {
   const t = await getT();

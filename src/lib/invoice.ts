@@ -1,4 +1,5 @@
 import { db } from "./db";
+import { invoiceNumber as nextInvoiceSeq } from "./sequence";
 import { gel, formatDate } from "./format";
 import { sendEmail } from "./notify/email";
 import { DELIVERY_METHOD_LABELS, PAYMENT_METHOD_LABELS } from "./constants";
@@ -22,17 +23,17 @@ export const SELLER = {
 export const sellerIsConfigured = () =>
   !SELLER.name.includes("[") && !SELLER.iban.includes("[") && !SELLER.taxId.includes("[");
 
-/** INV-2026-00001 — შეკვეთის ნომრისგან დამოუკიდებელი, თანმიმდევრული ნუმერაცია */
+/** INV-2026-00001 — შეკვეთის ნომრისგან დამოუკიდებელი, თანმიმდევრული ნუმერაცია (მრიცხველით, src/lib/sequence.ts) */
 export async function nextInvoiceNumber(): Promise<string> {
-  const year = new Date().getFullYear();
-  const count = await db.order.count({ where: { invoiceNumber: { not: null } } });
-  return `INV-${year}-${String(count + 1).padStart(5, "0")}`;
+  return db.$transaction((tx) => nextInvoiceSeq(tx));
 }
 
 type InvoiceOrder = {
   number: string;
   invoiceNumber: string | null;
   createdAt: Date;
+  /** რეზერვაციის ვადა — გადახდის ვადა ინვოისზე ამას ემთხვევა */
+  reservedUntil?: Date | null;
   customerName: string;
   customerEmail: string;
   customerPhone: string;
@@ -56,7 +57,7 @@ const esc = (s: string) =>
 /** ინვოისი ერთ HTML-ად — ბეჭდვაც შეიძლება და ელფოსტაშიც ისე ჩანს, როგორც არის */
 export function buildInvoiceHtml(order: InvoiceOrder): string {
   const buyer = order.companyName || order.customerName;
-  const dueDate = new Date(order.createdAt.getTime() + 3 * 86_400_000);
+  const dueDate = order.reservedUntil ?? new Date(order.createdAt.getTime() + 3 * 86_400_000);
   // გადარიცხვაზე ბანკის რეკვიზიტები სჭირდება; ტერმინალზე/ბარათზე — არა, იქ მეთოდი კმარა
   const bankTransfer = !order.paymentMethod || order.paymentMethod === "BANK_TRANSFER";
 
@@ -193,7 +194,16 @@ export async function issueAndSendInvoice(orderId: string) {
   const order = await db.order.findUnique({ where: { id: orderId }, include: { items: true } });
   if (!order) return { ok: false as const, error: "შეკვეთა ვერ მოიძებნა" };
 
-  const invoiceNumber = order.invoiceNumber ?? (await nextInvoiceNumber());
+  // ნომერი ჯერ ბაზაში იწერება, მერე იგზავნება — ორ მყიდველს ერთი ნომერი ვეღარ მოუვა
+  let invoiceNumber = order.invoiceNumber;
+  if (!invoiceNumber) {
+    invoiceNumber = await db.$transaction(async (tx) => {
+      const num = await nextInvoiceSeq(tx);
+      const set = await tx.order.updateMany({ where: { id: orderId, invoiceNumber: null }, data: { invoiceNumber: num } });
+      if (set.count) return num;
+      return (await tx.order.findUnique({ where: { id: orderId }, select: { invoiceNumber: true } }))!.invoiceNumber!;
+    });
+  }
   const html = buildInvoiceHtml({ ...order, invoiceNumber });
 
   const res = await sendEmail({
@@ -207,7 +217,7 @@ export async function issueAndSendInvoice(orderId: string) {
 
   await db.order.update({
     where: { id: orderId },
-    data: { invoiceNumber, invoiceSentAt: res.ok ? new Date() : null },
+    data: { invoiceSentAt: res.ok ? new Date() : null },
   });
 
   return res.ok

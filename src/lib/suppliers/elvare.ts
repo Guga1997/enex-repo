@@ -195,6 +195,10 @@ export const makeElvare = (send: Transport = ipv4): SupplierAdapter => ({
         const item = toItem(p, paths, brands);
         if (item) items.push(item);
       }
+      // ცარიელი გვერდი ბოლომდე — ნუსხა ნაწილობრივია; ასე დაბრუნებული გაქრობად ჩაითვლებოდა
+      if (!body.items?.length && page < (body.total_pages ?? page)) {
+        throw new Error(`Elvare: გვერდი ${page}/${body.total_pages} ცარიელია — ნუსხა არასრულია`);
+      }
       if (!body.items?.length || page >= (body.total_pages ?? page)) break;
     }
     return items;

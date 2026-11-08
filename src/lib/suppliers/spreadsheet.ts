@@ -53,7 +53,7 @@ const DOCS_ROOT = path.join(process.cwd(), "public", "uploads", "docs");
 async function loadWorkbook(cfg: SupplierConfig): Promise<XLSX.WorkBook> {
   const src = cfg.baseUrl?.trim();
   if (src && /^https?:\/\//i.test(src)) {
-    const res = await fetch(src, { cache: "no-store" });
+    const res = await fetch(src, { signal: AbortSignal.timeout(60_000), cache: "no-store" });
     if (!res.ok) throw new Error(`ფაილი ვერ ჩამოიტვირთა: HTTP ${res.status}`);
     return XLSX.read(Buffer.from(await res.arrayBuffer()), { type: "buffer" });
   }
@@ -66,9 +66,20 @@ async function loadWorkbook(cfg: SupplierConfig): Promise<XLSX.WorkBook> {
 
 const cell = (row: unknown[], i: number | undefined) =>
   i === undefined || i < 0 ? "" : String(row[i] ?? "").trim();
-const num = (v: string) => {
-  const clean = v.replace(/[^\d.,-]/g, "").replace(",", ".");
+export const num = (v: string) => {
+  let clean = v.replace(/[^\d.,-]/g, "");
   if (!clean) return null; // ცარიელი უჯრა ნული არ არის
+  if (clean.includes(",") && clean.includes(".")) {
+    // "1,234.50" ან "1.234,50" — ბოლო ნიშანი ათწილადია, მეორე ათასების გამყოფი
+    clean =
+      clean.lastIndexOf(",") > clean.lastIndexOf(".")
+        ? clean.replace(/\./g, "").replace(",", ".")
+        : clean.replace(/,/g, "");
+  } else if (/^-?\d{1,3}(,\d{3})+$/.test(clean)) {
+    clean = clean.replace(/,/g, ""); // "1,234" — ათასები, არა 1.234
+  } else {
+    clean = clean.replace(",", ".");
+  }
   const n = Number(clean);
   return Number.isFinite(n) ? n : null;
 };

@@ -125,7 +125,7 @@ export async function notifySalesNewOrder(orderId: string): Promise<void> {
 }
 
 /** გადახდა დადასტურდა — ბანკის callback-იდან ან ადმინიდან */
-export async function notifySalesPaid(orderId: string): Promise<void> {
+export async function notifySalesPaid(orderId: string, opts: { late?: boolean } = {}): Promise<void> {
   const to = recipients();
   if (!to.length) return;
   const order = await load(orderId);
@@ -136,15 +136,33 @@ export async function notifySalesPaid(orderId: string): Promise<void> {
   const html = summaryHtml(
     order,
     `გადახდილია — შეკვეთა ${order.number}, ${gel(order.total)}`,
-    pickup ? "თანხა ჩამოვიდა. მოამზადე შეკვეთა გასატანად." : "თანხა ჩამოვიდა. მოამზადე შეკვეთა მიწოდებისთვის."
+    opts.late
+      ? "⚠ თანხა ჩამოვიდა შეკვეთის ვადის გასვლის შემდეგ — რეზერვაცია უკვე მოხსნილი იყო. გადაამოწმე ნაშთი, სანამ მყიდველს დაუკავშირდები."
+      : pickup ? "თანხა ჩამოვიდა. მოამზადე შეკვეთა გასატანად." : "თანხა ჩამოვიდა. მოამზადე შეკვეთა მიწოდებისთვის."
   );
   await Promise.all(
     to.map((addr) =>
       sendEmail({
         to: addr,
-        subject: `გადახდილია: შეკვეთა ${order.number} — ${gel(order.total)} · ${pay}`,
+        subject: `${opts.late ? "⚠ ვადის შემდეგ " : ""}გადახდილია: შეკვეთა ${order.number} — ${gel(order.total)} · ${pay}`,
         html,
         text: `შეკვეთა ${order.number} გადახდილია, ${gel(order.total)}, ${pay}.`,
+      }).then((r) => { if (!r.ok) console.error("გაყიდვების წერილი ვერ გაიგზავნა", addr, r.error); })
+    )
+  );
+}
+
+/** გადახდა, რომელიც ავტომატურად ვერ დადასტურდა (თანხა/შეკვეთა არ ემთხვევა) — ხელით გადასახედი */
+export async function notifySalesPaymentProblem(orderNumber: string, problem: string): Promise<void> {
+  const to = recipients();
+  console.error(`გადახდის პრობლემა ${orderNumber}: ${problem}`);
+  await Promise.all(
+    to.map((addr) =>
+      sendEmail({
+        to: addr,
+        subject: `⚠ გადახდა გადასახედია: შეკვეთა ${orderNumber}`,
+        html: `<p>შეკვეთა <b>${orderNumber}</b>: ${problem.replace(/</g, "&lt;")}</p><p>შეკვეთა გადახდილად <b>არ</b> მოინიშნა. გადაამოწმე ბანკის კაბინეტში.</p>`,
+        text: `შეკვეთა ${orderNumber}: ${problem}. გადახდილად არ მოინიშნა — გადაამოწმე ბანკში.`,
       }).then((r) => { if (!r.ok) console.error("გაყიდვების წერილი ვერ გაიგზავნა", addr, r.error); })
     )
   );
