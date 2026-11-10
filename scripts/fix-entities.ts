@@ -1,5 +1,5 @@
 /**
- * პროდუქტის სახელებში/აღწერებში დარჩენილი HTML კოდები (&quot; &amp;) → ნამდვილი სიმბოლოები.
+ * პროდუქტის სახელებში, აღწერებში და მახასიათებლებში დარჩენილი HTML კოდები (&quot; &amp;) → ნამდვილი სიმბოლოები.
  *   npx tsx scripts/fix-entities.ts            — მხოლოდ დათვლა
  *   npx tsx scripts/fix-entities.ts --write    — ჩაწერა
  */
@@ -27,5 +27,19 @@ const FIELDS = ["nameKa", "nameEn", "nameRu", "descriptionKa", "descriptionEn", 
     if (WRITE) await db.product.update({ where: { id: r.id }, data });
   }
   console.log(`${WRITE ? "გასწორდა" : "გასასწორებელია"}: ${n} პროდუქტი${WRITE ? "" : " (--write ჩასაწერად)"}`);
+
+  // მახასიათებლები — ფილტრის სათაურშიც ჩანს („Display diagonal, &quot;“)
+  const RE = /&(amp|quot|#0?39|apos|lt|gt|nbsp);/;
+  const attrs = await db.productAttribute.findMany({
+    where: { OR: [{ name: { contains: "&" } }, { value: { contains: "&" } }] },
+    select: { id: true, name: true, value: true },
+  });
+  let m = 0;
+  for (const at of attrs) {
+    if (!RE.test(at.name) && !RE.test(at.value)) continue;
+    m++;
+    if (WRITE) await db.productAttribute.update({ where: { id: at.id }, data: { name: decodeEntities(at.name), value: decodeEntities(at.value) } });
+  }
+  console.log(`${WRITE ? "გასწორდა" : "გასასწორებელია"}: ${m} მახასიათებელი`);
   await db.$disconnect();
 })();
