@@ -1,5 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { db } from "./db";
+import { closestWord, rankIds } from "./search-rank";
 import { splitFilter } from "./filter-values";
 import { PAGE_SIZE } from "./constants";
 import { ci } from "./search-mode";
@@ -360,8 +361,37 @@ export const productCardSelect = {
   category: { select: { nameKa: true, nameEn: true, nameRu: true } },
 } satisfies Prisma.ProductSelect;
 
+/** ძებნის დასალაგებლად საჭირო მსუბუქი ველები (სურათისა და ფასის დონეების გარეშე) */
+const rankSelect = {
+  id: true, sku: true, model: true, nameKa: true, nameEn: true, nameRu: true,
+  price: true, sortOrder: true, stockStatus: true, stockQty: true, reservedQty: true,
+  brand: { select: { name: true } },
+  category: {
+    select: {
+      nameKa: true, nameEn: true, nameRu: true,
+      parent: { select: { nameKa: true, nameEn: true, nameRu: true } },
+    },
+  },
+} satisfies Prisma.ProductSelect;
+
 export async function getProducts(q: CatalogQuery) {
   const where = buildWhere(q);
+
+  // ძებნა, დალაგება არჩეული არ არის → შესაბამისობით (src/lib/search-rank.ts), არა ფასით.
+  // ყველა დამთხვევის მსუბუქ ველებს ვიღებთ, მეხსიერებაში ვალაგებთ და მხოლოდ ამ გვერდის
+  // ბარათებს ვტვირთავთ სრულად.
+  if (q.q && q.sort === "default") {
+    const rows = await db.product.findMany({ where, select: rankSelect });
+    const ids = rankIds(rows, q.q).slice((q.page - 1) * PAGE_SIZE, q.page * PAGE_SIZE);
+    const cards = await db.product.findMany({ where: { id: { in: ids } }, select: productCardSelect });
+    const byId = new Map(cards.map((c) => [c.id, c]));
+    return {
+      items: ids.flatMap((id) => byId.get(id) ?? []),
+      total: rows.length,
+      pages: Math.max(1, Math.ceil(rows.length / PAGE_SIZE)),
+    };
+  }
+
   const [items, total] = await Promise.all([
     db.product.findMany({
       where,
@@ -373,4 +403,42 @@ export async function getProducts(q: CatalogQuery) {
     db.product.count({ where }),
   ]);
   return { items, total, pages: Math.max(1, Math.ceil(total / PAGE_SIZE)) };
+}
+
+/** ბრენდებისა და კატეგორიების სიტყვები — შეცდომით აკრეფილის გასასწორებლად; 5 წუთი ინახება */
+let knownWords: { at: number; words: Set<string> } | null = null;
+async function loadKnownWords(): Promise<Set<string>> {
+  if (knownWords && Date.now() - knownWords.at < 5 * 60_000) return knownWords.words;
+  const [brands, cats] = await Promise.all([
+    db.brand.findMany({ select: { name: true } }),
+    db.category.findMany({ where: { isActive: true }, select: { nameKa: true, nameEn: true, nameRu: true } }),
+  ]);
+  const words = new Set<string>();
+  const add = (v: string | null) => {
+    for (const w of (v ?? "").toLowerCase().split(/[^\p{L}\p{N}]+/u)) if (w.length >= 5) words.add(w);
+  };
+  for (const b of brands) add(b.name);
+  for (const c of cats) [c.nameKa, c.nameEn, c.nameRu].forEach(add);
+  knownWords = { at: Date.now(), words };
+  return words;
+}
+
+/**
+ * ძებნამ არაფერი იპოვა → შეცდომით აკრეფილ სიტყვებს („hikvison“) ცნობილი ბრენდის ან
+ * კატეგორიის სიტყვით ვცვლით. აბრუნებს გასწორებულ მოთხოვნას ან იმავეს, თუ გასასწორებელი არაფერია.
+ */
+export async function fixTypos(q: CatalogQuery): Promise<CatalogQuery> {
+  if (!q.q) return q;
+  if (await db.product.count({ where: buildWhere(q), take: 1 })) return q;
+  const known = await loadKnownWords();
+  let changed = false;
+  const fixed = q.q
+    .split(/\s+/)
+    .map((w) => {
+      const better = closestWord(w, known);
+      if (better) changed = true;
+      return better ?? w;
+    })
+    .join(" ");
+  return changed ? { ...q, q: fixed } : q;
 }

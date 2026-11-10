@@ -22,6 +22,7 @@ import {
   categoryIdsWithDescendants,
   getFacets,
   getProducts,
+  fixTypos,
   parseQuery,
   type SearchParams,
 } from "@/lib/catalog";
@@ -120,7 +121,9 @@ export default async function CatalogPage({ params, searchParams }: Props) {
   const heading = cables ? nameOf(cables, locale) : category ? nameOf(category, locale) : null;
 
   const viewer = await getCurrentUser();
-  const query = parseQuery(sp, categoryIds);
+  const asked = parseQuery(sp, categoryIds);
+  // „hikvison“ → „hikvision“: ნული შედეგის ნაცვლად ყველაზე ახლო ბრენდი/კატეგორია
+  const query = await fixTypos(asked);
   const [facets, { items, total, pages }] = await Promise.all([
     getFacets(query),
     getProducts(query),
@@ -153,6 +156,11 @@ export default async function CatalogPage({ params, searchParams }: Props) {
         <h1 className="mb-4 text-2xl font-bold">
           {heading ?? (query.q ? t("ძებნის შედეგები: {0}", query.q) : t("ყველა პროდუქტი"))}
         </h1>
+        {asked.q && query.q !== asked.q && (
+          <p className="-mt-2 mb-4 text-sm text-muted">
+            {t("„{0}“ ვერ მოიძებნა — ნაჩვენებია „{1}“.", asked.q, query.q ?? "")}
+          </p>
+        )}
 
         {/* ქვეკატეგორიების ჩიპები */}
         {chips.length > 0 && (

@@ -33,7 +33,10 @@ const GROUPS: string[][] = [
   ["პროცესორ", "processor", "cpu"],
   ["ვიდეობარათ", "graphics", "gpu"],
   ["დედადაფ", "motherboard"],
-  ["დისკ", "ssd", "hdd", "nvme"],
+  // SSD და HDD სხვადასხვა ნივთია — „ssd“-ზე მყარი დისკები და ჩამწერები არ უნდა ამოვიდეს
+  ["დისკ", "drive"],
+  ["ssd", "სსდ", "nvme"],
+  ["hdd", "მყარი დისკ", "hard drive"],
   ["ფლეშ", "flash", "usb drive"],
   ["ქულერ", "cooler", "cooling"],
   ["კვების ბლოკ", "power supply", "psu"],
