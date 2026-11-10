@@ -173,7 +173,8 @@ select optgroup {
 .group:hover .cat-ico {
   animation: cat-in 0.35s ease-out var(--d, 0ms) both;
 }
-.group/item:hover .cat-ico {
+/* Tailwind-ის კლასია „group/item“ — CSS-ში დახრილი ხაზი ეკრანირებას ითხოვს, თორემ წესი იგნორირდება */
+.group\/item:hover .cat-ico {
   animation: cat-pop 0.3s ease-out both;
 }
 @keyframes cat-in {
