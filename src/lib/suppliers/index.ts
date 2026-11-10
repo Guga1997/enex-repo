@@ -12,6 +12,7 @@ import { spreadsheet } from "./spreadsheet";
 import { computePrices, Pricer, repriceProduct } from "./pricing";
 import type { SupplierAdapter, SupplierConfig, SupplierItem } from "./types";
 import { translateName } from "../i18n/translate-name";
+import { FALLBACK_CATEGORY, refineCategory, type RuleInput } from "../category-rules";
 
 export type { SupplierItem, SupplierConfig, SupplierAdapter } from "./types";
 
@@ -33,7 +34,7 @@ export function resolveAdapter(name: string): SupplierAdapter {
 
 export const adapterNames = () => Object.keys(ADAPTERS);
 
-export const FALLBACK = "დაუკატეგორიებელი (იმპორტი)";
+export const FALLBACK = FALLBACK_CATEGORY;
 
 /** „ხმამაღლამოლაპარაკე“ ≈ „ხმამაღლამოლაპარაკეები“ ≈ „ხმამაღლამოლაპარაკეები (AV)“ */
 function normCat(s: string): string {
@@ -140,20 +141,55 @@ export async function resolveCategoryId(path: string[] | undefined): Promise<str
  * არსებული პროდუქტი ფსკერზე ან ფესვშია? — მიმწოდებლის გზით უფრო კონკრეტულს ვეძებთ.
  * ადმინის ხელით არჩეულ ქვეკატეგორიას არ ვეხებით.
  */
-async function recategorizeIfVague(productId: string, path: string[] | undefined) {
-  if (!path?.length) return;
+async function recategorizeIfVague(productId: string, path: string[] | undefined, item?: SupplierItem) {
   const p = await db.product.findUnique({
     where: { id: productId },
-    select: { categoryId: true, category: { select: { nameKa: true, parentId: true } } },
+    select: { sku: true, nameKa: true, model: true, categoryId: true, brand: { select: { name: true } }, category: { select: { nameKa: true, parentId: true } } },
   });
   if (!p) return;
+  let categoryId = p.categoryId;
   const vague = p.category.nameKa === FALLBACK || p.category.parentId === null;
-  if (!vague) return;
-  const next = await resolveCategoryId(path);
-  if (next === p.categoryId) return;
-  const cat = await db.category.findUnique({ where: { id: next }, select: { nameKa: true, parentId: true } });
-  if (!cat || cat.nameKa === FALLBACK || cat.parentId === null) return; // უკეთესი არ არის
-  await db.product.update({ where: { id: productId }, data: { categoryId: next } });
+  if (vague && path?.length) {
+    const next = await resolveCategoryId(path);
+    const cat = next === categoryId ? null : await db.category.findUnique({ where: { id: next }, select: { nameKa: true, parentId: true } });
+    if (cat && cat.nameKa !== FALLBACK && cat.parentId !== null) categoryId = next; // უკეთესი მოიძებნა
+  }
+  // ზოგად კატეგორიაში („UPS“, „მონაცემთა შენახვა“) მყოფს სახელით ვაზუსტებთ
+  categoryId = await refineCategoryId(categoryId, {
+    name: p.nameKa,
+    brand: p.brand?.name ?? item?.brand,
+    model: p.model ?? item?.model,
+    sku: p.sku,
+  });
+  if (categoryId !== p.categoryId) await db.product.update({ where: { id: productId }, data: { categoryId } });
+}
+
+/** კატეგორიის გზა ძირიდან — სინქის განმავლობაში ინახება (კატეგორია ~300-ია, პროდუქტი ათასობით) */
+const chainCache = new Map<string, { at: number; chain: string[] }>();
+async function cachedChain(id: string): Promise<string[]> {
+  const hit = chainCache.get(id);
+  if (hit && Date.now() - hit.at < 5 * 60_000) return hit.chain;
+  const chain = await categoryChain(id);
+  chainCache.set(id, { at: Date.now(), chain });
+  return chain;
+}
+
+/** ზუსტი გზით კატეგორიის პოვნა; არ არსებობს — null (ბუნდოვანი ძებნის გარეშე) */
+async function categoryIdByPath(path: string[]): Promise<string | null> {
+  let parent: string | null = null;
+  for (const name of path) {
+    const c: { id: string } | null = await db.category.findFirst({ where: { parentId: parent, nameKa: name }, select: { id: true } });
+    if (!c) return null;
+    parent = c.id;
+  }
+  return parent;
+}
+
+/** src/lib/category-rules.ts-ის წესებით უფრო ზუსტი ქვეკატეგორია; წესი არ არის — იგივე id */
+export async function refineCategoryId(categoryId: string, p: RuleInput): Promise<string> {
+  const next = refineCategory(p, await cachedChain(categoryId));
+  if (!next) return categoryId;
+  return (await categoryIdByPath(next)) ?? categoryId;
 }
 
 /** კატეგორიის სახელები ძირიდან */
@@ -345,7 +381,12 @@ export async function syncSupplier(supplierId: string): Promise<SyncResult> {
         let productId = await matchProductId(supplier.id, item);
 
         if (!productId) {
-          const categoryId = await resolveCategoryId(item.categoryPath);
+          const categoryId = await refineCategoryId(await resolveCategoryId(item.categoryPath), {
+            name: item.name,
+            brand: item.brand,
+            model: item.model,
+            sku: item.supplierSku,
+          });
           const prices = computePrices(
             pricer.ruleFor(supplier.id, categoryId) ?? supplier,
             item.cost,
@@ -406,7 +447,7 @@ export async function syncSupplier(supplierId: string): Promise<SyncResult> {
           }
         } else {
           const pid: string = productId;
-          await recategorizeIfVague(pid, item.categoryPath);
+          await recategorizeIfVague(pid, item.categoryPath, item);
           // დოკუმენტები/მახასიათებლები, თუ პროდუქტს ჯერ არ აქვს — მიმწოდებელმა მოგვიანებით რომ დაამატოს
           if (item.documents?.length && !(await db.productDocument.count({ where: { productId: pid } }))) {
             await db.productDocument.createMany({
