@@ -123,3 +123,21 @@ test("უკვე ცნობილ პოზიციაზე დეტა�
   await intelectro.fetchItems(cfg, { known: new Set(["882889", "882927", "161000202"]) });
   assert.deepEqual(calls.map((c) => c.url), ["https://intelectro.test/api/v1/products"]);
 });
+
+test("ფოტოების სია: მძიმე ფაილის სახელში მისამართს არ წყვეტს", async () => {
+  const { urls } = await import("../src/lib/suppliers/intelectro");
+  assert.deepEqual(
+    urls(
+      "https://intelectro.ge/admin/uploads/product/Tiandy/TC-H363U 8DA-4, 2x3MP.jpg",
+      "https://intelectro.ge/a/CABLE_8X0,22.jpg, https://intelectro.ge/a/b.png,https://intelectro.ge/a/c.png",
+      "https://intelectro.ge/",
+      null
+    ),
+    [
+      "https://intelectro.ge/admin/uploads/product/Tiandy/TC-H363U 8DA-4, 2x3MP.jpg",
+      "https://intelectro.ge/a/CABLE_8X0,22.jpg",
+      "https://intelectro.ge/a/b.png",
+      "https://intelectro.ge/a/c.png",
+    ]
+  );
+});

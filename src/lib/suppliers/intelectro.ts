@@ -110,10 +110,12 @@ export function specsFromHtml(html: string | null | undefined): { name: string; 
   return out;
 }
 
-const urls = (...vals: (string | null | undefined)[]) => {
+export const urls = (...vals: (string | null | undefined)[]) => {
   const seen = new Set<string>();
   for (const v of vals) {
-    for (const part of String(v ?? "").split(",")) {
+    // სია მძიმით არის გაყოფილი, მაგრამ მძიმე ფაილის სახელშიც გვხვდება („TC-H363U 8DA-4, 2x3MP.jpg“,
+    // „CABLE_8X0,22.jpg“) — ვყოფთ მხოლოდ იქ, სადაც მძიმის შემდეგ ახალი მისამართი იწყება
+    for (const part of String(v ?? "").split(/,\s*(?=https?:\/\/)/i)) {
       const u = part.trim();
       // „https://intelectro.ge/“ — ცარიელი ჩანაწერი, ფაილი არ არის
       if (/^https?:\/\/[^/]+\/.+/.test(u)) seen.add(u);
