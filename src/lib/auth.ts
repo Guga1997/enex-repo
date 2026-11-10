@@ -3,7 +3,8 @@ import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
 import { db } from "./db";
 import { ADMIN_AUD, authSecret } from "./auth-secret";
-import { ROLES } from "./workflow";
+import { redirect } from "next/navigation";
+import { ROLES, canOpen, homeFor } from "./workflow";
 
 const COOKIE = "admin_session";
 const secret = authSecret;
@@ -61,4 +62,15 @@ export async function getSession(): Promise<Session | null> {
 
 export async function destroySession() {
   (await cookies()).delete(COOKIE);
+}
+
+/**
+ * ადმინის გვერდის დასაწყისში: სესია ბაზით მოწმდება (გამორთული/როლშეცვლილი თანამშრომელი
+ * მაშინვე კარგავს წვდომას — middleware მხოლოდ ტოკენს ხედავს) და როლს ამ გვერდის ნახვის უფლება აქვს.
+ */
+export async function requireStaff(path: string): Promise<Session> {
+  const session = await getSession();
+  if (!session) redirect("/admin/login");
+  if (!canOpen(session.role, path)) redirect(homeFor(session.role));
+  return session;
 }

@@ -1,3 +1,4 @@
+import { requireStaff } from "@/lib/auth";
 import Link from "next/link";
 import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
@@ -29,6 +30,7 @@ export default async function AdminOrders({
 }: {
   searchParams: Promise<{ q?: string; status?: string; page?: string; from?: string; to?: string }>;
 }) {
+  await requireStaff("/admin/orders");
   const sp = await searchParams;
   const page = Math.max(1, Number(sp.page) || 1);
   const q = sp.q?.trim();

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
-import { getSession } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
 import { formatDate, gel } from "@/lib/format";
 import { ROLE_LABEL, canSee, type Role } from "@/lib/workflow";
 import OrderWorkflow from "@/components/admin/OrderWorkflow";
@@ -18,8 +18,8 @@ export const metadata = { title: "შეკვეთის პროცესი
  */
 export default async function WorkflowOrderPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const session = await getSession();
-  const role = session?.role ?? "ADMIN";
+  const session = await requireStaff("/admin/workflow/x");
+  const role = session.role;
 
   const order = await db.order.findUnique({
     where: { id },

@@ -1,3 +1,4 @@
+import { requireStaff } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { MAX_PARTNER_SHARE, TIER_COST_PLUS, TIERS } from "@/lib/pricing";
 import { getTierShares } from "@/lib/pricing-settings";
@@ -16,6 +17,7 @@ export default async function PricesPage({
 }: {
   searchParams: Promise<{ ok?: string; error?: string }>;
 }) {
+  await requireStaff("/admin/prices");
   const { ok, error } = await searchParams;
 
   const [suppliers, supplies, shares] = await Promise.all([

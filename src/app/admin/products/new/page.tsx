@@ -1,3 +1,4 @@
+import { requireStaff } from "@/lib/auth";
 import { db } from "@/lib/db";
 import ProductForm from "@/components/admin/ProductForm";
 
@@ -5,6 +6,7 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "ახალი პროდუქტი" };
 
 export default async function NewProductPage() {
+  await requireStaff("/admin/products/new");
   const [categories, brands] = await Promise.all([
     db.category.findMany({
       select: { id: true, nameKa: true, parentId: true },

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
-import { getSession } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
 import { formatDate, gel } from "@/lib/format";
 import {
   ROLE_LABEL,
@@ -23,11 +23,12 @@ export const metadata = { title: "პროცესი" };
  * ბარათებადაა და არა ცხრილად: კურიერი ამას ტელეფონიდან ხსნის.
  */
 export default async function WorkflowPage() {
-  const session = await getSession();
-  const role = session?.role ?? "ADMIN";
+  const session = await requireStaff("/admin/workflow");
+  const role = session.role;
 
   const orders = await db.order.findMany({
-    where: { status: { notIn: ["CANCELLED", "EXPIRED", "RETURNED"] } },
+    // DELIVERED აქვე გამოირიცხება — თორემ 200 დასრულებულის შემდეგ ახალი შეკვეთა სიაში აღარ ჩანდა
+    where: { status: { notIn: ["CANCELLED", "EXPIRED", "RETURNED", "DELIVERED"] } },
     include: { steps: { select: { step: true } } },
     orderBy: { createdAt: "asc" },
     take: 200,

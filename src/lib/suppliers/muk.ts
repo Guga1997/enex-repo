@@ -27,7 +27,17 @@ type Map = {
 };
 
 type Node = Record<string, unknown>;
-const text = (v: unknown): string => (v === null || v === undefined ? "" : String(v).trim());
+/** MUK-ის XML-ში ტექსტი ორმაგად არის დაკოდირებული (&amp;quot;) — საიტზე „&quot;“ ასოებად ჩანდა */
+export const decodeEntities = (s: string): string =>
+  s
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#0?39;|&apos;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&");
+const text = (v: unknown): string => (v === null || v === undefined ? "" : decodeEntities(String(v)).trim());
 const num = (v: unknown): number | null => {
   const n = Number(text(v).replace(",", "."));
   return Number.isFinite(n) ? n : null;

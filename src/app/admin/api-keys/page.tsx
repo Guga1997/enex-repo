@@ -1,3 +1,4 @@
+import { requireStaff } from "@/lib/auth";
 import { cookies } from "next/headers";
 import { db } from "@/lib/db";
 import { formatDate } from "@/lib/format";
@@ -7,6 +8,7 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "API გასაღებები" };
 
 export default async function ApiKeysPage() {
+  await requireStaff("/admin/api-keys");
   // ახლახან შექმნილი გასაღები — 60 წამი ჩანს, მერე cookie თავისით ქრება
   const created = (await cookies()).get("api_key_created")?.value;
   const [keys, categories] = await Promise.all([

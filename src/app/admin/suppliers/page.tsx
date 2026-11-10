@@ -1,3 +1,4 @@
+import { requireStaff } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { formatDate } from "@/lib/format";
 import { adapterNames } from "@/lib/suppliers";
@@ -17,6 +18,7 @@ export default async function SuppliersPage({
 }: {
   searchParams: Promise<{ test?: string; error?: string; edit?: string }>;
 }) {
+  await requireStaff("/admin/suppliers");
   const { test, error, edit } = await searchParams;
 
   const suppliers = await db.supplier.findMany({

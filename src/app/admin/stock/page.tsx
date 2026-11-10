@@ -1,3 +1,4 @@
+import { requireStaff } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { STOCK_LABELS } from "@/lib/constants";
 import { ci } from "@/lib/search-mode";
@@ -10,6 +11,7 @@ export default async function StockLogPage({
 }: {
   searchParams: Promise<{ sku?: string }>;
 }) {
+  await requireStaff("/admin/stock");
   const { sku } = await searchParams;
 
   const logs = await db.stockSyncLog.findMany({

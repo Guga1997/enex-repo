@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { getSession } from "@/lib/auth";
+import { getSession, requireStaff } from "@/lib/auth";
 import { formatDate } from "@/lib/format";
 import { ROLES, ROLE_LABEL, STEP_DEFS, type Role } from "@/lib/workflow";
 import PasswordField from "@/components/admin/PasswordField";
@@ -40,6 +40,7 @@ export default async function StaffPage({
 }: {
   searchParams: Promise<{ ok?: string; error?: string }>;
 }) {
+  await requireStaff("/admin/staff");
   const session = (await getSession())!;
   const { ok, error } = await searchParams;
 

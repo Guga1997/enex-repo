@@ -1,3 +1,4 @@
+import { requireStaff } from "@/lib/auth";
 import Image from "next/image";
 import { db } from "@/lib/db";
 import ImageUploader from "@/components/admin/ImageUploader";
@@ -15,6 +16,7 @@ export default async function BannersPage({
 }: {
   searchParams: Promise<{ edit?: string }>;
 }) {
+  await requireStaff("/admin/banners");
   const { edit } = await searchParams;
   const [banners, brands, roots] = await Promise.all([
     db.banner.findMany({ orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] }),

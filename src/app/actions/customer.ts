@@ -41,12 +41,13 @@ export type FormState = { error?: string; field?: string; ok?: string } | null;
  * cookie-ში id ხელმოწერით ინახება — უბრალო id ხელით ჩასმის საშუალებას იძლეოდა და
  * „კოდის ხელახლა გაგზავნა“ სხვის ანგარიშზე (სხვის ტელეფონზე SMS) წავიდოდა.
  */
-const signId = (id: string) =>
-  `${id}.${createHmac("sha256", process.env.AUTH_SECRET || "dev-only-insecure-secret-change-me!!").update("pending:" + id).digest("base64url")}`;
-function readSigned(v: string | undefined): string | null {
+type Purpose = "pending" | "reset";
+const signId = (id: string, purpose: Purpose = "pending") =>
+  `${id}.${createHmac("sha256", process.env.AUTH_SECRET || "dev-only-insecure-secret-change-me!!").update(purpose + ":" + id).digest("base64url")}`;
+function readSigned(v: string | undefined, purpose: Purpose = "pending"): string | null {
   if (!v) return null;
   const id = v.slice(0, v.lastIndexOf("."));
-  return id && signId(id) === v ? id : null;
+  return id && signId(id, purpose) === v ? id : null;
 }
 
 /** დასადასტურებელი ანგარიში cookie-ში ინახება — id URL-ში არ გადის */
@@ -128,6 +129,17 @@ export async function verifyAction(_prev: FormState, formData: FormData): Promis
   const code = String(formData.get("code") ?? "");
   if (!/^\d{6}$/.test(code.trim())) return { error: t("კოდი 6 ციფრისგან შედგება"), field: channel };
 
+  // უკვე დადასტურებულ ანგარიშზე კოდით შესვლა არ არსებობს — შედის პაროლით
+  const pendingUser = await db.user.findUnique({ where: { id: userId } });
+  if (!pendingUser || isVerified(pendingUser)) {
+    await clearPending();
+    return { error: t("სესიას ვადა გაუვიდა — გაიარე რეგისტრაცია თავიდან") };
+  }
+  // კოდის გამოცნობის წინააღმდეგ — IP-ზე
+  if (!rateLimit(`verify-ip:${await clientIp()}`, 30, 15 * 60_000).ok) {
+    return { error: t("ძალიან ბევრი მცდელობა — სცადე 15 წუთში.") };
+  }
+
   const res = await confirmCode(userId, channel, code);
   if (!res.ok) return { error: t(res.error), field: channel };
 
@@ -161,6 +173,11 @@ export async function resendAction(_prev: FormState, formData: FormData): Promis
   const hourly = rateLimit(`resend-h:${userId}`, LIMITS.resendPerUserHour.limit, LIMITS.resendPerUserHour.windowMs);
   if (!hourly.ok) return { error: t("ლიმიტი ამოიწურა — {0}", retryText(hourly.retryAfterSec, t)) };
 
+  const pendingUser = await db.user.findUnique({ where: { id: userId } });
+  if (!pendingUser || isVerified(pendingUser)) {
+    await clearPending();
+    return { error: t("სესიას ვადა გაუვიდა — გაიარე რეგისტრაცია თავიდან") };
+  }
   const channel = String(formData.get("channel") ?? "EMAIL") === "SMS" ? "SMS" : "EMAIL";
   const res = await issueCode(userId, channel);
   if (!res.ok) return { error: t(res.error) };
@@ -301,7 +318,7 @@ export async function changePasswordAction(_prev: FormState, formData: FormData)
 const RESETTING = "resetting_user";
 
 export async function getResettingUserId(): Promise<string | null> {
-  return readSigned((await cookies()).get(RESETTING)?.value);
+  return readSigned((await cookies()).get(RESETTING)?.value, "reset");
 }
 
 /**
@@ -324,7 +341,7 @@ export async function requestResetAction(_prev: FormState, formData: FormData): 
   const user = await findUserByLogin(login);
   if (user && user.isActive) {
     await issueResetCode(user.id);
-    (await cookies()).set(RESETTING, signId(user.id), {
+    (await cookies()).set(RESETTING, signId(user.id, "reset"), {
       httpOnly: true,
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",

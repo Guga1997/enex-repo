@@ -1,3 +1,4 @@
+import { requireStaff } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import ProductForm from "@/components/admin/ProductForm";
@@ -18,6 +19,7 @@ export default async function EditProductPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await requireStaff("/admin/products/x");
   const { id } = await params;
 
   const [product, categories, brands] = await Promise.all([

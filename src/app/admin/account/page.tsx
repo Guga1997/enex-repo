@@ -1,4 +1,4 @@
-import { getSession } from "@/lib/auth";
+import { getSession, requireStaff } from "@/lib/auth";
 import { changeAdminEmail, changeAdminPassword } from "../actions";
 
 export const dynamic = "force-dynamic";
@@ -20,6 +20,7 @@ export default async function AdminAccountPage({
 }: {
   searchParams: Promise<{ ok?: string; error?: string }>;
 }) {
+  await requireStaff("/admin/account");
   const session = (await getSession())!;
   const { ok, error } = await searchParams;
   const isDefault = session.email === "admin@example.ge";

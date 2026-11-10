@@ -1,3 +1,4 @@
+import { requireStaff } from "@/lib/auth";
 import Link from "next/link";
 import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
@@ -38,6 +39,7 @@ const SORTS: Record<string, (d: Prisma.SortOrder) => Prisma.ProductOrderByWithRe
 const TEXT_SORTS = new Set(["name", "category"]);
 
 export default async function InventoryPage({ searchParams }: { searchParams: Promise<SP> }) {
+  await requireStaff("/admin/inventory");
   const sp = await searchParams;
   const page = Math.max(1, Number(sp.page) || 1);
   const sort = sp.sort && SORTS[sp.sort] ? sp.sort : "qty";

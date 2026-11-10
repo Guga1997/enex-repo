@@ -8,7 +8,7 @@ import {
   PAYMENT_STATUS_LABELS,
 } from "@/lib/constants";
 import { setItemSerials, updateOrderStatus } from "../../actions";
-import { getSession } from "@/lib/auth";
+import { getSession, requireStaff } from "@/lib/auth";
 import OrderWorkflow from "@/components/admin/OrderWorkflow";
 
 export const dynamic = "force-dynamic";
@@ -19,6 +19,7 @@ export default async function AdminOrderDetail({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await requireStaff("/admin/orders/x");
   const { id } = await params;
   const [order, session] = await Promise.all([
     db.order.findUnique({

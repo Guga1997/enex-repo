@@ -1,3 +1,4 @@
+import { requireStaff } from "@/lib/auth";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { gel, formatDate } from "@/lib/format";
@@ -8,6 +9,7 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "მიმოხილვა" };
 
 export default async function AdminDashboard() {
+  await requireStaff("/admin");
   const [products, active, outOfStock, lowStock, orders, pending, revenue, recent] =
     await Promise.all([
       db.product.count(),

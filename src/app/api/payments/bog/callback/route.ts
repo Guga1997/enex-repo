@@ -47,10 +47,14 @@ export async function POST(req: Request) {
     const body = payload.body!;
     const paid = Number(body.purchase_units?.transfer_amount ?? body.purchase_units?.request_amount);
     const currency = body.purchase_units?.currency_code;
+    // ხელმოწერა მხოლოდ „ბანკმა გამოგზავნა“-ს ამტკიცებს და ყველა მერჩანტისთვის ერთია — ამიტომ
+    // callback ზუსტად იმ გადახდას უნდა ეკუთვნოდეს, რომელიც ჩვენ შევქმენით (სხვა მერჩანტის
+    // გადახდა ჩვენი შეკვეთის ნომრით საბანკო გადარიცხვის შეკვეთას „გადახდილად“ ვერ მონიშნავს)
     const problems = [
-      order.paymentId && body.order_id && body.order_id !== order.paymentId ? `ბანკის შეკვეთის id ${body.order_id} ≠ ${order.paymentId}` : "",
-      Number.isFinite(paid) && Math.round(paid * 100) !== Math.round(order.total * 100) ? `თანხა ${paid}, შეკვეთა ${order.total}` : "",
-      currency && currency !== "GEL" ? `ვალუტა ${currency}` : "",
+      order.paymentMethod !== "BOG" ? `შეკვეთის გადახდის მეთოდია ${order.paymentMethod}` : "",
+      !order.paymentId || body.order_id !== order.paymentId ? `ბანკის შეკვეთის id ${body.order_id ?? "—"} ≠ ${order.paymentId ?? "—"}` : "",
+      !Number.isFinite(paid) || Math.round(paid * 100) !== Math.round(order.total * 100) ? `თანხა ${paid}, შეკვეთა ${order.total}` : "",
+      currency !== "GEL" ? `ვალუტა ${currency ?? "—"}` : "",
     ].filter(Boolean);
     if (problems.length) {
       if (order.paymentStatus !== "PAID") await notifySalesPaymentProblem(order.number, "BOG: " + problems.join("; ")).catch(() => {});
@@ -58,7 +62,12 @@ export async function POST(req: Request) {
     }
     await markOrderPaid(order.id, payload);
   }
-  else if (statusKey === "rejected") await markOrderFailed(order.id, payload);
+  else if (statusKey === "rejected") {
+    // უცხო callback-ით ჩვენი შეკვეთის გაუქმებაც არ უნდა შეიძლებოდეს
+    if (order.paymentMethod === "BOG" && order.paymentId && payload.body?.order_id === order.paymentId) {
+      await markOrderFailed(order.id, payload);
+    }
+  }
   // თანხა მთლიანად დაბრუნდა (ადმინიდან ან ბანკის კაბინეტიდან) — გადახდილად აღარ ჩანს
   else if (statusKey === "refunded") {
     await db.order.updateMany({ where: { id: order.id, paymentStatus: "PAID" }, data: { paymentStatus: "REFUNDED" } });

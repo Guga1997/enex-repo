@@ -6,7 +6,7 @@ import { applyFlittResult, fetchFlittStatus } from "./payments/flitt";
 /** ბანკი პასუხს არ იძლევა / გადახდა ჯერ მუშავდება — მაქსიმუმ ამდენი ხანი ველოდებით ვადის შემდეგ */
 const BANK_GRACE_MS = 60 * 60_000;
 
-type Outcome = "paid" | "failed" | "pending" | "unknown";
+type Outcome = "paid" | "failed" | "pending" | "abandoned" | "unknown";
 
 /**
  * ბარათით გადახდის სტატუსი პირდაპირ ბანკიდან. callback შეიძლება დაიკარგოს (ჩვენი
@@ -18,7 +18,8 @@ async function askBank(o: { id: string; paymentMethod: string; paymentId: string
   if (o.paymentMethod === "BOG") {
     if (isMockMode()) return "unknown";
     const s = await fetchPaymentStatus(o.paymentId);
-    if (!s) return "unknown";
+    // ბანკმა ვერ გვიპასუხა (5xx/429) — ჯერ არ ვაუქმებთ, ლოდინის ვადა მოქმედებს
+    if (!s) return "pending";
     if (s.key === "completed") {
       await markOrderPaid(o.id, s.raw);
       return "paid";
@@ -27,16 +28,16 @@ async function askBank(o: { id: string; paymentMethod: string; paymentId: string
       await markOrderFailed(o.id, s.raw);
       return "failed";
     }
-    // created — მყიდველმა გადახდის გვერდი არ დაასრულა; ბანკის ttl უკვე გავიდა
-    return s.key === "created" ? "failed" : "pending";
+    // created — მყიდველმა გადახდის გვერდი არ დაასრულა; ბანკის ttl უკვე გავიდა → შეკვეთა უქმდება
+    return s.key === "created" ? "abandoned" : "pending";
   }
   if (o.paymentMethod === "TBC") {
     const r = await fetchFlittStatus(o.paymentId);
-    if (!r) return "unknown";
+    if (!r) return "pending";
     const res = await applyFlittResult(r);
     if (res === "paid" || res === "failed") return res;
     if (res === "mismatch") return "pending"; // ხელით გადასახედი — გაყიდვებს უკვე ეცნობა
-    return r.order_status === "created" ? "failed" : "pending";
+    return r.order_status === "created" ? "abandoned" : "pending";
   }
   return "unknown";
 }

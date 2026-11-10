@@ -12,6 +12,10 @@ const COOKIE = "user_session";
 const CODE_TTL_MIN = 10;
 const MAX_ATTEMPTS = 5;
 
+/** მომხმარებლის შეყვანილი ტექსტი წერილის HTML-ში — ტეგები არ უნდა გაიაროს */
+const escHtml = (v: string) =>
+  v.slice(0, 120).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
+
 const secret = authSecret;
 
 export type CustomerSession = { id: string; email: string; name: string; priceTier: string; iat?: number };
@@ -191,7 +195,7 @@ export async function issueCode(userId: string, channel: "EMAIL" | "SMS") {
     await sendEmail({
       to: user.email,
       subject: `დადასტურების კოდი: ${code}`,
-      html: `<p>გამარჯობა, ${user.name}.</p>
+      html: `<p>გამარჯობა, ${escHtml(user.name)}.</p>
              <p>ელფოსტის დასადასტურებელი კოდია <b style="font-size:20px">${code}</b>.</p>
              <p>კოდი ${CODE_TTL_MIN} წუთის განმავლობაშია ძალაში.</p>`,
     });
@@ -212,11 +216,15 @@ export async function confirmCode(userId: string, channel: "EMAIL" | "SMS", code
   if (row.attempts >= MAX_ATTEMPTS)
     return { ok: false as const, error: "ცდების ლიმიტი ამოიწურა — გამოითხოვე ახალი კოდი" };
 
+  // ცდა ჯერ ითვლება, მერე მოწმდება — პარალელური მოთხოვნებით 5-ზე მეტს ვეღარ გამოიცნობენ
+  const claimed = await db.verificationCode.updateMany({
+    where: { id: row.id, attempts: { lt: MAX_ATTEMPTS }, consumedAt: null },
+    data: { attempts: { increment: 1 } },
+  });
+  if (!claimed.count) return { ok: false as const, error: "ცდების ლიმიტი ამოიწურა — გამოითხოვე ახალი კოდი" };
+
   const ok = await bcrypt.compare(code.trim(), row.codeHash);
-  if (!ok) {
-    await db.verificationCode.update({ where: { id: row.id }, data: { attempts: { increment: 1 } } });
-    return { ok: false as const, error: "კოდი არასწორია" };
-  }
+  if (!ok) return { ok: false as const, error: "კოდი არასწორია" };
 
   await db.verificationCode.update({ where: { id: row.id }, data: { consumedAt: new Date() } });
   await db.user.update({
@@ -290,7 +298,7 @@ export async function issueResetCode(userId: string) {
     sendEmail({
       to: user.email,
       subject: `პაროლის აღდგენის კოდი: ${code}`,
-      html: `<p>გამარჯობა, ${user.name}.</p>
+      html: `<p>გამარჯობა, ${escHtml(user.name)}.</p>
              <p>პაროლის აღსადგენი კოდია <b style="font-size:20px">${code}</b>.</p>
              <p>კოდი ${CODE_TTL_MIN} წუთის განმავლობაშია ძალაში.</p>
              <p style="color:#666">თუ პაროლის აღდგენა შენ არ მოგითხოვია, უბრალოდ იგნორირება გაუკეთე — პაროლი არ შეცვლილა.</p>`,
@@ -313,10 +321,14 @@ export async function resetPassword(userId: string, code: string, password: stri
   if (row.attempts >= MAX_ATTEMPTS)
     return { ok: false as const, error: "ცდების ლიმიტი ამოიწურა — გამოითხოვე ახალი კოდი" };
 
-  if (!(await bcrypt.compare(code.trim(), row.codeHash))) {
-    await db.verificationCode.update({ where: { id: row.id }, data: { attempts: { increment: 1 } } });
-    return { ok: false as const, error: "კოდი არასწორია" };
-  }
+  // ცდა ჯერ ითვლება, მერე მოწმდება — პარალელური მოთხოვნებით 5-ზე მეტს ვეღარ გამოიცნობენ
+  const claimed = await db.verificationCode.updateMany({
+    where: { id: row.id, attempts: { lt: MAX_ATTEMPTS }, consumedAt: null },
+    data: { attempts: { increment: 1 } },
+  });
+  if (!claimed.count) return { ok: false as const, error: "ცდების ლიმიტი ამოიწურა — გამოითხოვე ახალი კოდი" };
+
+  if (!(await bcrypt.compare(code.trim(), row.codeHash))) return { ok: false as const, error: "კოდი არასწორია" };
 
   await db.verificationCode.update({ where: { id: row.id }, data: { consumedAt: new Date() } });
   const user = await db.user.update({

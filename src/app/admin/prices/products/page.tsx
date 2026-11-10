@@ -1,3 +1,4 @@
+import { requireStaff } from "@/lib/auth";
 import Link from "next/link";
 import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
@@ -29,6 +30,7 @@ export default async function ProductPricesPage({
 }: {
   searchParams: Promise<{ q?: string; f?: string; page?: string; ok?: string; error?: string }>;
 }) {
+  await requireStaff("/admin/prices/products");
   const sp = await searchParams;
   const q = sp.q?.trim() ?? "";
   const f = sp.f && FILTERS[sp.f] ? sp.f : "all";

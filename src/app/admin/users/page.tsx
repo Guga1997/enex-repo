@@ -1,3 +1,4 @@
+import { requireStaff } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { formatDate, gel } from "@/lib/format";
 import { setUserTier } from "../actions";
@@ -14,6 +15,7 @@ export default async function UsersPage({
 }: {
   searchParams: Promise<{ q?: string }>;
 }) {
+  await requireStaff("/admin/users");
   const { q } = await searchParams;
   const term = q?.trim();
 

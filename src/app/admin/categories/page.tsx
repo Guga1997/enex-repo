@@ -1,3 +1,4 @@
+import { requireStaff } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { deleteCategory, saveCategory, toggleCategoryActive } from "../actions";
 
@@ -5,6 +6,7 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "კატეგორიები" };
 
 export default async function AdminCategories() {
+  await requireStaff("/admin/categories");
   const categories = await db.category.findMany({
     orderBy: [{ sortOrder: "asc" }, { nameKa: "asc" }],
     include: { _count: { select: { products: true } } },

@@ -1,3 +1,4 @@
+import { requireStaff } from "@/lib/auth";
 import Link from "next/link";
 import Image from "next/image";
 import { db } from "@/lib/db";
@@ -19,6 +20,7 @@ type SP = {
 };
 
 export default async function AdminProducts({ searchParams }: { searchParams: Promise<SP> }) {
+  await requireStaff("/admin/products");
   const sp = await searchParams;
   const page = Math.max(1, Number(sp.page) || 1);
   const where = productFilter(sp);

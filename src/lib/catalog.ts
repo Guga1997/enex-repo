@@ -105,7 +105,8 @@ export function buildWhere(
   skip?: "brand" | "status" | "price" | "attrs"
 ): Prisma.ProductWhereInput {
   // ფასის გარეშე პროდუქტი კატალოგში არ უნდა ჩანდეს — შეცდომით „0 ₾“ არ გაიყიდოს
-  const AND: Prisma.ProductWhereInput[] = [{ isActive: true }, { price: { gt: 0 } }];
+  // გამორთული კატეგორიის პროდუქტი („დაუკატეგორიებელი“ და სხვ.) საერთო სიასა და ძებნაშიც არ ჩანს
+  const AND: Prisma.ProductWhereInput[] = [{ isActive: true }, { price: { gt: 0 } }, { category: { isActive: true } }];
 
   if (q.categoryIds.length) AND.push({ categoryId: { in: q.categoryIds } });
   if (skip !== "brand" && q.brands.length) AND.push({ brand: { slug: { in: q.brands } } });
