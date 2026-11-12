@@ -55,7 +55,7 @@ export async function middleware(req: NextRequest) {
         const role = String(payload.role ?? "");
         if (!(ROLES as readonly string[]).includes(role)) return redirectToLogin(req, path, locale);
         if (!canOpen(role, path)) {
-          const url = req.nextUrl.clone();
+          const url = sameOrigin(req);
           const home = homeFor(role);
           url.pathname = locale === DEFAULT_LOCALE ? home : `/${locale}${home}`;
           url.search = "";
@@ -68,7 +68,7 @@ export async function middleware(req: NextRequest) {
   }
 
   if (path !== pathname) {
-    const url = req.nextUrl.clone();
+    const url = sameOrigin(req);
     url.pathname = path;
     return NextResponse.rewrite(url, { request: { headers } });
   }
@@ -76,7 +76,7 @@ export async function middleware(req: NextRequest) {
 }
 
 function redirectToLogin(req: NextRequest, path: string, locale: Locale) {
-  const url = req.nextUrl.clone();
+  const url = sameOrigin(req);
   const login = path.startsWith("/account") ? "/login" : "/admin/login";
   url.pathname = locale === DEFAULT_LOCALE ? login : `/${locale}${login}`;
   url.search = `?next=${encodeURIComponent(path)}`;
@@ -90,3 +90,14 @@ export const config = {
     "/((?!api|_next|uploads|brand|favicon.ico|robots.txt|sitemap.xml|.*\\.[a-zA-Z0-9]+$).*)",
   ],
 };
+
+/**
+ * გადამისამართების/rewrite-ის მისამართი req.url-იდან და არა req.nextUrl-იდან: NextURL
+ * 127.0.0.1-ს localhost-ად აქცევს, Next-ის router-ი კი 127.0.0.1-ს ტოვებს (`next start -H
+ * 127.0.0.1`). ჰოსტები არ ემთხვეოდა და Next ჩვენს rewrite-ს „გარე“ მისამართად თვლიდა:
+ * /en → 500, /account → https://localhost:3000/login. req.url ჰოსტს უცვლელად ინარჩუნებს
+ * next.config-ის `skipMiddlewareUrlNormalize`-ით.
+ */
+function sameOrigin(req: NextRequest) {
+  return new URL(req.url);
+}
