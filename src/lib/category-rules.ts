@@ -225,7 +225,8 @@ const RULES: Record<string, Rule[]> = {
     [/interactive display/i, P.interactive],
     [/monitor arm|arm monitor|monitor stand|all-in-one stand|hdmi.*cable|soundbar|კედლის საკიდი/i, P.monitorAcc],
   ],
-  [`${AV} > ინტერაქტიული დაფები`]: [[/interactive display/i, P.interactive]],
+  // MUK-ის „Interactive Whiteboard“ — ჩვენთან ერთი კატეგორიაა: ყველაფერი ეკრანებში გადადის
+  [`${AV} > ინტერაქტიული დაფები`]: [[() => true, P.interactive]],
   [`${AV} > VoIP > IP ტელეფონები`]: [
     [/\bdect\b/i, P.dect],
     [/expansion module/i, P.phoneAcc],

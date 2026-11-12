@@ -16,6 +16,8 @@ const GROUPS: string[][] = [
   ["მონობლოკ", "all in one", "all-in-one"],
   ["ტაბლეტ", "tablet"],
   ["მონიტორ", "ეკრან", "monitor", "display"],
+  // ერთი სიტყვის ორი დაწერილობა — მიმწოდებლები ორივეს იყენებენ
+  ["ინტერაქტიულ", "ინტერაქტიურ"],
   ["კლავიატურ", "keyboard"],
   ["მაუს", "mouse"],
   ["ყურსასმენ", "ნაუშნიკ", "headset", "headphone", "earbud"],
@@ -61,6 +63,28 @@ const GROUPS: string[][] = [
   ["საკეტ", "lock"],
 ];
 
+/**
+ * სახელწოდებები, რომლებსაც კატალოგში სხვა სიტყვით ვწერთ: მოთხოვნის ეს ნაწილი ძებნამდე
+ * კატალოგის სიტყვით იცვლება. ინტერაქტიული დაფა / პანელი / smart board ჩვენთან კატეგორიაა
+ * „ინტერაქტიული ეკრანები“. სინონიმად ვერ ჩაიწერება: ცალკე „დაფ“ დედადაფებსაც დაიჭერდა,
+ * „board“ კი keyboard-ს და motherboard-ს.
+ */
+const INTERACTIVE = "ინტერაქტიული ეკრანი";
+const ALIASES: [RegExp, string][] = [
+  [/(?:ინტერაქტი[ულრ]{2}\S*|სმარტ|ჭკვიან\S*)\s+(?:დაფ|პანელ)\S*/giu, INTERACTIVE],
+  [/(?:interactive|smart)\s*(?:white\s?boards?|boards?|flat\s+panels?|panels?)/giu, INTERACTIVE],
+  [/интерактивн\S*\s+(?:доск|панел|диспле|экран)\S*/giu, INTERACTIVE],
+];
+/** მხოლოდ „დაფა“ / „დაფები“ — სხვა დაფას არ ვყიდით */
+const ONLY_BOARD = /^\s*დაფ(?:ა|ას|ის|ები|ებს|ების)?\s*$/u;
+
+export function applyAliases(q: string): string {
+  if (ONLY_BOARD.test(q)) return INTERACTIVE;
+  let out = q;
+  for (const [re, to] of ALIASES) out = out.replace(re, to);
+  return out;
+}
+
 const MIN = 3;
 
 /**
@@ -91,7 +115,7 @@ export function synonyms(word: string): string[] {
  * ეძებს). ერთ სიტყვაზე სინონიმებიც ემატება.
  */
 export function searchTerms(q: string): { word: string; variants: string[] }[] {
-  return q
+  return applyAliases(q)
     .split(/[\s,]+/)
     .map((w) => w.trim())
     .filter((w) => w.length >= 2)

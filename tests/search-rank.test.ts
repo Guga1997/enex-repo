@@ -67,3 +67,29 @@ test("შეცდომით აკრეფილი სიტყვა", () 
   assert.equal(closestWord("samsung", known), null); // ახლოს არაფერია
   assert.equal(editDistance("hikvison", "hikvision"), 1);
 });
+
+// ── სახელწოდებები, რომლებსაც კატალოგში სხვა სიტყვით ვწერთ ──
+import { applyAliases, searchTerms as termsOf } from "../src/lib/search-terms";
+
+test("ინტერაქტიული დაფა ყველა ენაზე კატალოგის სიტყვით იძებნება", () => {
+  const want = "ინტერაქტიული ეკრანი";
+  for (const q of [
+    "ინტერაქტიული დაფა", "ინტერაქტიული დაფები", "ინტერაქტიური დაფა", "სმარტ დაფა", "ჭკვიანი დაფა",
+    "ინტერაქტიული პანელი", "interactive board", "Interactive Whiteboard", "interactive white board",
+    "smart board", "smartboard", "interactive flat panel", "интерактивная доска", "интерактивная панель",
+    "დაფა", "დაფები",
+  ]) assert.equal(applyAliases(q), want, q);
+  // დანარჩენი სიტყვები რჩება
+  assert.equal(applyAliases("infocus ინტერაქტიული დაფა 75"), "infocus ინტერაქტიული ეკრანი 75");
+});
+
+test("სხვა „დაფა“ და „board“ ხელუხლებელია", () => {
+  for (const q of ["დედადაფა", "დედადაფა asus", "keyboard", "motherboard", "dashboard camera", "ელექტრო დაფა", "დაფარვით"])
+    assert.equal(applyAliases(q), q, q);
+});
+
+test("ორივე დაწერილობა — ინტერაქტიული / ინტერაქტიური — ერთმანეთს პოულობს", () => {
+  const [first, second] = termsOf("ინტერაქტიული დაფა");
+  assert.ok(first.variants.includes("ინტერაქტიურ"));
+  assert.ok(second.variants.includes("ეკრან") && second.variants.includes("display"));
+});
