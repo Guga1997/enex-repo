@@ -3,6 +3,8 @@ import { translate } from "./i18n/dict";
 import { descriptionOf, nameOf } from "./i18n/content";
 import { translateAttr } from "./i18n/attributes";
 import { isPurchasable } from "./stock";
+import { DELIVERY_FEE, FREE_DELIVERY_FROM } from "./constants";
+import type { ReturnNote } from "./return-terms";
 /**
  * SEO-ს საერთო ნაწილი: საიტის მისამართი, სტრუქტურირებული მონაცემები (JSON-LD),
  * აღწერის ავტომატური აწყობა იქ, სადაც ხელით არავის დაუწერია.
@@ -79,7 +81,55 @@ const AVAILABILITY: Record<string, string> = {
   PREORDER: "https://schema.org/PreOrder",
 };
 
-export function productJsonLd(p: ProductForSeo, locale: Locale = "ka") {
+/**
+ * მიწოდება Google-ისთვის (Merchant listings): საფასური და ვადა /page/delivery-ის მიხედვით —
+ * 200 ₾-დან უფასო, ნაკლებზე 15 ₾; თბილისი 1–2, რეგიონები 2–4 სამუშაო დღე. ვადას მხოლოდ
+ * მარაგში მყოფ ნივთზე ვწერთ; დიდი გაბარიტის ნივთის მიწოდება ცალკე თანხმდება — საერთოდ არ იწერება.
+ */
+function shippingJsonLd(p: ProductForSeo, note?: ReturnNote) {
+  if (note?.bulky) return {};
+  return {
+    shippingDetails: {
+      "@type": "OfferShippingDetails",
+      shippingRate: {
+        "@type": "MonetaryAmount",
+        value: (p.price >= FREE_DELIVERY_FROM ? 0 : DELIVERY_FEE).toFixed(2),
+        currency: "GEL",
+      },
+      shippingDestination: { "@type": "DefinedRegion", addressCountry: "GE" },
+      ...(p.stockStatus === "IN_STOCK"
+        ? {
+            deliveryTime: {
+              "@type": "ShippingDeliveryTime",
+              handlingTime: { "@type": "QuantitativeValue", minValue: 0, maxValue: 1, unitCode: "DAY" },
+              transitTime: { "@type": "QuantitativeValue", minValue: 1, maxValue: 4, unitCode: "DAY" },
+            },
+          }
+        : {}),
+    },
+  };
+}
+
+/**
+ * დაბრუნება — /page/returns: 14 კალენდარული დღე, უკან გაგზავნის ხარჯი მყიდველზეა.
+ * გამონაკლის ნივთზე (სიგრძეზე დაჭრილი კაბელი, ლიცენზია, დაპროგრამებული საკეტი) არ იწერება.
+ */
+function returnJsonLd(locale: Locale, note?: ReturnNote) {
+  if (note?.restricted) return {};
+  return {
+    hasMerchantReturnPolicy: {
+      "@type": "MerchantReturnPolicy",
+      applicableCountry: "GE",
+      returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow",
+      merchantReturnDays: 14,
+      ...(note?.bulky ? {} : { returnMethod: "https://schema.org/ReturnByMail" }),
+      returnFees: "https://schema.org/ReturnFeesCustomerResponsibility",
+      merchantReturnLink: abs(withLocale("/page/returns", locale)),
+    },
+  };
+}
+
+export function productJsonLd(p: ProductForSeo, locale: Locale = "ka", note?: ReturnNote) {
   return {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -104,6 +154,8 @@ export function productJsonLd(p: ProductForSeo, locale: Locale = "ka") {
                 : AVAILABILITY[p.stockStatus] ?? AVAILABILITY.OUT_OF_STOCK,
             url: abs(withLocale(`/product/${p.slug}`, locale)),
             seller: { "@type": "Organization", name: SITE_NAME },
+            ...shippingJsonLd(p, note),
+            ...returnJsonLd(locale, note),
           },
         }
       : {}),

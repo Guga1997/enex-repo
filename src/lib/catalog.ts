@@ -332,6 +332,34 @@ export async function getFacets(q: CatalogQuery) {
   };
 }
 
+/**
+ * ფასეტები 60 წამიანი ქეშით — კატეგორიის გვერდისთვის. ფასეტების დათვლა გვერდის ყველაზე
+ * ძვირი ნაწილია (კატეგორიის ყველა პროდუქტის მახასიათებელი მეხსიერებაში იშლება), ხოლო
+ * ერთსა და იმავე კატეგორიას მყიდველებიც და საძიებო რობოტებიც განმეორებით ხსნიან.
+ * გვერდის ნომერსა და დალაგებაზე ფასეტები არ არის დამოკიდებული — გასაღებში არ შედის.
+ * ტექსტური ძებნა არ იქეშება (გასაღებების რაოდენობა შეუზღუდავი იქნებოდა).
+ * მენიუს რაოდენობებიც ამდენივე ხანს ინახება (category-tree.ts).
+ */
+const FACETS_TTL_MS = 60_000;
+const FACETS_MAX = 300;
+const facetsCache = new Map<string, { at: number; value: Promise<Facets> }>();
+
+export function getFacetsCached(q: CatalogQuery): Promise<Facets> {
+  if (q.q) return getFacets(q);
+  const { page: _page, sort: _sort, ...rest } = q;
+  const key = JSON.stringify(rest);
+  const hit = facetsCache.get(key);
+  if (hit && Date.now() - hit.at < FACETS_TTL_MS) return hit.value;
+  const value = getFacets(q);
+  // შეცდომა არ ინახება — შემდეგი მოთხოვნა თავიდან ცდის
+  value.catch(() => facetsCache.delete(key));
+  facetsCache.delete(key);
+  facetsCache.set(key, { at: Date.now(), value });
+  // ყველაზე ძველი გასაღები გადის (Map ჩასმის რიგს ინახავს)
+  if (facetsCache.size > FACETS_MAX) facetsCache.delete(facetsCache.keys().next().value!);
+  return value;
+}
+
 export const productCardSelect = {
   id: true,
   sku: true,

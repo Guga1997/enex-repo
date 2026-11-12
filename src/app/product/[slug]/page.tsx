@@ -126,7 +126,7 @@ export default async function ProductPage({ params }: Props) {
 
   return (
     <>
-      <JsonLd data={productJsonLd(p, locale)} />
+      <JsonLd data={productJsonLd(p, locale, returns)} />
       <JsonLd data={breadcrumbJsonLd(crumbs, locale)} />
       <Suspense>
         <Header />

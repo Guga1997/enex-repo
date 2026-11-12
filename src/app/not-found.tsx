@@ -12,7 +12,7 @@ export default async function NotFound() {
   return (
     <>
       <Suspense>
-        <Header />
+        <Header compact />
       </Suspense>
       <main className="container-x flex min-h-[50vh] flex-col items-center justify-center py-16 text-center">
         <div className="text-5xl font-bold text-brand-600">404</div>

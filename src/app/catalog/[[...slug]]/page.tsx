@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 import { db } from "@/lib/db";
 import { getCategoryTree } from "@/lib/category-tree";
 import { CABLES_SLUG, cableCategoryIds, cableGroups, cablesSegment } from "@/lib/cables";
-import { clip, alts } from "@/lib/seo";
+import { JsonLd, breadcrumbJsonLd, clip, alts } from "@/lib/seo";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
@@ -20,7 +20,7 @@ import { getLocale } from "@/lib/i18n/server";
 import { translate } from "@/lib/i18n/dict";
 import {
   categoryIdsWithDescendants,
-  getFacets,
+  getFacetsCached,
   getProducts,
   fixTypos,
   parseQuery,
@@ -125,12 +125,24 @@ export default async function CatalogPage({ params, searchParams }: Props) {
   // „hikvison“ → „hikvision“: ნული შედეგის ნაცვლად ყველაზე ახლო ბრენდი/კატეგორია
   const query = await fixTypos(asked);
   const [facets, { items, total, pages }] = await Promise.all([
-    getFacets(query),
+    getFacetsCached(query),
     getProducts(query),
   ]);
 
+  // Google-ისთვის იგივე ჯაჭვი, რაც გვერდზე ჩანს (ძებნის შედეგებზე — არა: ისინი ინდექსში არ მიდის)
+  const crumbs = [
+    { name: t("მთავარი"), path: "/" },
+    ...(category?.parent ? [{ name: nameOf(category.parent, locale), path: `/catalog/${category.parent.slug}` }] : []),
+    cables
+      ? { name: nameOf(cables, locale), path: `/catalog/${CABLES_SLUG}` }
+      : category
+        ? { name: nameOf(category, locale), path: `/catalog/${category.slug}` }
+        : { name: t("კატალოგი"), path: "/catalog" },
+  ];
+
   return (
     <>
+      {!query.q && <JsonLd data={breadcrumbJsonLd(crumbs, locale)} />}
       <Suspense>
         <Header />
       </Suspense>

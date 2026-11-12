@@ -19,11 +19,17 @@ import type { Metadata } from "next";
 import { getLocale } from "@/lib/i18n/server";
 import { alts } from "@/lib/seo";
 import { translateName } from "@/lib/i18n/translate-name";
+import { translate } from "@/lib/i18n/dict";
 
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
-  return { alternates: alts("/", await getLocale()) };
+  const locale = await getLocale();
+  // მთავარ გვერდს საკუთარი სათაური: რასაც ვყიდით (ამით ეძებენ) და არა ზოგადი „პროფესიონალური აღჭურვილობა“
+  return {
+    title: { absolute: translate(locale, "Enex — ვიდეოკამერები, ქსელური მოწყობილობები, UPS და მზის სისტემები") },
+    alternates: alts("/", locale),
+  };
 }
 
 export default async function HomePage() {

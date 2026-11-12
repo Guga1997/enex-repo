@@ -82,6 +82,8 @@ export const PAYMENT_TTL_MINUTES = 15;
 export const PAGE_SIZE = 24;
 export const DELIVERY_FEE_TBILISI = 0;
 export const FREE_DELIVERY_FROM = 200;
+/** მიწოდების საფასური FREE_DELIVERY_FROM-ზე ნაკლებ შეკვეთაზე (კალათა და შეკვეთა ამავე თანხას ითვლის) */
+export const DELIVERY_FEE = 15;
 
 /**
  * სტატუსის ფერი სიაში — მოლოდინში ნარინჯისფერია, რომ თვალში ხვდებოდეს:

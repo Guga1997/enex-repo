@@ -13,7 +13,12 @@ import LangSwitcher from "./LangSwitcher";
 import { getI18n } from "@/lib/i18n/server";
 import { nameOf } from "@/lib/i18n/content";
 
-export default async function Header() {
+/**
+ * compact — ჩამოსაშლელი ქვემენიუს გარეშე (მხოლოდ სეგმენტების ზოლი). 404 გვერდისთვის:
+ * Next მას ყველა გვერდის მონაცემებს თან აყოლებს, ამიტომ სრული მენიუ (≈200 ბმული, ≈150 KB)
+ * ყველა გვერდზე ორჯერ იწერებოდა.
+ */
+export default async function Header({ compact = false }: { compact?: boolean } = {}) {
   const { locale, t } = await getI18n();
   // სეგმენტი → ქვეჯგუფი → ქვე-ქვეჯგუფი; ყველა დონეზე სავსე წინ, ცარიელი ბოლოს
   const { roots } = await getCategoryTree();
@@ -78,7 +83,7 @@ export default async function Header() {
             <div key={segment.id} className="group static lg:min-w-0 lg:flex-1">
               <NavSegment name={nameOf(segment, locale)} slug={segment.slug} />
 
-              {segment.children.length > 0 && (
+              {!compact && segment.children.length > 0 && (
                 /* ზოლს სქროლბარი აქვს და ჩამონათვალამდე 15px მკვდარი ზოლი რჩება.
                    მაუსი რომ მას გადაკვეთს, hover წყდება და მენიუ ქრება — ამიტომ
                    ორი რამ: დახურვა ოდნავ ყოვნდება და ზემოთ უხილავი „ხიდია“,
