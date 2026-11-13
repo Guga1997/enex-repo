@@ -200,6 +200,12 @@ const RANK_SELECT = {
   },
 } satisfies Prisma.ProductSelect;
 
+/** ტექსტის გარეშე სიისთვის: მხოლოდ ის, რაც რიგს წყვეტს (მარაგი, ადმინის რიგი, ფასი) */
+const LIST_SELECT = {
+  id: true, sku: true, price: true, sortOrder: true,
+  stockStatus: true, stockQty: true, reservedQty: true, minQty: true,
+} satisfies Prisma.ProductSelect;
+
 /**
  * საიტის ძებნა (სინონიმები, ფუძეები, შესაბამისობით დალაგება) + მახასიათებლების
  * მნიშვნელობები: „4მპ“, „PoE“, „IP67“ სახელში რომ არ ეწეროს, მახასიათებლით იპოვება.
@@ -245,7 +251,14 @@ export async function searchProducts(input: SearchInput) {
 
   // „hikvison“ → „hikvision“: ნული შედეგის ნაცვლად ყველაზე ახლო ბრენდი/კატეგორია — როგორც საიტზე
   let q = asked;
-  let rows = await db.product.findMany({ where: whereFor(q), select: RANK_SELECT });
+  // ტექსტის გარეშე (მთელი კატეგორია ან მთელი კატალოგი) შესაბამისობა არ ითვლება — სახელები,
+  // ბრენდი და კატეგორია არ იტვირთება: ათასობით სტრიქონზე სწორედ ეს join-ები იყო ნელი
+  let rows: Prisma.ProductGetPayload<{ select: typeof RANK_SELECT }>[] = q
+    ? await db.product.findMany({ where: whereFor(q), select: RANK_SELECT })
+    : (await db.product.findMany({ where: whereFor(), select: LIST_SELECT })).map((r) => ({
+        ...r, model: null, nameKa: "", nameEn: null, nameRu: null, brand: null,
+        category: { nameKa: "", nameEn: null, nameRu: null, parent: null },
+      }));
   if (q && !rows.length) {
     const fixed = (await fixTypos({ ...base, q })).q;
     if (fixed && fixed !== q) {
