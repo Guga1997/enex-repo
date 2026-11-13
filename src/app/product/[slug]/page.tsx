@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import { db } from "@/lib/db";
 import { returnNote } from "@/lib/return-terms";
-import { CONTACT, JsonLd, breadcrumbJsonLd, productDescription, productJsonLd, realBrand, alts } from "@/lib/seo";
+import { CONTACT, WHATSAPP_URL, JsonLd, breadcrumbJsonLd, productDescription, productJsonLd, realBrand, alts } from "@/lib/seo";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
@@ -204,6 +204,16 @@ export default async function ProductPage({ params }: Props) {
                     {CONTACT.phone && (
                       <a href={`tel:${CONTACT.phone.replace(/\s+/g, "")}`} className="btn btn-primary px-4 py-2">
                         {CONTACT.phone}
+                      </a>
+                    )}
+                    {WHATSAPP_URL && (
+                      <a
+                        href={`${WHATSAPP_URL}?text=${encodeURIComponent(`${p.sku} — ${p.model ?? p.nameKa}`)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-outline px-4 py-2"
+                      >
+                        WhatsApp
                       </a>
                     )}
                     <a

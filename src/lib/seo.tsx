@@ -29,6 +29,9 @@ export const CONTACT = {
   hours: "ორშ–პარ: 10:00–18:00",
 };
 
+/** WhatsApp-ის ჩატის ბმული — ცარიელი, თუ ნომერი არ არის დაყენებული */
+export const WHATSAPP_URL = CONTACT.whatsapp ? `https://wa.me/${CONTACT.whatsapp.replace(/[^0-9]/g, "")}` : "";
+
 export const abs = (path: string) => (path.startsWith("http") ? path : `${SITE_URL}${path}`);
 
 /** 160 სიმბოლომდე, სიტყვის საზღვარზე */

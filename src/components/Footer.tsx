@@ -1,6 +1,7 @@
 import Link from "@/components/Link";
 import Logo from "./Logo";
-import { CONTACT } from "@/lib/seo";
+import { CONTACT, WHATSAPP_URL } from "@/lib/seo";
+import WhatsAppIcon from "./WhatsAppIcon";
 import { getT } from "@/lib/i18n/server";
 
 export default async function Footer() {
@@ -37,6 +38,19 @@ export default async function Footer() {
           <ul className="space-y-2 text-sm text-muted">
             {CONTACT.phone && (
               <li><a href={`tel:${CONTACT.phone.replace(/\s+/g, "")}`} className="hover:text-brand-600">{CONTACT.phone}</a></li>
+            )}
+            {WHATSAPP_URL && (
+              <li>
+                <a
+                  href={WHATSAPP_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 hover:text-brand-600"
+                >
+                  <WhatsAppIcon className="h-4 w-4 text-[#25D366]" />
+                  WhatsApp
+                </a>
+              </li>
             )}
             <li><a href={`mailto:${CONTACT.email}`} className="hover:text-brand-600">{CONTACT.email}</a></li>
             <li>{t(CONTACT.address)}</li>

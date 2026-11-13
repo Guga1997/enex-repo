@@ -7,7 +7,7 @@ import { rankIds } from "./search-rank";
 import { searchTerms } from "./search-terms";
 import { ci, ciEquals } from "./search-mode";
 import { availableQty, isPurchasable, stockLabel } from "./stock";
-import { abs, clip, realBrand, CONTACT, SITE_URL } from "./seo";
+import { abs, clip, realBrand, CONTACT, SITE_URL, WHATSAPP_URL } from "./seo";
 import { descriptionOf, nameOf, plainText } from "./i18n/content";
 import { translate } from "./i18n/dict";
 import { translateAttr } from "./i18n/attributes";
@@ -379,7 +379,7 @@ export function storeInfo(locale: Locale) {
     phone: CONTACT.phone || null,
     whatsapp: CONTACT.whatsapp || null,
     // ბმული, რომელიც პირდაპირ ჩატს ხსნის: wa.me/<ნომერი მხოლოდ ციფრებით>
-    whatsappUrl: CONTACT.whatsapp ? `https://wa.me/${CONTACT.whatsapp.replace(/[^0-9]/g, "")}` : null,
+    whatsappUrl: WHATSAPP_URL || null,
     email: CONTACT.email || null,
     address: process.env.SELLER_ADDRESS ? translate(locale, process.env.SELLER_ADDRESS) : null,
     workingHours: translate(locale, CONTACT.hours),
