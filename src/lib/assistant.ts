@@ -377,7 +377,9 @@ export function storeInfo(locale: Locale) {
   const link = (slug: string) => abs(withLocale(`/page/${slug}`, locale));
   const contacts = {
     phone: CONTACT.phone || null,
-    whatsapp: null as string | null, // საიტზე WhatsApp ნომერი არ არის მითითებული
+    whatsapp: CONTACT.whatsapp || null,
+    // ბმული, რომელიც პირდაპირ ჩატს ხსნის: wa.me/<ნომერი მხოლოდ ციფრებით>
+    whatsappUrl: CONTACT.whatsapp ? `https://wa.me/${CONTACT.whatsapp.replace(/[^0-9]/g, "")}` : null,
     email: CONTACT.email || null,
     address: process.env.SELLER_ADDRESS ? translate(locale, process.env.SELLER_ADDRESS) : null,
     workingHours: translate(locale, CONTACT.hours),
@@ -409,7 +411,7 @@ export function storeInfo(locale: Locale) {
       H.contacts[locale],
       [
         line(translate(locale, "ტელეფონი"), contacts.phone),
-        line("WhatsApp", contacts.whatsapp),
+        line("WhatsApp", contacts.whatsapp && `${contacts.whatsapp} (${contacts.whatsappUrl})`),
         line(translate(locale, "ელფოსტა"), contacts.email),
         line(translate(locale, "მისამართი"), contacts.address),
         line(H.hours[locale], contacts.workingHours),

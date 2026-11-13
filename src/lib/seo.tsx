@@ -22,6 +22,8 @@ export const realBrand = (b: { name: string } | null | undefined) =>
 /** საკონტაქტო — .env-დან, რომ საიტი, ინვოისი და JSON-LD ერთსა და იმავეს წერდეს */
 export const CONTACT = {
   phone: process.env.SELLER_PHONE || "",
+  /** WhatsApp-ის ნომერი — ცარიელი, თუ არ გვაქვს (ყველა ტელეფონი WhatsApp-ზე არ არის) */
+  whatsapp: process.env.SELLER_WHATSAPP || "",
   email: process.env.CONTACT_EMAIL || "sales@enex.ge",
   address: process.env.SELLER_ADDRESS || "თბილისი, საქართველო",
   hours: "ორშ–პარ: 10:00–18:00",

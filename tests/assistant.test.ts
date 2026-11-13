@@ -172,7 +172,9 @@ test("მაღაზიის ინფორმაცია: მიწოდ�
   assert.ok(info.markdown.includes("14 კალენდარული დღ"));
   assert.equal(info.delivery.fee, 15);
   assert.equal(info.delivery.freeFrom, 200);
-  assert.ok(info.missing.includes("whatsapp"));
+  // WhatsApp .env-დან მოდის: ნომრის გარეშე „აკლია“-ში წერია, ნომრით — ბმულიც აქვს
+  assert.equal(info.missing.includes("whatsapp"), !info.contacts.whatsapp);
+  if (info.contacts.whatsapp) assert.match(info.contacts.whatsappUrl ?? "", /^https:\/\/wa\.me\/\d+$/);
   assert.ok(storeInfo("en").markdown.includes("## Delivery"));
   assert.doesNotMatch(JSON.stringify(info), /IBAN|SELLER_BANK|ს\/კ/);
 });
