@@ -2,6 +2,7 @@ import type { Locale } from "../i18n/config";
 import { LOCALES } from "../i18n/config";
 import { translateAttr } from "../i18n/attributes";
 import { clip } from "../seo";
+import { gel } from "../format";
 import { categoryTree, getProduct, searchProducts, storeInfo, type AssistantProduct } from "../assistant";
 
 /**
@@ -94,8 +95,9 @@ export function compact(p: AssistantProduct, o: CompactOpts = LIST) {
     brand: p.brand,
     model: p.model,
     category: p.category,
-    price: p.price,
-    oldPrice: p.oldPrice,
+    // ფასი ისე, როგორც საიტზე წერია („212.40₾“): მოდელი ციფრს უცვლელად იმეორებს და „212.4“ გამოდიოდა
+    price: gel(p.price),
+    oldPrice: p.oldPrice != null ? gel(p.oldPrice) : null,
     discountPercent: p.discountPercent,
     warrantyMonths: p.warrantyMonths,
     stock: p.stock.label,

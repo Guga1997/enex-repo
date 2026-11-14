@@ -133,7 +133,7 @@ test("get_product, list_categories (2 დონე), store_info, უცნობ
   });
   const one = JSON.parse((await tools.runTool("get_product", { id_or_sku: p!.sku }, "ka")).content);
   assert.equal(one.sku, p!.sku);
-  assert.equal(one.price, p!.price);
+  assert.equal(one.price, `${p!.price.toFixed(2)}₾`, "ფასი საიტისეული ჩაწერით");
   assert.ok(JSON.parse((await tools.runTool("get_product", { id_or_sku: "no-such-48151623" }, "ka")).content).error);
 
   const cats = (await tools.runTool("list_categories", {}, "ka")).content.split("\n");

@@ -124,7 +124,7 @@ function inline(text: string, onNavigate: (path: string) => void, links = true, 
             {url.replace(/^https?:\/\/(www\.)?/, "")}
           </Anchor>
         ) : (
-          url
+          url.replace(/^https?:\/\/(www\.)?/, "")
         ),
       );
       if (tail) out.push(tail);
@@ -146,12 +146,13 @@ function inline(text: string, onNavigate: (path: string) => void, links = true, 
 const BULLET = /^\s*(?:[-*•–]|\d{1,2}[.)])\s+(.*)$/;
 const NUMBERED = /^\s*\d{1,2}[.)]\s+/;
 const HEADING = /^\s*#{1,6}\s+(.*)$/;
+const INDENTED = /^(?: {2,}|\t)\s*\S/;
 
 /** აბზაცები, სიები, სათაურები (მუქი სტრიქონი). ცხრილი და სხვა — ჩვეულებრივი ტექსტი. */
 function Markdown({ text, onNavigate }: { text: string; onNavigate: (path: string) => void }) {
   const blocks: ReactNode[] = [];
   let para: string[] = [];
-  let list: { ordered: boolean; items: string[] } | null = null;
+  let list: { ordered: boolean; items: { text: string; children: string[] }[] } | null = null;
 
   const flushPara = () => {
     if (!para.length) return;
@@ -168,7 +169,16 @@ function Markdown({ text, onNavigate }: { text: string; onNavigate: (path: strin
     const k = `l${blocks.length}`;
     const items = list.items.map((it, i) => (
       <li key={i} className="break-words">
-        {inline(it, onNavigate, true, `${k}-${i}`)}
+        {inline(it.text, onNavigate, true, `${k}-${i}`)}
+        {it.children.length > 0 && (
+          <ul className="mt-1 list-[circle] space-y-0.5 pl-4">
+            {it.children.map((c, j) => (
+              <li key={j} className="break-words">
+                {inline(c, onNavigate, true, `${k}-${i}-${j}`)}
+              </li>
+            ))}
+          </ul>
+        )}
       </li>
     ));
     blocks.push(
@@ -200,15 +210,21 @@ function Markdown({ text, onNavigate }: { text: string; onNavigate: (path: strin
           {inline(heading[1], onNavigate, true, `h${blocks.length}`)}
         </p>,
       );
+    } else if (bullet && list?.items.length && INDENTED.test(raw)) {
+      // შეწეული პუნქტი — წინა პუნქტის ქვესია (მოდელი ასე წერს: პროდუქტი, ქვემოთ ფასი / მარაგი / ბმული)
+      flushPara();
+      list.items[list.items.length - 1].children.push(bullet[1]);
     } else if (bullet) {
       flushPara();
       const ordered = NUMBERED.test(line);
       if (list && list.ordered !== ordered) flushList();
       list ??= { ordered, items: [] };
-      list.items.push(bullet[1]);
-    } else if (list && /^\s{2,}\S/.test(raw)) {
+      list.items.push({ text: bullet[1], children: [] });
+    } else if (list?.items.length && INDENTED.test(raw)) {
       // სიის პუნქტის გაგრძელება (შეწეული სტრიქონი)
-      list.items[list.items.length - 1] += " " + line.trim();
+      const lastItem = list.items[list.items.length - 1];
+      if (lastItem.children.length) lastItem.children[lastItem.children.length - 1] += " " + line.trim();
+      else lastItem.text += " " + line.trim();
     } else {
       flushList();
       para.push(line);

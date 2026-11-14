@@ -37,6 +37,13 @@ export async function startMock(port = 0): Promise<{ url: string; calls: MockCal
         line(call("ინვერტორი"));
       } else if (/loop/.test(lastUser)) {
         line({ role: "assistant", content: "ბოლო პასუხი" });
+      } else if (/nested/.test(lastUser)) {
+        // ისე, როგორც ნამდვილი მოდელი წერს: პროდუქტი და ქვემოთ შეწეული ფასი / მარაგი / ბმული
+        line({
+          role: "assistant",
+          content:
+            "მსგავსი მოდელები:\n\n* **ინვერტორი 12 ვოლტი, 1200 ვატი (Epever)**\n    * ფასი: 738.17₾\n    * მარაგი: დარჩენილია 3 ცალი\n    * ბმული: [https://enex.ge/product/invertori-12-volti-1200-vati](https://enex.ge/product/invertori-12-volti-1200-vati)\n\n* **ინვერტორი 12 ვოლტი, 400 ვატი**\n    * ფასი: 345.48₾\n\nთუ სხვა რამ გაინტერესებთ, მკითხეთ.",
+        });
       } else if (/tool|say/.test(lastUser) && !lastIsTool) {
         if (/say/.test(lastUser)) line({ role: "assistant", content: "ახლავე მოვძებნი. " });
         line(call("ინვერტორი"));
