@@ -19,6 +19,7 @@ const NAV = [
   { href: "/admin/suppliers", label: "მიმწოდებლები" },
   { href: "/admin/users", label: "მომხმარებლები" },
   { href: "/admin/stock", label: "სტოკის ლოგი" },
+  { href: "/admin/ai-chats", label: "AI ჩატები" },
   { href: "/admin/api-keys", label: "API გასაღებები" },
 ];
 

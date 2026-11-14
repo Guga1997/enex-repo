@@ -3,6 +3,7 @@ import { Noto_Sans_Georgian } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/components/CartProvider";
 import { LocaleProvider } from "@/components/LocaleProvider";
+import ChatWidget from "@/components/ChatWidget";
 import { getLocale } from "@/lib/i18n/server";
 import { HTML_LANG, OG_LOCALE } from "@/lib/i18n/config";
 import { translate } from "@/lib/i18n/dict";
@@ -82,6 +83,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         <LocaleProvider locale={locale}>
           <CartProvider>{children}</CartProvider>
+          {/* AI კონსულტანტი: თვითონ წყვეტს, ჩანს თუ არა (ადმინში — არა; გათიშული — არა) */}
+          <ChatWidget />
         </LocaleProvider>
       </body>
     </html>
