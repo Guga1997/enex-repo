@@ -94,7 +94,7 @@ export default async function ProductCard({ p, viewer }: { p: CardProduct; viewe
         <div className="text-xs text-muted">#{p.sku}</div>
 
         <div className="mt-auto pt-2">
-          {price.saved > 0 ? (
+          {!(price.value > 0) ? null /* ფასის გარეშე პოზიცია — მხოლოდ მარაგის წარწერა */ : price.saved > 0 ? (
             /* დილერს ორივე ფასი უჩანს, როგორც ეტალონ საიტზე */
             <div className="space-y-0.5">
               <div className="flex items-baseline gap-2">

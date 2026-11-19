@@ -141,13 +141,14 @@ export async function saveProductPriceAction(formData: FormData) {
   }
 
   if (supplied && !manual) {
-    await db.product.update({ where: { id }, data: { priceLocked: false, oldPrice } });
+    // ფასი ისევ მიმწოდებლიდან ითვლება — „ფასის გარეშე“ ნიშანიც იხსნება
+    await db.product.update({ where: { id }, data: { priceLocked: false, priceOnRequest: false, oldPrice } });
     await repriceProduct(id);
   } else {
     const cost = supplied ? undefined : num(formData, "cost");
     await db.product.update({
       where: { id },
-      data: { price: price!, oldPrice, priceLocked: supplied, ...(cost !== undefined ? { cost } : {}) },
+      data: { price: price!, oldPrice, priceLocked: supplied, priceOnRequest: false, ...(cost !== undefined ? { cost } : {}) },
     });
   }
 

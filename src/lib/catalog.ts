@@ -96,6 +96,12 @@ export function parseQuery(sp: SearchParams, categoryIds: string[]): CatalogQuer
 }
 
 /**
+ * ფასის გარეშე პროდუქტი კატალოგში არ ჩანს — შეცდომით „0 ₾“ არ გაიყიდოს. გამონაკლისია
+ * priceOnRequest: ფასი განზრახ არ იწერება, ბარათზე მხოლოდ მარაგის წარწერა რჩება.
+ */
+export const HAS_PRICE = { OR: [{ price: { gt: 0 } }, { priceOnRequest: true }] } satisfies Prisma.ProductWhereInput;
+
+/**
  * Prisma where-ის აწყობა. `skip` საშუალებას გვაძლევს ერთი ფასეტი გამოვრიცხოთ
  * საკუთარი რაოდენობების დათვლისას (სტანდარტული faceted-search ქცევა):
  * მონიშნულ ბრენდს სხვა ბრენდების რაოდენობა არ უნდა გაუქრეს. "attrs" ყველა
@@ -105,9 +111,8 @@ export function buildWhere(
   q: CatalogQuery,
   skip?: "brand" | "status" | "price" | "attrs"
 ): Prisma.ProductWhereInput {
-  // ფასის გარეშე პროდუქტი კატალოგში არ უნდა ჩანდეს — შეცდომით „0 ₾“ არ გაიყიდოს
   // გამორთული კატეგორიის პროდუქტი („დაუკატეგორიებელი“ და სხვ.) საერთო სიასა და ძებნაშიც არ ჩანს
-  const AND: Prisma.ProductWhereInput[] = [{ isActive: true }, { price: { gt: 0 } }, { category: { isActive: true } }];
+  const AND: Prisma.ProductWhereInput[] = [{ isActive: true }, HAS_PRICE, { category: { isActive: true } }];
 
   if (q.categoryIds.length) AND.push({ categoryId: { in: q.categoryIds } });
   if (skip !== "brand" && q.brands.length) AND.push({ brand: { slug: { in: q.brands } } });
@@ -156,16 +161,17 @@ export function buildWhere(
 
 function orderBy(sort: string): Prisma.ProductOrderByWithRelationInput[] {
   switch (sort) {
+    // ფასის გარეშე პოზიციები ფასით დალაგებისას ყოველთვის ბოლოშია — „0“ ყველაზე იაფად არ ჩაითვალოს
     case "price_asc":
-      return [{ price: "asc" }];
+      return [{ priceOnRequest: "asc" }, { price: "asc" }];
     case "price_desc":
-      return [{ price: "desc" }];
+      return [{ priceOnRequest: "asc" }, { price: "desc" }];
     case "name_asc":
       return [{ nameKa: "asc" }];
     case "newest":
       return [{ createdAt: "desc" }];
     default:
-      return [{ sortOrder: "asc" }, { price: "asc" }];
+      return [{ sortOrder: "asc" }, { priceOnRequest: "asc" }, { price: "asc" }, { nameKa: "asc" }];
   }
 }
 

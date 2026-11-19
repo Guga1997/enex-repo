@@ -129,7 +129,8 @@ export function present(p: Row, byId: Map<string, TreeNode>, locale: Locale, ful
     brand: realBrand(p.brand),
     model: p.model,
     ...categoryPath(byId, p.categoryId, locale),
-    price: p.price,
+    // ფასის გარეშე პოზიცია („ფასი მოთხოვნით“): 0 ₾ არ უნდა გავიდეს — ფასი null-ია, ონლაინ არ იყიდება
+    price: p.price > 0 ? p.price : null,
     currency: "GEL",
     oldPrice: discounted ? p.oldPrice : null,
     discountPercent: discounted ? Math.round((1 - p.price / p.oldPrice!) * 100) : null,
@@ -139,7 +140,7 @@ export function present(p: Row, byId: Map<string, TreeNode>, locale: Locale, ful
     stock: {
       status,
       label: stockLabel(p, t).text,
-      canOrder: purchasable,
+      canOrder: purchasable && p.price > 0,
       // ზუსტი რაოდენობა მხოლოდ მარაგში მყოფზე (პროდუქტის გვერდი ამდენის შეკვეთას უშვებს)
       quantity: status === "in_stock" ? availableQty(p) : null,
       expectedDate: p.stockStatus === "IN_TRANSIT" && p.incomingDate ? p.incomingDate.toISOString().slice(0, 10) : null,

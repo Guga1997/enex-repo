@@ -426,8 +426,8 @@ export const en: Record<string, string> = {
     "Hotel systems — electronic locks, safes, minibars",
   "ZEN დიზელ-გენერატორები Baudouin, IVECO, Perkins და Scania ძრავებით, 15-დან 2000 kVA-მდე. ფასი ლარში ეროვნული ბანკის დღიური კურსით, ტექნიკური დოკუმენტაცია ყველა მოდელზე, მიწოდება შეკვეთით — Enex.":
     "ZEN diesel generators with Baudouin, IVECO, Perkins and Scania engines, 15 to 2000 kVA. Prices in GEL at the National Bank daily rate, technical documentation for every model, made to order — Enex.",
-  "Omnitec Systems: სასტუმროს ელექტრონული საკეტები (OS Slim, EVO, Gaudi 3), დაშვების კონტროლი, სეიფები, მინიბარები, ენერგოსეივერები, ლოკერები და მართვის პროგრამა. ფასი ლარში ეროვნული ბანკის დღიური კურსით, მიწოდება შეკვეთით — Enex.":
-    "Omnitec Systems: hotel electronic locks (OS Slim, EVO, Gaudi 3), access control, safes, minibars, energy savers, lockers and management software. Prices in GEL at the National Bank daily rate, made to order — Enex.",
+  "Omnitec Systems: სასტუმროს ელექტრონული საკეტები (OS Slim, EVO, Gaudi 3), დაშვების კონტროლი, სეიფები, მინიბარები, ენერგოსეივერები, ლოკერები და მართვის პროგრამა. მიწოდება შეკვეთით — Enex.":
+    "Omnitec Systems: hotel electronic locks (OS Slim, EVO, Gaudi 3), access control, safes, minibars, energy savers, lockers and management software. Made to order — Enex.",
   "{0} პროდუქტი ოფიციალური გარანტიით, მიწოდება საქართველოს მასშტაბით — Enex.":
     "{0} products with official warranty, delivery across Georgia — Enex.",
   "პროფესიონალური აღჭურვილობა ოფიციალური გარანტიით, მიწოდება საქართველოს მასშტაბით — Enex.":
@@ -994,8 +994,8 @@ export const ru: Record<string, string> = {
     "Гостиничные системы — электронные замки, сейфы, мини-бары",
   "ZEN დიზელ-გენერატორები Baudouin, IVECO, Perkins და Scania ძრავებით, 15-დან 2000 kVA-მდე. ფასი ლარში ეროვნული ბანკის დღიური კურსით, ტექნიკური დოკუმენტაცია ყველა მოდელზე, მიწოდება შეკვეთით — Enex.":
     "Дизельные генераторы ZEN с двигателями Baudouin, IVECO, Perkins и Scania, от 15 до 2000 кВА. Цены в лари по ежедневному курсу Нацбанка, техническая документация на каждую модель, поставка под заказ — Enex.",
-  "Omnitec Systems: სასტუმროს ელექტრონული საკეტები (OS Slim, EVO, Gaudi 3), დაშვების კონტროლი, სეიფები, მინიბარები, ენერგოსეივერები, ლოკერები და მართვის პროგრამა. ფასი ლარში ეროვნული ბანკის დღიური კურსით, მიწოდება შეკვეთით — Enex.":
-    "Omnitec Systems: электронные замки для отелей (OS Slim, EVO, Gaudi 3), контроль доступа, сейфы, мини-бары, энергосберегатели, локеры и программа управления. Цены в лари по ежедневному курсу Нацбанка, поставка под заказ — Enex.",
+  "Omnitec Systems: სასტუმროს ელექტრონული საკეტები (OS Slim, EVO, Gaudi 3), დაშვების კონტროლი, სეიფები, მინიბარები, ენერგოსეივერები, ლოკერები და მართვის პროგრამა. მიწოდება შეკვეთით — Enex.":
+    "Omnitec Systems: электронные замки для отелей (OS Slim, EVO, Gaudi 3), контроль доступа, сейфы, мини-бары, энергосберегатели, локеры и программа управления. Поставка под заказ — Enex.",
   "{0} პროდუქტი ოფიციალური გარანტიით, მიწოდება საქართველოს მასშტაბით — Enex.":
     "{0} товаров с официальной гарантией, доставка по всей Грузии — Enex.",
   "პროფესიონალური აღჭურვილობა ოფიციალური გარანტიით, მიწოდება საქართველოს მასშტაბით — Enex.":

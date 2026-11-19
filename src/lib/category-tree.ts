@@ -83,7 +83,7 @@ async function load(): Promise<Built> {
     }),
     db.product.groupBy({
       by: ["categoryId"],
-      where: { isActive: true, price: { gt: 0 } },
+      where: { isActive: true, OR: [{ price: { gt: 0 } }, { priceOnRequest: true }] },
       _count: { _all: true },
     }),
   ]);

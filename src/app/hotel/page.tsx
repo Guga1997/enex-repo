@@ -24,7 +24,7 @@ const META = {
   title: "სასტუმროს სისტემები — ელექტრონული საკეტები, სეიფები, მინიბარები",
   // ჯერ თარგმანი, მერე clip — გასაღები სრული ტექსტია
   description:
-    "Omnitec Systems: სასტუმროს ელექტრონული საკეტები (OS Slim, EVO, Gaudi 3), დაშვების კონტროლი, სეიფები, მინიბარები, ენერგოსეივერები, ლოკერები და მართვის პროგრამა. ფასი ლარში ეროვნული ბანკის დღიური კურსით, მიწოდება შეკვეთით — Enex.",
+    "Omnitec Systems: სასტუმროს ელექტრონული საკეტები (OS Slim, EVO, Gaudi 3), დაშვების კონტროლი, სეიფები, მინიბარები, ენერგოსეივერები, ლოკერები და მართვის პროგრამა. მიწოდება შეკვეთით — Enex.",
 } as const;
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -76,8 +76,11 @@ export default async function HotelPage({
       (a, b) =>
         a.p.category.nameKa.localeCompare(b.p.category.nameKa, "ka") ||
         serieOf(a.p).localeCompare(serieOf(b.p)) ||
-        a.price.value - b.price.value
+        a.price.value - b.price.value ||
+        a.p.nameKa.localeCompare(b.p.nameKa)
     );
+  // ფასები თუ საერთოდ არ იწერება, არც კურსის შენიშვნაა საჭირო და არც ფასის სვეტი
+  const priced = rows.some((r) => r.price.value > 0);
 
   return (
     <>
@@ -99,7 +102,7 @@ export default async function HotelPage({
             <b className="text-white">Omnitec Systems</b>{" "}
             {t("— ესპანური ბრენდი, 10 000-ზე მეტ სასტუმროში მსოფლიოს 5 კონტინენტზე: ელექტრონული საკეტები, დაშვების კონტროლი, სეიფები, მინიბარები, ენერგოსეივერები, ლოკერები და მართვის პროგრამა. ყველა პოზიცია შეკვეთით მოდის; ობიექტის კონფიგურაცია და მონტაჟი — ჩვენი გუნდით.")}
           </p>
-          {fx && (
+          {fx && priced && (
             <p className="mt-4 text-xs text-white/60">
               {t(
                 "ფასები ლარში, ეროვნული ბანკის კურსით: 1 EUR = {0} ₾{1} — ყოველდღიურად ახლდება.",
@@ -139,7 +142,7 @@ export default async function HotelPage({
                   <th className="p-3 font-medium" colSpan={2}>{t("დასახელება")}</th>
                   <th className="p-3 font-medium">{t("ჯგუფი")}</th>
                   <th className="p-3 font-medium">{t("კოდი")}</th>
-                  <th className="p-3 text-right font-medium">{t("ფასი")}</th>
+                  {priced && <th className="p-3 text-right font-medium">{t("ფასი")}</th>}
                   <th className="p-3 font-medium">{t("მიწოდება")}</th>
                   <th className="p-3" />
                 </tr>
@@ -169,10 +172,12 @@ export default async function HotelPage({
                     </td>
                     <td className="p-3 text-muted">{nameOf(p.category, locale)}</td>
                     <td className="p-3 font-mono text-xs text-muted">{p.sku}</td>
-                    <td className="p-3 text-right">
-                      <div className="font-bold tabular-nums">{price.value > 0 ? gel(price.value) : t("ფასი მოთხოვნით")}</div>
-                      {price.saved > 0 && <div className="text-xs text-emerald-700">{t("სადილერო ფასი")}</div>}
-                    </td>
+                    {priced && (
+                      <td className="p-3 text-right">
+                        <div className="font-bold tabular-nums">{price.value > 0 ? gel(price.value) : t("ფასი მოთხოვნით")}</div>
+                        {price.saved > 0 && <div className="text-xs text-emerald-700">{t("სადილერო ფასი")}</div>}
+                      </td>
+                    )}
                     <td className="p-3 text-muted">{translateAttr(leadOf(p) || "შეკვეთით", locale)}</td>
                     <td className="p-3 text-right">
                       <Link

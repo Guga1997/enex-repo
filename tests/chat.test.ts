@@ -267,3 +267,12 @@ test("AI მიუწვდომელია — მაშინვე „unava
   assert.ok(Date.now() - t0 < 3000);
   mock = await startMock();
 });
+
+test("ფასის გარეშე პოზიცია: მოდელს „0₾“ კი არა, „ფასი მოთხოვნით“ მიეწოდება", async () => {
+  const assistant = await import("../src/lib/assistant");
+  const r = await assistant.searchProducts({ limit: 1 });
+  assert.ok(!("error" in r) && r.items.length === 1);
+  const rec = tools.compact({ ...r.items[0], price: null, oldPrice: null, discountPercent: null });
+  assert.match(String(rec.price), /მოთხოვნით/);
+  assert.doesNotMatch(JSON.stringify(rec), /0\.00₾/);
+});

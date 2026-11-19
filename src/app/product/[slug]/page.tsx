@@ -16,7 +16,7 @@ import AddToCart from "@/components/AddToCart";
 import Gallery from "@/components/Gallery";
 import { gel } from "@/lib/format";
 import { availableQty, isPurchasable, stockLabel } from "@/lib/stock";
-import { productCardSelect } from "@/lib/catalog";
+import { HAS_PRICE, productCardSelect } from "@/lib/catalog";
 import { StockStatus } from "@/lib/constants";
 import { getI18n } from "@/lib/i18n/server";
 import { nameOf, descriptionOf } from "@/lib/i18n/content";
@@ -97,7 +97,7 @@ export default async function ProductPage({ params }: Props) {
   const description = descriptionOf(p, locale);
 
   const related = await db.product.findMany({
-    where: { categoryId: p.categoryId, isActive: true, price: { gt: 0 }, id: { not: p.id } },
+    where: { categoryId: p.categoryId, isActive: true, ...HAS_PRICE, id: { not: p.id } },
     select: productCardSelect,
     take: 4,
   });

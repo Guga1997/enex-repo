@@ -96,7 +96,7 @@ export function compact(p: AssistantProduct, o: CompactOpts = LIST) {
     model: p.model,
     category: p.category,
     // ფასი ისე, როგორც საიტზე წერია („212.40₾“): მოდელი ციფრს უცვლელად იმეორებს და „212.4“ გამოდიოდა
-    price: gel(p.price),
+    price: p.price != null ? gel(p.price) : "ფასი მოთხოვნით — მყიდველმა დაგვირეკოს ან მოგვწეროს",
     oldPrice: p.oldPrice != null ? gel(p.oldPrice) : null,
     discountPercent: p.discountPercent,
     warrantyMonths: p.warrantyMonths,
