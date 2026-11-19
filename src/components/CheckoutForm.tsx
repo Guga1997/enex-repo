@@ -5,11 +5,11 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { PENDING_CART_KEY, useCart } from "./CartProvider";
 import { gel } from "@/lib/format";
-import { FREE_DELIVERY_FROM, PAYMENT_METHOD_LABELS } from "@/lib/constants";
+import {
+  DELIVERY_CITIES, DELIVERY_FEE, DELIVERY_FEE_REGIONS, FREE_DELIVERY_FROM, PAYMENT_METHOD_LABELS, deliveryFeeFor,
+} from "@/lib/constants";
 import { useLocale, useT } from "@/components/LocaleProvider";
 import { withLocale } from "@/lib/i18n/config";
-
-const CITIES = ["თბილისი", "ბათუმი", "ქუთაისი", "რუსთავი", "გორი", "ზუგდიდი", "თელავი", "სხვა"];
 
 /** ონლაინ გადახდა ბანკის გვერდზე — ლოგო ბანკების ოფიციალური საიტებიდან (public/brand/pay) */
 const BANK = {
@@ -55,7 +55,11 @@ export default function CheckoutForm({
   const { lines, subtotal, clear, ready } = useCart();
   const router = useRouter();
 
-  const [deliveryMethod, setDeliveryMethod] = useState<"COURIER" | "PICKUP">("COURIER");
+  // მიწოდების მეთოდსა და ქალაქს მყიდველი თვითონ ირჩევს — საფასური მათზეა დამოკიდებული,
+  // ამიტომ წინასწარ არაფერია მონიშნული; აურჩევლად დადასტურებისას ველი წითლდება
+  const [deliveryMethod, setDeliveryMethod] = useState<"" | "COURIER" | "PICKUP">("");
+  const [city, setCity] = useState("");
+  const [missing, setMissing] = useState<{ method?: boolean; city?: boolean }>({});
   const [paymentMethod, setPaymentMethod] =
     useState<"BOG" | "TBC" | "BANK_TRANSFER" | "POS">("BOG");
   const [isCompany, setIsCompany] = useState(user?.type === "COMPANY");
@@ -69,10 +73,7 @@ export default function CheckoutForm({
   /* ფასს, წონასა და მოცულობას სერვერი თვლის — localStorage-ის ფასი დამატების მომენტისაა */
   useEffect(() => {
     if (!ready || lines.length === 0) return;
-    const body = {
-      items: lines.map((l) => ({ productId: l.productId, qty: l.qty })),
-      deliveryMethod,
-    };
+    const body = { items: lines.map((l) => ({ productId: l.productId, qty: l.qty })) };
     let cancelled = false;
     fetch("/api/cart/quote", {
       method: "POST",
@@ -83,7 +84,7 @@ export default function CheckoutForm({
       .then((q) => { if (!cancelled && q) setQuote(q as Quote); })
       .catch(() => {});
     return () => { cancelled = true; };
-  }, [ready, lines, deliveryMethod]);
+  }, [ready, lines]);
 
   if (!ready) return <div className="card h-96 animate-pulse" />;
 
@@ -99,14 +100,25 @@ export default function CheckoutForm({
   }
 
   const shownSubtotal = quote?.subtotal ?? subtotal;
+  const freeDelivery = shownSubtotal >= FREE_DELIVERY_FROM;
+  // საფასური იმავე წესით, რითაც სერვერი შეკვეთას ითვლის; სანამ არჩევანი არ არის — უცნობია („—“)
   const deliveryFee =
-    quote?.deliveryFee ??
-    (deliveryMethod === "PICKUP" || subtotal >= FREE_DELIVERY_FROM ? 0 : 15);
-  const total = quote?.total ?? shownSubtotal + deliveryFee;
+    deliveryMethod === "PICKUP" || (deliveryMethod === "COURIER" && (city || freeDelivery))
+      ? deliveryFeeFor(deliveryMethod, city, shownSubtotal)
+      : null;
+  const total = Math.round((shownSubtotal + (deliveryFee ?? 0)) * 100) / 100;
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
+
+    const miss = { method: !deliveryMethod, city: deliveryMethod === "COURIER" && !city };
+    if (miss.method || miss.city) {
+      setMissing(miss);
+      setError(t(miss.method ? "აირჩიეთ მიწოდების მეთოდი" : "აირჩიეთ ქალაქი"));
+      document.getElementById("checkout-delivery")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
     setBusy(true);
 
     const fd = new FormData(e.currentTarget);
@@ -117,7 +129,7 @@ export default function CheckoutForm({
       customerId: String(fd.get("customerId") ?? ""),
       companyName: isCompany ? String(fd.get("companyName") ?? "") : "",
       deliveryMethod,
-      deliveryCity: deliveryMethod === "COURIER" ? String(fd.get("deliveryCity") ?? "") : "",
+      deliveryCity: deliveryMethod === "COURIER" ? city : "",
       deliveryAddress: deliveryMethod === "COURIER" ? String(fd.get("deliveryAddress") ?? "") : "",
       comment: String(fd.get("comment") ?? ""),
       paymentMethod,
@@ -218,35 +230,57 @@ export default function CheckoutForm({
           )}
         </fieldset>
 
-        <fieldset className="card p-5">
-          <legend className="px-1 font-semibold">{t("მიწოდება")}</legend>
+        <fieldset id="checkout-delivery" className="card p-5">
+          <legend className="px-1 font-semibold">
+            {t("მიწოდება")} <span className="text-brand-500">*</span>
+          </legend>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <Radio
               checked={deliveryMethod === "COURIER"}
-              onChange={() => setDeliveryMethod("COURIER")}
+              onChange={() => { setDeliveryMethod("COURIER"); setMissing((m) => ({ ...m, method: false })); setError(null); }}
+              invalid={missing.method}
               title={t("ადგილზე მიტანა")}
-              desc={subtotal >= FREE_DELIVERY_FROM ? t("უფასო") : "15₾"}
+              desc={
+                freeDelivery
+                  ? t("უფასო")
+                  : t("თბილისი — {0}, სხვა ქალაქები — {1}", `${DELIVERY_FEE}₾`, `${DELIVERY_FEE_REGIONS}₾`)
+              }
             />
             <Radio
               checked={deliveryMethod === "PICKUP"}
-              onChange={() => setDeliveryMethod("PICKUP")}
+              onChange={() => { setDeliveryMethod("PICKUP"); setMissing({}); setError(null); }}
+              invalid={missing.method}
               title={t("საწყობიდან გატანა")}
               desc={t("უფასო")}
             />
           </div>
+          {missing.method && (
+            <p role="alert" className="mt-2 text-sm font-medium text-rose-600">{t("აირჩიეთ მიწოდების მეთოდი")}</p>
+          )}
 
           {deliveryMethod === "COURIER" && (
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <label className="block">
-                <span className="mb-1.5 block text-sm font-medium">{t("ქალაქი")}</span>
+                <span className="mb-1.5 block text-sm font-medium">
+                  {t("ქალაქი")} <span className="text-brand-500">*</span>
+                </span>
                 <select
                   name="deliveryCity"
-                  className="w-full rounded-lg border border-line px-3 py-2.5 text-sm outline-none focus:border-brand-500"
+                  value={city}
+                  onChange={(e) => { setCity(e.target.value); setMissing((m) => ({ ...m, city: false })); setError(null); }}
+                  aria-invalid={missing.city || undefined}
+                  className={`w-full rounded-lg border px-3 py-2.5 text-sm outline-none ${
+                    missing.city ? "border-rose-500 ring-1 ring-rose-500" : "border-line focus:border-brand-500"
+                  } ${city ? "" : "text-muted"}`}
                 >
-                  {CITIES.map((c) => (
+                  <option value="" disabled>{t("აირჩიეთ ქალაქი")}</option>
+                  {DELIVERY_CITIES.map((c) => (
                     <option key={c} value={c}>{t(c)}</option>
                   ))}
                 </select>
+                {missing.city && (
+                  <span role="alert" className="mt-1 block text-xs font-medium text-rose-600">{t("აირჩიეთ ქალაქი")}</span>
+                )}
               </label>
               <Field name="deliveryAddress" label={t("მისამართი")} required />
             </div>
@@ -322,7 +356,7 @@ export default function CheckoutForm({
           )}
           <div className="flex justify-between">
             <dt className="text-muted">{t("მიწოდება")}</dt>
-            <dd>{deliveryFee === 0 ? t("უფასო") : gel(deliveryFee)}</dd>
+            <dd>{deliveryFee === null ? "—" : deliveryFee === 0 ? t("უფასო") : gel(deliveryFee)}</dd>
           </div>
           {quote && quote.weightKg > 0 && (
             <div className="flex justify-between">
@@ -363,6 +397,9 @@ export default function CheckoutForm({
         <button
           type="submit"
           disabled={busy}
+          // ბრაუზერის საკუთარმა შემოწმებამ (სავალდებულო ველი, თანხმობა) submit-მდე რომ გააჩეროს,
+          // აურჩეველი მიწოდება მაინც მაშინვე გაწითლდეს
+          onClick={() => setMissing({ method: !deliveryMethod, city: deliveryMethod === "COURIER" && !city })}
           className="btn btn-primary mt-4 w-full hover:bg-brand-600 disabled:opacity-60"
         >
           {busy ? t("მუშავდება...") : paymentMethod === "BOG" || paymentMethod === "TBC" ? t("გადახდაზე გადასვლა") : t("შეკვეთის დადასტურება")}
@@ -413,17 +450,24 @@ function Radio({
   title,
   desc,
   logo,
+  invalid,
 }: {
   checked: boolean;
   onChange: () => void;
   title: string;
   desc: string;
   logo?: string;
+  /** არჩევანი სავალდებულოა და არ გაკეთებულა — წითელი ჩარჩო */
+  invalid?: boolean;
 }) {
   return (
     <label
       className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition ${
-        checked ? "border-brand-500 bg-brand-50" : "border-line hover:border-brand-200"
+        checked
+          ? "border-brand-500 bg-brand-50"
+          : invalid
+            ? "border-rose-500 ring-1 ring-rose-500"
+            : "border-line hover:border-brand-200"
       }`}
     >
       <input type="radio" checked={checked} onChange={onChange} className="mt-0.5 size-4 accent-brand-500" />

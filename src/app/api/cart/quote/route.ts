@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/customer-auth";
 import { effectivePrice } from "@/lib/pricing";
 import { isPurchasable, availableQty } from "@/lib/stock";
-import { FREE_DELIVERY_FROM } from "@/lib/constants";
+import { deliveryFeeFor } from "@/lib/constants";
 import { getLocale } from "@/lib/i18n/server";
 import { nameOf } from "@/lib/i18n/content";
 
@@ -17,6 +17,7 @@ const schema = z.object({
     .array(z.object({ productId: z.string(), qty: z.number().int().min(1).max(100000) }))
     .max(200),
   deliveryMethod: z.enum(["COURIER", "PICKUP"]).optional(),
+  deliveryCity: z.string().max(60).optional(),
 });
 
 export async function POST(req: Request) {
@@ -31,7 +32,7 @@ export async function POST(req: Request) {
   if (!parsed.success) {
     return NextResponse.json({ error: "არავალიდური მოთხოვნა" }, { status: 400 });
   }
-  const { items, deliveryMethod = "COURIER" } = parsed.data;
+  const { items, deliveryMethod, deliveryCity } = parsed.data;
 
   if (items.length === 0) {
     return NextResponse.json({
@@ -72,7 +73,10 @@ export async function POST(req: Request) {
   const round = (n: number) => Math.round(n * 100) / 100;
   const subtotal = round(lines.reduce((s, l) => s + l.lineTotal, 0));
   const retailSubtotal = round(lines.reduce((s, l) => s + l.retailPrice * l.qty, 0));
-  const deliveryFee = deliveryMethod === "PICKUP" || subtotal >= FREE_DELIVERY_FROM ? 0 : 15;
+  // საფასური მეთოდსა და ქალაქზეა დამოკიდებული — სანამ არჩეული არ არის, ჯამში არ შედის
+  const deliveryFee = deliveryMethod && (deliveryMethod === "PICKUP" || deliveryCity?.trim())
+    ? deliveryFeeFor(deliveryMethod, deliveryCity, subtotal)
+    : 0;
 
   return NextResponse.json({
     lines,

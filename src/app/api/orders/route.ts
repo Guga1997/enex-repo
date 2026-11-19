@@ -8,7 +8,7 @@ import { createPayment, isBogEnabled } from "@/lib/payments/bog";
 import { canPayWithTbc, createFlittPayment } from "@/lib/payments/flitt";
 import { getI18n } from "@/lib/i18n/server";
 import { nameOf } from "@/lib/i18n/content";
-import { FREE_DELIVERY_FROM, PAYMENT_TTL_MINUTES } from "@/lib/constants";
+import { DELIVERY_CITIES, PAYMENT_TTL_MINUTES, deliveryFeeFor } from "@/lib/constants";
 import { getCurrentUser } from "@/lib/customer-auth";
 import { effectivePrice } from "@/lib/pricing";
 import { issueAndSendInvoice } from "@/lib/invoice";
@@ -66,6 +66,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: t("თიბისის ბარათით გადახდა დროებით მიუწვდომელია") }, { status: 400 });
   }
 
+  // ქალაქი საფასურს წყვეტს (თბილისი 15 ₾, სხვაგან 40 ₾) — ამიტომ სიიდან უნდა იყოს არჩეული
+  if (input.deliveryMethod === "COURIER" && !DELIVERY_CITIES.includes(input.deliveryCity?.trim() ?? "")) {
+    return NextResponse.json({ error: t("აირჩიეთ ქალაქი") }, { status: 400 });
+  }
   if (input.deliveryMethod === "COURIER" && !input.deliveryAddress?.trim()) {
     return NextResponse.json({ error: t("მიუთითეთ მიწოდების მისამართი") }, { status: 400 });
   }
@@ -166,8 +170,7 @@ export async function POST(req: Request) {
   const subtotal = Number(
     priced.reduce((s, l) => s + l.unitPrice * l.qty, 0).toFixed(2)
   );
-  const deliveryFee =
-    input.deliveryMethod === "PICKUP" || subtotal >= FREE_DELIVERY_FROM ? 0 : 15;
+  const deliveryFee = deliveryFeeFor(input.deliveryMethod, input.deliveryCity, subtotal);
   const total = Number((subtotal + deliveryFee).toFixed(2));
 
   const order = await db.$transaction(async (tx) => {

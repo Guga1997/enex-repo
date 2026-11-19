@@ -13,7 +13,7 @@ import { translate } from "./i18n/dict";
 import { translateAttr } from "./i18n/attributes";
 import { isLocale, withLocale, type Locale } from "./i18n/config";
 import { rateLimit } from "./rate-limit";
-import { DELIVERY_FEE, FREE_DELIVERY_FROM } from "./constants";
+import { DELIVERY_FEE, DELIVERY_FEE_REGIONS, FREE_DELIVERY_FROM } from "./constants";
 import { PAGES } from "@/content/pages";
 
 /**
@@ -387,8 +387,11 @@ export function storeInfo(locale: Locale) {
     website: SITE_URL,
   };
   const delivery = {
-    // ერთი ტარიფი მთელ საქართველოზე — რეგიონების მიხედვით განსხვავდება მხოლოდ ვადა
+    // freeFrom-ზე ნაკლებ შეკვეთაზე: თბილისში feeTbilisi, ნებისმიერ სხვა ქალაქში feeRegions.
+    // fee ძველი ველია (= თბილისი) — თავსებადობისთვის რჩება
     fee: DELIVERY_FEE,
+    feeTbilisi: DELIVERY_FEE,
+    feeRegions: DELIVERY_FEE_REGIONS,
     freeFrom: FREE_DELIVERY_FROM,
     currency: "GEL",
     daysTbilisi: "1-2",

@@ -80,10 +80,22 @@ export const RESERVATION_MINUTES: Record<string, number> = {
 export const PAYMENT_TTL_MINUTES = 15;
 
 export const PAGE_SIZE = 24;
-export const DELIVERY_FEE_TBILISI = 0;
 export const FREE_DELIVERY_FROM = 200;
-/** მიწოდების საფასური FREE_DELIVERY_FROM-ზე ნაკლებ შეკვეთაზე (კალათა და შეკვეთა ამავე თანხას ითვლის) */
+/** მიწოდების საფასური FREE_DELIVERY_FROM-ზე ნაკლებ შეკვეთაზე: თბილისში და თბილისის გარეთ */
 export const DELIVERY_FEE = 15;
+export const DELIVERY_FEE_REGIONS = 40;
+/** ქალაქები შეკვეთის ფორმაში — მნიშვნელობა ქართულად ინახება, ეკრანზე ითარგმნება */
+export const DELIVERY_TBILISI = "თბილისი";
+export const DELIVERY_CITIES = [DELIVERY_TBILISI, "ბათუმი", "ქუთაისი", "რუსთავი", "გორი", "ზუგდიდი", "თელავი", "სხვა"];
+
+/**
+ * მიწოდების საფასური — ერთი წესი ფორმისთვის, გადათვლისთვის და შეკვეთისთვის:
+ * გატანა და FREE_DELIVERY_FROM-დან — უფასო; თბილისი — 15 ₾; ნებისმიერი სხვა ქალაქი — 40 ₾.
+ */
+export function deliveryFeeFor(method: string, city: string | null | undefined, subtotal: number): number {
+  if (method === "PICKUP" || subtotal >= FREE_DELIVERY_FROM) return 0;
+  return city?.trim() === DELIVERY_TBILISI ? DELIVERY_FEE : DELIVERY_FEE_REGIONS;
+}
 
 /**
  * სტატუსის ფერი სიაში — მოლოდინში ნარინჯისფერია, რომ თვალში ხვდებოდეს:

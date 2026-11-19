@@ -3,7 +3,7 @@ import { translate } from "./i18n/dict";
 import { descriptionOf, nameOf } from "./i18n/content";
 import { translateAttr } from "./i18n/attributes";
 import { isPurchasable } from "./stock";
-import { DELIVERY_FEE, FREE_DELIVERY_FROM } from "./constants";
+import { DELIVERY_FEE_REGIONS, FREE_DELIVERY_FROM } from "./constants";
 import type { ReturnNote } from "./return-terms";
 /**
  * SEO-ს საერთო ნაწილი: საიტის მისამართი, სტრუქტურირებული მონაცემები (JSON-LD),
@@ -88,7 +88,8 @@ const AVAILABILITY: Record<string, string> = {
 
 /**
  * მიწოდება Google-ისთვის (Merchant listings): საფასური და ვადა /page/delivery-ის მიხედვით —
- * 200 ₾-დან უფასო, ნაკლებზე 15 ₾; თბილისი 1–2, რეგიონები 2–4 სამუშაო დღე. ვადას მხოლოდ
+ * 200 ₾-დან უფასო, ნაკლებზე თბილისში 15 ₾, სხვაგან 40 ₾. Google ქვეყნის შიგნით ქალაქებს არ
+ * არჩევს, ამიტომ მთელ საქართველოზე უფრო მაღალი ტარიფი იწერება (ნაკლების დაწერა დარღვევაა); თბილისი 1–2, რეგიონები 2–4 სამუშაო დღე. ვადას მხოლოდ
  * მარაგში მყოფ ნივთზე ვწერთ; დიდი გაბარიტის ნივთის მიწოდება ცალკე თანხმდება — საერთოდ არ იწერება.
  */
 function shippingJsonLd(p: ProductForSeo, note?: ReturnNote) {
@@ -98,7 +99,7 @@ function shippingJsonLd(p: ProductForSeo, note?: ReturnNote) {
       "@type": "OfferShippingDetails",
       shippingRate: {
         "@type": "MonetaryAmount",
-        value: (p.price >= FREE_DELIVERY_FROM ? 0 : DELIVERY_FEE).toFixed(2),
+        value: (p.price >= FREE_DELIVERY_FROM ? 0 : DELIVERY_FEE_REGIONS).toFixed(2),
         currency: "GEL",
       },
       shippingDestination: { "@type": "DefinedRegion", addressCountry: "GE" },

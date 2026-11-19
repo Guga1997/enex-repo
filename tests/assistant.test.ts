@@ -112,7 +112,7 @@ test("გათიშული და უფასო პროდუქტი �
   const off = await mk("OFF", { isActive: false, cost: 55, dealerPrice: 60 });
   // ფასის გარეშე („ფასი მოთხოვნით“) პროდუქტს ბაზაში ვეძებთ და არ ვქმნით: ჩართული უფასო
   // პროდუქტი კატალოგის ტესტებს, რომლებიც პარალელურად ითვლის, რიცხვებს აურევდა
-  const free = await db.product.findFirst({ where: { isActive: true, price: 0 }, select: { id: true, sku: true } });
+  const free = await db.product.findFirst({ where: { isActive: true, price: 0, priceOnRequest: false }, select: { id: true, sku: true } });
 
   const r = await searchProducts({ q: P });
   assert.ok(!("error" in r));
@@ -121,6 +121,18 @@ test("გათიშული და უფასო პროდუქტი �
     assert.equal(await getProduct(x.id, "ka"), null);
     assert.equal(await getProduct(x.sku, "ka"), null);
   }
+});
+
+test("ფასი განზრახ არ იწერება (priceOnRequest): პროდუქტი ჩანს, ფასი null-ია და ონლაინ არ იყიდება", async () => {
+  const p = await db.product.findFirst({
+    where: { AND: [VISIBLE, { price: 0, priceOnRequest: true }] },
+    select: { sku: true },
+  });
+  if (!p) return; // ბაზაში ასეთი პროდუქტი არ არის
+  const one = await getProduct(p.sku, "ka");
+  assert.ok(one);
+  assert.equal(one.price, null);
+  assert.equal(one.stock.canOrder, false);
 });
 
 test("ერთი პროდუქტი id-ით და კოდით — სრული ვერსია, ისევ მხოლოდ საჯარო ველები", async () => {
@@ -171,6 +183,8 @@ test("მაღაზიის ინფორმაცია: მიწოდ�
     assert.ok(info.markdown.includes(h), h);
   assert.ok(info.markdown.includes("14 კალენდარული დღ"));
   assert.equal(info.delivery.fee, 15);
+  assert.equal(info.delivery.feeTbilisi, 15);
+  assert.equal(info.delivery.feeRegions, 40);
   assert.equal(info.delivery.freeFrom, 200);
   // WhatsApp .env-დან მოდის: ნომრის გარეშე „აკლია“-ში წერია, ნომრით — ბმულიც აქვს
   assert.equal(info.missing.includes("whatsapp"), !info.contacts.whatsapp);

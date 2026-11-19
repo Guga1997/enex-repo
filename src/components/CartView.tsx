@@ -5,7 +5,7 @@ import Link from "@/components/Link";
 import { useCart } from "./CartProvider";
 import { gel } from "@/lib/format";
 import { normalizeQty } from "@/lib/stock";
-import { FREE_DELIVERY_FROM } from "@/lib/constants";
+import { DELIVERY_FEE, DELIVERY_FEE_REGIONS, FREE_DELIVERY_FROM } from "@/lib/constants";
 import { useT } from "@/components/LocaleProvider";
 import { useEffect, useState } from "react";
 
@@ -48,7 +48,8 @@ export default function CartView() {
     );
   }
 
-  const delivery = subtotal >= FREE_DELIVERY_FROM ? 0 : 15;
+  // საფასური ქალაქზეა დამოკიდებული (თბილისი / სხვა) — კალათაში ჯამს არ ემატება, გაფორმებისას ითვლება
+  const freeDelivery = subtotal >= FREE_DELIVERY_FROM;
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_20rem]">
@@ -163,17 +164,18 @@ export default function CartView() {
           </div>
           <div className="flex justify-between">
             <dt className="text-muted">{t("მიწოდება")}</dt>
-            <dd>{delivery === 0 ? t("უფასო") : gel(delivery)}</dd>
+            <dd>{freeDelivery ? t("უფასო") : t("გაფორმებისას")}</dd>
           </div>
         </dl>
-        {delivery > 0 && (
+        {!freeDelivery && (
           <p className="mt-2 text-xs text-muted">
+            {t("თბილისში {0}, სხვა ქალაქებში {1}.", `${DELIVERY_FEE}₾`, `${DELIVERY_FEE_REGIONS}₾`)}{" "}
             {t("{0}-ით მეტი შეძენისას მიწოდება უფასოა.", gel(FREE_DELIVERY_FROM - subtotal))}
           </p>
         )}
         <div className="mt-4 flex justify-between border-t border-line pt-4 text-lg font-bold">
           <span>{t("ჯამი")}</span>
-          <span>{gel(subtotal + delivery)}</span>
+          <span>{gel(subtotal)}</span>
         </div>
         <Link href="/checkout" className="btn btn-primary mt-5 w-full hover:bg-brand-600">
           {t("შეკვეთის გაფორმება")}

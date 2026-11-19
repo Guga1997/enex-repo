@@ -32,7 +32,7 @@ We work with both corporate and private customers. Every product is officially s
       body: `თბილისში მიწოდება ხორციელდება 1-2 სამუშაო დღეში.
 რეგიონებში — 2-4 სამუშაო დღეში.
 
-200₾-ზე მეტი შეკვეთისას მიწოდება უფასოა. ამ თანხაზე ნაკლები შეკვეთის მიწოდების ღირებულებაა 15₾.
+200₾-ზე მეტი შეკვეთისას მიწოდება უფასოა. ამ თანხაზე ნაკლები შეკვეთის მიწოდების ღირებულებაა: თბილისში — 15₾, თბილისის გარეთ — 40₾.
 
 შესაძლებელია თვითგატანა ჩვენი შოურუმიდან სამუშაო საათებში.`,
     },
@@ -41,7 +41,7 @@ We work with both corporate and private customers. Every product is officially s
       body: `Delivery in Tbilisi takes 1–2 business days.
 To the regions — 2–4 business days.
 
-Delivery is free for orders over 200₾. For smaller orders the delivery fee is 15₾.
+Delivery is free for orders over 200₾. For smaller orders the delivery fee is 15₾ in Tbilisi and 40₾ outside Tbilisi.
 
 You can also pick up your order from our showroom during business hours.`,
     },
@@ -50,7 +50,7 @@ You can also pick up your order from our showroom during business hours.`,
       body: `Доставка по Тбилиси — 1–2 рабочих дня.
 В регионы — 2–4 рабочих дня.
 
-При заказе от 200₾ доставка бесплатная. Для заказов на меньшую сумму стоимость доставки — 15₾.
+При заказе от 200₾ доставка бесплатная. Для заказов на меньшую сумму стоимость доставки: по Тбилиси — 15₾, за пределами Тбилиси — 40₾.
 
 Также возможен самовывоз из нашего шоурума в рабочее время.`,
     },
