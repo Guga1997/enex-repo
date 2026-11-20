@@ -6,17 +6,26 @@ import { gel } from "@/lib/format";
 import { STOCK_LABELS } from "@/lib/constants";
 import { productFilter } from "@/lib/admin-filters";
 import { availableQty } from "@/lib/stock";
+import { STALE_SUPPLY_MS } from "@/lib/suppliers";
 import StockControl from "@/components/admin/StockControl";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "მარაგი" };
+export const metadata = { title: "საწყობი" };
 
 const PER_PAGE = 50;
 
 type SP = {
   q?: string; category?: string; supplier?: string; status?: string;
   stock?: string; sort?: string; dir?: string; page?: string;
+  /** საწყობი: "" — ორივე, "api" — მიმწოდებლებიდან მოსული, "own" — ჩემი */
+  wh?: string;
 };
+
+const WAREHOUSES = [
+  { key: "", label: "ორივე საწყობი", hint: "რასაც საიტი აჩვენებს" },
+  { key: "api", label: "API საწყობი", hint: "მიმწოდებლებიდან მოსული ნაშთი" },
+  { key: "own", label: "ჩემი საწყობი", hint: "ჩემი ჩაწერილი რაოდენობები" },
+];
 
 const TABS = [
   { key: "", label: "ყველა" },
@@ -24,7 +33,6 @@ const TABS = [
   { key: "low", label: "ცოტაა (1–5)" },
   { key: "out", label: "არ არის" },
   { key: "reserved", label: "დაკავებული" },
-  { key: "own", label: "ჩემი მარაგი" },
 ];
 
 /** სვეტი → დალაგება; სათაურზე დაჭერა მიმართულებას ცვლის */
@@ -45,16 +53,21 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
   const sort = sp.sort && SORTS[sp.sort] ? sp.sort : "qty";
   const fallbackDir: Prisma.SortOrder = TEXT_SORTS.has(sort) ? "asc" : "desc";
   const dir: Prisma.SortOrder = sp.dir === "asc" || sp.dir === "desc" ? sp.dir : fallbackDir;
-  const where = productFilter(sp);
+  const wh = sp.wh === "api" || sp.wh === "own" ? sp.wh : "";
+  const where = productFilter({ ...sp, warehouse: wh });
+  // ბარათების ციფრები: მიმდინარე ძებნა / მიმწოდებელი / კატეგორია, საწყობისა და ნაშთის ჩანართის გარეშე
+  const base = productFilter({ ...sp, stock: undefined });
+  const sum = (w: Prisma.ProductWhereInput) =>
+    db.product.aggregate({ where: { AND: [base, w] }, _sum: { stockQty: true, stockAdjust: true } });
 
-  const [items, total, categories, suppliers, counts] = await Promise.all([
+  const [items, total, categories, suppliers, counts, whCounts, supplied, manual] = await Promise.all([
     db.product.findMany({
       where,
       select: {
         id: true, sku: true, nameKa: true, price: true, isActive: true, stockQty: true,
         reservedQty: true, stockAdjust: true, stockStatus: true,
         category: { select: { nameKa: true } },
-        supplies: { select: { qty: true, supplier: { select: { name: true } } } },
+        supplies: { select: { qty: true, updatedAt: true, supplier: { select: { name: true, isActive: true } } } },
       },
       orderBy: [SORTS[sort](dir), { nameKa: "asc" }],
       skip: (page - 1) * PER_PAGE,
@@ -63,8 +76,21 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
     db.product.count({ where }),
     db.category.findMany({ where: { products: { some: {} } }, orderBy: { nameKa: "asc" }, select: { id: true, nameKa: true } }),
     db.supplier.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
-    Promise.all(TABS.map((t) => db.product.count({ where: productFilter({ ...sp, stock: t.key }) }))),
+    Promise.all(TABS.map((t) => db.product.count({ where: productFilter({ ...sp, warehouse: wh, stock: t.key }) }))),
+    Promise.all(WAREHOUSES.map((w) => db.product.count({ where: productFilter({ ...sp, stock: undefined, warehouse: w.key }) }))),
+    sum({ supplies: { some: {} } }),
+    sum({ supplies: { none: {} } }),
   ]);
+
+  // მიმწოდებლის პროდუქტზე: სულ = API + ჩემი (stockAdjust); ხელით შექმნილის მთელი ნაშთი ჩემია
+  const ownUnits = (supplied._sum.stockAdjust ?? 0) + (manual._sum.stockQty ?? 0);
+  const apiUnits = (supplied._sum.stockQty ?? 0) - (supplied._sum.stockAdjust ?? 0);
+  const units = [apiUnits + ownUnits, apiUnits, ownUnits];
+
+  // გაფრთხილება: ასეთი მიმწოდებლის ციფრს მომდევნო გადათვლა (rollupStock) ჯამიდან ამოიღებს
+  const staleBefore = Date.now() - STALE_SUPPLY_MS;
+  const skipped = (s: { updatedAt: Date; supplier: { isActive: boolean } }) =>
+    !s.supplier.isActive ? "მიმწოდებელი გამორთულია" : s.updatedAt.getTime() < staleBefore ? "48 საათზე მეტია არ განახლებულა" : null;
 
   const pages = Math.max(1, Math.ceil(total / PER_PAGE));
   const href = (patch: Partial<SP>) => {
@@ -90,15 +116,36 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
     <div className="space-y-5">
       <div className="flex flex-wrap items-baseline justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">მარაგი</h1>
-          <p className="mt-1 text-sm text-muted">
-            სულ = მიმწოდებლის მარაგი + ჩემი მარაგი. სინქი მიმწოდებლის ციფრს ცვლის, შენს ჩაწერილს არა.
-            გაყიდვისას ჯერ შენი აკლდება, სანამ არ განულდება, მერე მიმწოდებლისა.
+          <h1 className="text-2xl font-bold">საწყობი</h1>
+          <p className="mt-1 max-w-3xl text-sm text-muted">
+            საიტი აჩვენებს ჯამს: API საწყობი + ჩემი საწყობი. API-ს ციფრს სინქი ცვლის, შენს ჩაწერილს — არა.
+            გაყიდვისას ჯერ ჩემი საწყობი აკლდება, სანამ არ განულდება, მერე API-სი.
           </p>
         </div>
         <Link href="/admin/stock" className="text-sm font-medium text-brand-600 hover:underline">
           ცვლილებების ლოგი →
         </Link>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        {WAREHOUSES.map((w, i) => {
+          const active = wh === w.key;
+          return (
+            <Link
+              key={w.key}
+              href={href({ wh: w.key || undefined })}
+              className={`card block p-4 transition ${active ? "border-brand-500 ring-1 ring-brand-500" : "hover:border-brand-500"}`}
+            >
+              <div className="text-sm font-semibold">{w.label}</div>
+              <div className="mt-1 text-2xl font-bold tabular-nums">
+                {units[i]} <span className="text-sm font-normal text-muted">ცალი</span>
+              </div>
+              <div className="mt-0.5 text-xs text-muted">
+                {whCounts[i]} პროდუქტი · {w.hint}
+              </div>
+            </Link>
+          );
+        })}
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -119,6 +166,7 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
       </div>
 
       <form className="card flex flex-wrap gap-3 p-4">
+        {wh && <input type="hidden" name="wh" value={wh} />}
         {sp.stock && <input type="hidden" name="stock" value={sp.stock} />}
         {sp.sort && <input type="hidden" name="sort" value={sp.sort} />}
         {sp.dir && <input type="hidden" name="dir" value={sp.dir} />}
@@ -129,7 +177,7 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
           className="min-w-56 flex-1 rounded-lg border border-line px-3 py-2 text-sm outline-none focus:border-brand-500"
         />
         <select name="supplier" defaultValue={sp.supplier ?? ""} className={select}>
-          <option value="">ყველა წყარო</option>
+          <option value="">ყველა მიმწოდებელი</option>
           {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
           <option value="manual">ხელით შექმნილი</option>
         </select>
@@ -159,9 +207,9 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
             <tr>
               <Th id="name">დასახელება</Th>
               <Th id="category">კატეგორია</Th>
-              <th className="p-3 font-medium">მიმწოდებელი</th>
-              <Th id="own">ჩემი მარაგი</Th>
-              <Th id="qty" right>სულ</Th>
+              <th className="p-3 font-medium">API საწყობი</th>
+              <Th id="own">ჩემი საწყობი</Th>
+              <Th id="qty" right>საიტზე ჩანს</Th>
               <Th id="reserved" right>დაკავებული</Th>
               <Th id="price" right>ფასი</Th>
             </tr>
@@ -187,12 +235,23 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
                 </td>
                 <td className="p-3 text-xs text-muted">{p.category.nameKa}</td>
                 <td className="p-3 text-xs">
-                  {p.supplies.length === 0 && <span className="text-muted">ხელით შექმნილი</span>}
-                  {p.supplies.map((s, i) => (
-                    <div key={i} className="whitespace-nowrap">
-                      {s.supplier.name}: <b>{s.qty}</b>
-                    </div>
-                  ))}
+                  {p.supplies.length === 0 ? (
+                    <span className="text-muted">— (ხელით შექმნილი)</span>
+                  ) : (
+                    <>
+                      {/* რაც ჯამში ითვლება: გამორთული ან დიდი ხნის განუახლებელი მიმწოდებელი არ შედის */}
+                      <div className="text-sm font-semibold">{p.stockQty - p.stockAdjust}</div>
+                      {p.supplies.map((s, i) => {
+                        const why = s.qty > 0 ? skipped(s) : null;
+                        return (
+                          <div key={i} className="whitespace-nowrap text-muted">
+                            {s.supplier.name}: {s.qty}
+                            {why && <span className="ml-1 text-amber-600">⚠ {why}</span>}
+                          </div>
+                        );
+                      })}
+                    </>
+                  )}
                 </td>
                 <td className="p-3">
                   {/* მიმწოდებლის გარეშე პროდუქტის მთელი ნაშთი ჩვენია */}

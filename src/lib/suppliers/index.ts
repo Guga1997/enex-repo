@@ -267,7 +267,7 @@ export function isSpecificModel(model: string): boolean {
 }
 
 /** მიმწოდებლის ჩანაწერი, რომელიც ამდენ ხანს არ განახლებულა, ნაშთად აღარ ითვლება */
-const STALE_SUPPLY_MS = 48 * 60 * 60_000;
+export const STALE_SUPPLY_MS = 48 * 60 * 60_000;
 
 /** ნაშთი პროდუქტზე = მისი ყველა მიმწოდებლის ჯამი + ჩემი მარაგი (ადმინი → მარაგი) */
 export async function rollupStock(productId: string) {
