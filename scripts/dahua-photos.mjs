@@ -71,7 +71,8 @@ function results(html) {
     const href = li.match(/<a href="([^"]+)"/)?.[1];
     const alt = li.match(/<img[^>]*alt="([^"]*)"/s)?.[1];
     const text = li.match(/search-products-text">([\s\S]*?)<\/p>/)?.[1]?.replace(/<[^>]+>/g, "").trim();
-    if (href) out.push({ href: href.replace(/&amp;/g, "&"), model: (text || alt || "").trim() });
+    const img = li.match(/<img[^>]*src="(https:\/\/material[^"]+)"/s)?.[1];
+    if (href) out.push({ href: href.replace(/&amp;/g, "&"), model: (text || alt || "").trim(), img });
   }
   return out;
 }
@@ -118,18 +119,43 @@ async function alive(url) {
   }
 }
 
+/** --near: ზუსტი მოდელი საიტზე არ არის (რეგიონული ვარიანტი) — იმავე სერიის უახლოესი მოდელის ფოტო */
+const NEAR = args.includes("--near");
+function nearest(list, wanted) {
+  const w = norm(wanted);
+  let best = null;
+  for (const r of list) {
+    const c = norm(r.model);
+    let n = 0;
+    while (n < Math.min(c.length, w.length) && c[n] === w[n]) n++;
+    const score = n / w.length;
+    if (score >= 0.7 && (!best || score > best.score)) best = { ...r, score, exact: false };
+  }
+  return best;
+}
+
 async function find(model) {
   const tried = new Set();
-  for (const keyword of [model, withoutPal(model)]) {
+  const base = withoutPal(model);
+  // უახლოესისთვის: მოდელის ბოლო ნაწილებს რიგრიგობით ვაკლებთ („IPC-HFW1439TL1-A-IL“ → „IPC-HFW1439TL1-A“ → „IPC-HFW1439TL1“)
+  const shorter = NEAR ? base.split("-").map((_, i, p) => p.slice(0, p.length - i).join("-")).filter((k) => k.split("-").length >= 2 && k !== base) : [];
+  for (const keyword of [model, base, ...shorter]) {
     if (tried.has(keyword)) continue;
     tried.add(keyword);
     const html = await get(`${SITE}/search/products?keyword=${encodeURIComponent(keyword)}`);
-    const hit = pick(results(html), keyword);
+    const hit = keyword === model || keyword === base ? pick(results(html), keyword) : nearest(results(html), base);
     await sleep(350);
     if (!hit) continue;
-    const page = SITE + hit.href;
-    const images = gallery(await get(page.replace(/ /g, "%20")));
+    // სვიჩები ცალკე საიტზეა (transmission.dahuasecurity.com) — ბმული სრულია და გალერეა სხვანაირია
+    const page = /^https?:/.test(hit.href) ? hit.href : SITE + hit.href;
+    let images = [];
+    try {
+      images = gallery(await get(page.replace(/ /g, "%20")));
+    } catch {
+      /* გვერდი ვერ გაიხსნა — ძებნის შედეგის ფოტო მაინც გვაქვს */
+    }
     await sleep(350);
+    if (!images.length && hit.img) images = [hit.img.replace(/_thumb(\.\w+)$/i, "$1").replace(/ /g, "%20") + RESIZE];
     if (!images.length) continue;
     // სრული ზომა ყველა ფაილს არ აქვს — მაშინ პატარა (400 px) ვერსია რჩება
     const ok = [];
