@@ -140,3 +140,11 @@ test("პრეფიქსი მთლიან სეგმენტს ე�
   assert.equal(canOpen("SALES", "/admin/workflow-secrets"), false);
   assert.equal(canOpen("SALES", "/admin/orders-export"), false);
 });
+
+test("„პროდუქტის მომწოდებელი“ — მხოლოდ გაყიდვებს (და ადმინს); კატალოგის მართვა მას მაინც არ ეხსნება", () => {
+  assert.ok(canOpen("SALES", "/admin/sources"));
+  assert.ok(canOpen("ADMIN", "/admin/sources"));
+  for (const role of ["PURCHASING", "ACCOUNTING", "DELIVERY"]) assert.ok(!canOpen(role, "/admin/sources"), role);
+  for (const path of ["/admin/products", "/admin/inventory", "/admin/suppliers", "/admin/prices"])
+    assert.ok(!canOpen("SALES", path), path);
+});

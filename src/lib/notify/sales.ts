@@ -11,6 +11,9 @@ import { sendSms } from "./sms";
  *   SALES_EMAIL  — ვის მივიდეს (რამდენიმე მძიმით). ცარიელი → არაფერი იგზავნება.
  *   SALES_PHONE  — არასავალდებულო: მოკლე SMS ყოველ ახალ შეკვეთაზე. ყოველი SMS ფასიანია.
  *
+ * გადახდის დასტური ბუღალტერიასაც მიდის: ყველა ჩართულ თანამშრომელს როლით „ბუღალტერია“
+ * (ადმინი → თანამშრომლები) — მისამართი ანგარიშიდან მოდის, .env-ში არაფერი იწერება.
+ *
  * ყოველ წერილს ერთვის შეკვეთის ფურცელი (იგივე ინვოისი): გადარიცხვაზე ბანკის
  * რეკვიზიტებით, დანარჩენზე — გადახდის მეთოდით. ასე მენეჯერს ბეჭდვისთვის ყველაფერი აქვს.
  *
@@ -22,6 +25,12 @@ const recipients = () =>
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
+
+/** ბუღალტერიის მისამართები — ჩართული თანამშრომლები ამ როლით */
+async function accountingRecipients(): Promise<string[]> {
+  const staff = await db.admin.findMany({ where: { role: "ACCOUNTING", active: true }, select: { email: true } });
+  return staff.map((s) => s.email.trim()).filter(Boolean);
+}
 
 const esc = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -127,12 +136,40 @@ export async function notifySalesNewOrder(orderId: string): Promise<void> {
 /** გადახდა დადასტურდა — ბანკის callback-იდან ან ადმინიდან */
 export async function notifySalesPaid(orderId: string, opts: { late?: boolean } = {}): Promise<void> {
   const to = recipients();
-  if (!to.length) return;
+  // ბუღალტერია — ცალკე ტექსტით; ვინც გაყიდვების სიაშიც არის, ორ წერილს არ იღებს
+  const accounting = (await accountingRecipients()).filter((a) => !to.some((s) => s.toLowerCase() === a.toLowerCase()));
+  if (!to.length && !accounting.length) return;
   const order = await load(orderId);
   if (!order) return;
 
   const pay = PAYMENT_METHOD_LABELS[order.paymentMethod] ?? order.paymentMethod;
   const pickup = order.deliveryMethod === "PICKUP";
+
+  if (accounting.length) {
+    const sheet = buildInvoiceHtml(order);
+    const htmlAcc = summaryHtml(
+      order,
+      `გადახდილია — შეკვეთა ${order.number}, ${gel(order.total)}`,
+      opts.late
+        ? "⚠ თანხა ჩამოვიდა შეკვეთის ვადის გასვლის შემდეგ. გადაამოწმე ჩარიცხვა."
+        : `თანხა ჩამოვიდა (${pay}). გადაამოწმე ჩარიცხვა და დაადასტურე პროცესში — „თანხის ჩარიცხვის დადასტურება“.`
+    );
+    await Promise.all(
+      accounting.map((addr) =>
+        sendEmail({
+          to: addr,
+          subject: `${opts.late ? "⚠ ვადის შემდეგ " : ""}გადახდილია: შეკვეთა ${order.number} — ${gel(order.total)} · ${pay}`,
+          html: htmlAcc,
+          text: `შეკვეთა ${order.number} გადახდილია, ${gel(order.total)}, ${pay}.`,
+          attachments: [
+            { filename: `${order.invoiceNumber ?? order.number}.html`, content: sheet, contentType: "text/html" },
+          ],
+        }).then((r) => { if (!r.ok) console.error("ბუღალტერიის წერილი ვერ გაიგზავნა", addr, r.error); })
+      )
+    );
+  }
+  if (!to.length) return;
+
   const html = summaryHtml(
     order,
     `გადახდილია — შეკვეთა ${order.number}, ${gel(order.total)}`,
