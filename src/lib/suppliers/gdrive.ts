@@ -1,5 +1,6 @@
 import { createSign } from "node:crypto";
 import { readFile } from "node:fs/promises";
+import path from "node:path";
 import type { SupplierAdapter, SupplierConfig, SupplierItem } from "./types";
 
 /**
@@ -8,7 +9,10 @@ import type { SupplierAdapter, SupplierConfig, SupplierItem } from "./types";
  *
  * baseUrl  → ფოლდერის ბმული ან id (https://drive.google.com/drive/folders/<id>)
  * fieldMap → { "files": ["dahua_channel.csv", "dahua_wisualarm.csv"],
- *              "brands": { "Dahua Technology": "Dahua", "Wisualarm": "Dahua" } }   — არასავალდებულო
+ *              "brands": { "Dahua Technology": "Dahua", "Wisualarm": "Dahua" },          — არასავალდებულო
+ *              "discounts": { "dahua_channel.csv": 30, "dahua_wisualarm.csv": 35 },     — ჩვენი ფასდაკლება, %
+ *              "discountRules": [{ "word": "კაბელ", "discount": 5 }],                  — სახელით, ფაილისაზე წინ
+ *              "photos": "data/dahua-photos.json" }                                     — მოდელი → ფოტოები
  *
  * წვდომა (ერთ-ერთი):
  *   • სერვისის ანგარიში — ფოლდერი მის ელფოსტასაც უზიარდება (ნახვა). გასაღები სერვერზეა:
@@ -18,11 +22,35 @@ import type { SupplierAdapter, SupplierConfig, SupplierItem } from "./types";
  * ფაილის სვეტებს სათაურით ვპოულობთ და არა რიგით: სვეტი რომ გადაადგილდეს, სინქი გააგრძელებს;
  * საჭირო სვეტი რომ გაქრეს — შეცდომით გაჩერდება და ნაშთებს არ გაანულებს.
  *
- * ფასი: „საცალო ფასი ლარი“ გამოგზავნილ ფასად (cost) მიდის — ჩვენი ფასდაკლება და ფასდადება
- * მიმწოდებლის პარამეტრებშია (supplierDiscount, retailBase), როგორც Excel-ის ნუსხებზე.
+ * ფასი: ფაილში მათი საცალოა. ფასდაკლება თუ მითითებულია, პოზიცია ორი ფასით მოდის — მათი
+ * საცალო (listPrice) და ჩვენი თვითღირებულება (cost = საცალო − ფასდაკლება); საიტის ფასს
+ * მიმწოდებლის წესი წყვეტს („მის საცალოზე“, 0%). ფასდაკლების გარეშე — ერთი ფასი (cost),
+ * როგორც Excel-ის ნუსხებზე.
  */
 
-type FieldMap = { files?: string[]; brands?: Record<string, string> };
+type DiscountRule = { word: string; discount: number };
+/**
+ * მათი კატეგორია → ჩვენი კატეგორიის გზა. პირველი დამთხვეული წესი მოქმედებს; ყველა მითითებული
+ * პირობა უნდა ემთხვეოდეს (file — ფაილის სახელი, category / type — მათი სვეტები, word — სიტყვა სახელში).
+ */
+export type CategoryRule = { file?: string; category?: string; type?: string; word?: string; path: string[] };
+type FieldMap = {
+  files?: string[];
+  brands?: Record<string, string>;
+  discounts?: Record<string, number>;
+  discountRules?: DiscountRule[];
+  categories?: CategoryRule[];
+  photos?: string;
+};
+export type ParseOptions = {
+  brands?: Record<string, string>;
+  categories?: CategoryRule[];
+  /** ამ ფაილის ფასდაკლება, % */
+  discount?: number;
+  rules?: DiscountRule[];
+  /** მოდელი (ობიექტივის გარეშეც) → ფოტოები */
+  photos?: Record<string, string[]>;
+};
 
 type Init = { method?: string; headers?: Record<string, string>; body?: string };
 type Res = { ok: boolean; status: number; text(): Promise<string> };
@@ -91,8 +119,13 @@ export function splitName(raw: string, sku: string): { model: string; rest: stri
   return { model: parts.slice(0, take).join(" "), rest: parts.slice(take).join(" ") };
 }
 
+/** სიტყვა სახელში — სიტყვის თავიდან: „კაბელ“ ემთხვევა „კაბელი“-ს, მაგრამ არა „საკაბელო“-ს */
+const hasWord = (name: string, word: string) =>
+  (" " + name.toLowerCase().replace(/[,.;:()/\-]/g, " ")).includes(" " + word.trim().toLowerCase());
+
 /** ერთი CSV → პოზიციები. file — შეცდომის ტექსტისთვის. */
-export function parseDriveCsv(text: string, file: string, brands: Record<string, string> = {}): SupplierItem[] {
+export function parseDriveCsv(text: string, file: string, opts: ParseOptions = {}): SupplierItem[] {
+  const brands = opts.brands ?? {};
   const [head, ...rows] = parseCsv(text);
   if (!head) throw new Error(`${file}: ფაილი ცარიელია`);
   const titles = head.map((h) => h.trim());
@@ -114,15 +147,27 @@ export function parseDriveCsv(text: string, file: string, brands: Record<string,
     const brand = brands[maker] ?? maker ?? null;
     const price = number(r[at.price]);
     const qty = Math.max(0, Math.floor(number(r[at.qty]) ?? 0));
+    const retail = price && price > 0 ? Math.round(price * 100) / 100 : null;
+    const pct = opts.rules?.find((x) => hasWord(rawName, x.word))?.discount ?? opts.discount;
+    const discounted = retail !== null && typeof pct === "number" && pct > 0 && pct < 100;
+    const images = opts.photos?.[model] ?? opts.photos?.[model.split(" ")[0]];
+    const theirCategory = (r[at.category] ?? "").trim();
+    const theirType = (r[at.type] ?? "").trim();
+    const same = (a: string | undefined, b: string) => a === undefined || a.trim().toLowerCase() === b.toLowerCase();
+    const mapped = opts.categories?.find(
+      (c) => same(c.file, file) && same(c.category, theirCategory) && same(c.type, theirType) && (!c.word || rawName.toLowerCase().includes(c.word.toLowerCase()))
+    );
     items.push({
       supplierSku: sku,
       // საიტის სტილით: „Dahua HY-1301 — სამისამართო კვამლის დეტექტორი, …“
       name: [brand, model].filter(Boolean).join(" ") + (rest ? ` — ${rest}` : ""),
       model,
       brand: brand || null,
-      categoryPath: [(r[at.category] ?? "").trim(), (r[at.type] ?? "").trim()].filter(Boolean),
+      categoryPath: mapped?.path ?? [theirCategory, theirType].filter(Boolean),
       // 0 ან ცარიელი — ფასი ჯერ არ აწერია: პოზიცია ფასის გარეშე მოდის („ფასი მოთხოვნით“)
-      cost: price && price > 0 ? Math.round(price * 100) / 100 : null,
+      cost: discounted ? Math.round(retail * (1 - pct / 100) * 100) / 100 : retail,
+      listPrice: discounted ? retail : null,
+      images: images?.length ? images : undefined,
       qty,
       status: qty > 0 ? "IN_STOCK" : "OUT_OF_STOCK",
     });
@@ -198,6 +243,24 @@ export function folderId(src: string | null): string {
 
 const API = "https://www.googleapis.com/drive/v3/files";
 
+const discountFor = (map: Record<string, number> | undefined, file: string) =>
+  Object.entries(map ?? {}).find(([k]) => k.toLowerCase() === file.toLowerCase())?.[1];
+
+/** scripts/dahua-photos.mjs-ის შედეგი: { მოდელი: { images: [...] } } → მოდელი → ფოტოები */
+async function loadPhotos(file: string | undefined): Promise<Record<string, string[]> | undefined> {
+  if (!file?.trim()) return undefined;
+  const dataDir = path.join(process.cwd(), "data");
+  const full = path.normalize(path.join(process.cwd(), file));
+  // მხოლოდ პროექტის data/ საქაღალდე — fieldMap-ით სერვერის სხვა ფაილი არ უნდა იკითხებოდეს
+  if (!full.startsWith(dataDir + path.sep)) throw new Error("photos: ფაილი data/ საქაღალდეში უნდა იყოს");
+  try {
+    const raw = JSON.parse(await readFile(full, "utf8")) as Record<string, { images?: string[] }>;
+    return Object.fromEntries(Object.entries(raw).filter(([, v]) => v.images?.length).map(([k, v]) => [k, v.images!]));
+  } catch {
+    return undefined; // ფოტოების სია არასავალდებულოა — მის გარეშე სინქი მაინც მუშაობს
+  }
+}
+
 export async function fetchDriveItems(cfg: SupplierConfig, http: Transport = web): Promise<SupplierItem[]> {
   const map = (cfg.fieldMap?.trim() ? JSON.parse(cfg.fieldMap) : {}) as FieldMap;
   const wanted = (map.files ?? []).map((f) => f.trim()).filter(Boolean);
@@ -224,6 +287,7 @@ export async function fetchDriveItems(cfg: SupplierConfig, http: Transport = web
     );
   const files = (JSON.parse(listBody) as { files?: { id: string; name: string; modifiedTime?: string }[] }).files ?? [];
 
+  const photos = await loadPhotos(map.photos);
   const items: SupplierItem[] = [];
   const seen = new Set<string>();
   for (const name of wanted) {
@@ -236,7 +300,14 @@ export async function fetchDriveItems(cfg: SupplierConfig, http: Transport = web
     const res = await http(`${API}/${file.id}?alt=media&supportsAllDrives=true${auth}`, { headers });
     const text = await res.text();
     if (!res.ok) throw new Error(`„${name}“ ვერ ჩამოვტვირთე: HTTP ${res.status}`);
-    for (const item of parseDriveCsv(text, name, map.brands)) {
+    const opts: ParseOptions = {
+      brands: map.brands,
+      categories: map.categories,
+      discount: discountFor(map.discounts, name),
+      rules: map.discountRules,
+      photos,
+    };
+    for (const item of parseDriveCsv(text, name, opts)) {
       if (seen.has(item.supplierSku)) continue; // ერთი კოდი ორ ფაილში — პირველი რჩება
       seen.add(item.supplierSku);
       items.push(item);

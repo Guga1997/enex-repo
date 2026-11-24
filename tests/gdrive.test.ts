@@ -45,7 +45,7 @@ test("მოდელი: ობიექტივი მოდელის ნ�
 });
 
 test("პოზიცია: კოდი, სახელი საიტის სტილით, ხელმისაწვდომი ნაშთი, ფასი ლარში", () => {
-  const items = parseDriveCsv(CHANNEL, "dahua_channel.csv", BRANDS);
+  const items = parseDriveCsv(CHANNEL, "dahua_channel.csv", { brands: BRANDS });
   assert.equal(items.length, 3);
   const cam = items[0];
   assert.equal(cam.supplierSku, "582151");
@@ -63,7 +63,7 @@ test("პოზიცია: კოდი, სახელი საიტის
 });
 
 test("ფასი 0 — პოზიცია ფასის გარეშე მოდის; სვეტი რომ გაქრეს — შეცდომა და არა ცარიელი სია", () => {
-  const items = parseDriveCsv(WISUAL, "dahua_wisualarm.csv", BRANDS);
+  const items = parseDriveCsv(WISUAL, "dahua_wisualarm.csv", { brands: BRANDS });
   assert.equal(items[0].cost, 36.37);
   assert.equal(items[1].cost, null);
   assert.equal(items[1].qty, 4);
@@ -74,6 +74,52 @@ test("ფასი 0 — პოზიცია ფასის გარეშ�
     .map((r) => [r[6], ...r.slice(0, 6), ...r.slice(7)].map((c) => `"${c}"`).join(","))
     .join("\n");
   assert.equal(parseDriveCsv(swapped, "x.csv")[0].cost, 36.37);
+});
+
+test("ფასდაკლება: ფაილის პროცენტი; „კაბელი“ სახელში — თავისი; მათი საცალო ცალკე რჩება", () => {
+  const rules = [{ word: "კაბელ", discount: 5 }];
+  const cam = parseDriveCsv(CHANNEL, "dahua_channel.csv", { discount: 30, rules })[0];
+  assert.equal(cam.listPrice, 256.67, "მათი საცალო");
+  assert.equal(cam.cost, 179.67, "ჩვენი ფასი: საცალოს 70%");
+  const fire = parseDriveCsv(WISUAL, "dahua_wisualarm.csv", { discount: 35, rules });
+  assert.equal(fire[0].cost, 23.64);
+  assert.equal(fire[1].cost, null, "ფასის გარეშე პოზიციას ფასდაკლება არაფერს უმატებს");
+  assert.equal(fire[1].listPrice, null);
+
+  const extra = [
+    WISUAL,
+    '"1","PFM920I-5EUN UTP კაბელი Cat5e, 305მ #1","/Channel","ვიდეო მეთვალყურეობა","კაბელი","Dahua Technology","200","77","3","0","3","3","0","0","0"',
+    '"2","HY-JX20 საკაბელო გამანაწილებელი კოლოფი #2","/Wisualarm","სახანძრო სიგნალიზაცია","აქსესუარები","Wisualarm","100","38","3","0","3","3","0","0","0"',
+  ].join("\n");
+  const more = parseDriveCsv(extra, "dahua_wisualarm.csv", { discount: 35, rules });
+  assert.equal(more[2].cost, 190, "კაბელი — 5%");
+  assert.equal(more[3].cost, 65, "„საკაბელო“ კოლოფი კაბელი არ არის — ფაილის 35%");
+});
+
+test("ფოტოები მოდელით: ობიექტივიანი მოდელი ძირითადი მოდელის ფოტოს იღებს", () => {
+  const photos = {
+    "IPC-HFW1439TL1-A-IL": ["https://example.com/a.webp"],
+    ASC3202B: ["https://example.com/b.webp", "https://example.com/c.webp"],
+  };
+  const items = parseDriveCsv(CHANNEL, "dahua_channel.csv", { photos });
+  assert.deepEqual(items[0].images, ["https://example.com/a.webp"]);
+  assert.deepEqual(items[1].images, ["https://example.com/a.webp"], "3.6mm ვარიანტი — იგივე ფოტო");
+  assert.equal(items[2].images?.length, 2);
+  assert.equal(parseDriveCsv(WISUAL, "x.csv", { photos })[0].images, undefined);
+});
+
+test("კატეგორიის წესები: პირველი დამთხვეული; ფაილი, მათი ტიპი და სიტყვა სახელში", () => {
+  const categories = [
+    { file: "dahua_wisualarm.csv", word: "გახმოვანებ", path: ["უსაფრთხოება", "გახმოვანება"] },
+    { file: "dahua_wisualarm.csv", path: ["უსაფრთხოება", "სახანძრო"] },
+    { type: "IP კამერა", path: ["უსაფრთხოება", "IP კამერები"] },
+  ];
+  const fire = parseDriveCsv(WISUAL, "dahua_wisualarm.csv", { categories });
+  assert.deepEqual(fire[0].categoryPath, ["უსაფრთხოება", "სახანძრო"]);
+  assert.deepEqual(fire[1].categoryPath, ["უსაფრთხოება", "გახმოვანება"], "სიტყვიანი წესი ზოგადზე წინ");
+  const ch = parseDriveCsv(CHANNEL, "dahua_channel.csv", { categories });
+  assert.deepEqual(ch[0].categoryPath, ["უსაფრთხოება", "IP კამერები"]);
+  assert.deepEqual(ch[2].categoryPath, ["შეზღუდული დაშვების სისტემა", "კონტროლერი"], "წესის გარეშე — მათი კატეგორია და ტიპი");
 });
 
 test("ფოლდერის id ბმულიდან", () => {
