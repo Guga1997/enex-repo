@@ -87,7 +87,8 @@ export function buildInvoiceHtml(order: InvoiceOrder): string {
   const shipTo =
     order.deliveryMethod === "COURIER"
       ? `${esc(order.deliveryCity ? order.deliveryCity + ", " : "")}${esc(order.deliveryAddress ?? "")}`
-      : "საწყობიდან გატანა";
+      : ""; // გატანაზე მისამართი არ არის — მეთოდის სახელი ქვემოთ ისედაც წერია
+  const comment = customerComment(order.comment);
 
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/$/, "");
 
@@ -178,7 +179,7 @@ export function buildInvoiceHtml(order: InvoiceOrder): string {
     მიწოდება: ${esc(DELIVERY_METHOD_LABELS[order.deliveryMethod] ?? order.deliveryMethod)}${
       shipTo ? " — " + shipTo : ""
     }<br>
-    ${order.comment ? "კომენტარი: " + esc(order.comment) + "<br>" : ""}
+    ${comment ? "კომენტარი: " + esc(comment) + "<br>" : ""}
     ${bankTransfer ? "თანხის ჩარიცხვის შემდეგ შეკვეთა ავტომატურად გადავა დამუშავებაში." : ""}
   </div>
 
@@ -186,11 +187,24 @@ export function buildInvoiceHtml(order: InvoiceOrder): string {
 </body></html>`;
 }
 
+/** შიდა შენიშვნის ხაზი შეკვეთის კომენტარში (ვინ გამოწერა და მისთ.) — მყიდველის ინვოისზე არ იბეჭდება */
+export const INTERNAL_NOTE = "[შიდა] ";
+
+/** კომენტარი ისე, როგორც მყიდველმა უნდა ნახოს — შიდა ხაზების გარეშე */
+export function customerComment(comment: string | null | undefined): string {
+  return (comment ?? "")
+    .split(/\r?\n/)
+    .filter((l) => !l.startsWith(INTERNAL_NOTE.trim()))
+    .join("\n")
+    .trim();
+}
+
 /**
  * ინვოისის გამოწერა და გაგზავნა რეგისტრაციის ელფოსტაზე.
  * ნომერს ერთხელ ვანიჭებთ — ხელახლა გაგზავნა იმავე ინვოისს აგზავნის.
+ * send: false — მხოლოდ ნომერი (თანამშრომლის გამოწერილი ინვოისი: იბეჭდება ან ხელით გადაეცემა).
  */
-export async function issueAndSendInvoice(orderId: string) {
+export async function issueAndSendInvoice(orderId: string, opts: { send?: boolean } = {}) {
   const order = await db.order.findUnique({ where: { id: orderId }, include: { items: true } });
   if (!order) return { ok: false as const, error: "შეკვეთა ვერ მოიძებნა" };
 
@@ -204,6 +218,9 @@ export async function issueAndSendInvoice(orderId: string) {
       return (await tx.order.findUnique({ where: { id: orderId }, select: { invoiceNumber: true } }))!.invoiceNumber!;
     });
   }
+  // ელფოსტის გარეშე მყიდველი (ადმინიდან გამოწერილი) — ნომერი მინიჭებულია, გასაგზავნი არაფერია
+  if (opts.send === false || !order.customerEmail.trim()) return { ok: true as const, invoiceNumber };
+
   const html = buildInvoiceHtml({ ...order, invoiceNumber });
 
   const res = await sendEmail({

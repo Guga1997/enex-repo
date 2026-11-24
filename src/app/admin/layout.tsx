@@ -16,6 +16,7 @@ const NAV = [
   { href: "/admin/banners", label: "ბანერები" },
   { href: "/admin/orders", label: "შეკვეთები" },
   { href: "/admin/workflow", label: "პროცესი" },
+  { href: "/admin/invoices", label: "ინვოისის გამოწერა" },
   { href: "/admin/sources", label: "პროდუქტის მომწოდებელი" },
   { href: "/admin/suppliers", label: "მიმწოდებლები" },
   { href: "/admin/users", label: "მომხმარებლები" },

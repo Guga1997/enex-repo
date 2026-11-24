@@ -173,7 +173,8 @@ export const isFinished = (done: Set<string>) => done.has("DELIVERED");
 export const NAV_BY_ROLE: Record<Role, string[]> = {
   ADMIN: ["*"],
   // „პროდუქტის მომწოდებელი“ — მხოლოდ სანახავი ძებნა: რომელი პროდუქტი ვისგან მოდის
-  SALES: ["/admin/workflow", "/admin/orders", "/admin/sources"],
+  // „ინვოისის გამოწერა“ — გაყიდვები თვითონ ადგენს შეკვეთას მყიდველის სახელზე (საიტის ფასებით)
+  SALES: ["/admin/workflow", "/admin/orders", "/admin/sources", "/admin/invoices"],
   PURCHASING: ["/admin/workflow", "/admin/orders"],
   ACCOUNTING: ["/admin/workflow", "/admin/orders"],
   DELIVERY: ["/admin/workflow"],

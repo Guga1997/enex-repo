@@ -16,11 +16,15 @@ export const metadata = { title: "შეკვეთის დეტალებ
 
 export default async function AdminOrderDetail({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ mail?: string }>;
 }) {
   await requireStaff("/admin/orders/x");
   const { id } = await params;
+  // ინვოისის გამოწერიდან გადმოსვლისას: წერილი წავიდა თუ არა
+  const { mail } = await searchParams;
   const [order, session] = await Promise.all([
     db.order.findUnique({
       where: { id },
@@ -39,12 +43,30 @@ export default async function AdminOrderDetail({
 
   return (
     <div className="space-y-5">
+      {mail && (
+        <p className={`rounded-lg p-3 text-sm ${mail === "ok" ? "bg-emerald-50 text-emerald-800" : "bg-amber-50 text-amber-800"}`}>
+          {mail === "ok"
+            ? "ინვოისი გამოიწერა და მყიდველს ელფოსტაზე გაეგზავნა."
+            : `ინვოისი გამოიწერა, მაგრამ წერილი ვერ გაიგზავნა: ${mail.slice(0, 200)}. გახსენი ინვოისი და გადაეცი სხვა გზით.`}
+        </p>
+      )}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <Link href="/admin/orders" className="text-sm text-muted hover:text-brand-600">
             ← შეკვეთები
           </Link>
           <h1 className="text-2xl font-bold">{order.number}</h1>
+          {/* ინვოისი მხოლოდ გადარიცხვით შეკვეთაზეა — ახალ ჩანართში იხსნება, იქიდან იბეჭდება */}
+          {order.paymentMethod === "BANK_TRANSFER" && (
+            <a
+              href={`/order/${order.id}/invoice`}
+              target="_blank"
+              rel="noopener"
+              className="mt-1 inline-block text-sm font-medium text-brand-600 hover:underline"
+            >
+              ინვოისი{order.invoiceNumber ? ` ${order.invoiceNumber}` : ""} — გახსნა / ბეჭდვა ↗
+            </a>
+          )}
         </div>
 
       <OrderWorkflow
