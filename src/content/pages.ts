@@ -62,7 +62,7 @@ You can also pick up your order from our showroom during business hours.`,
 
 • ონლაინ, ბანკის გვერდზე — ბარათით (Visa, Mastercard), განვადებით ან ქულებით
 • საბანკო გადარიცხვა — იურიდიული პირებისთვის, ინვოისის საფუძველზე
-• ბარათით ადგილზე — POS ტერმინალით, ნივთის მიღებისას
+• ბარათით ადგილზე — POS ტერმინალით, მხოლოდ საწყობიდან გატანისას
 
 ყველა ფასი მოცემულია დღგ-ს ჩათვლით.`,
     },
@@ -72,7 +72,7 @@ You can also pick up your order from our showroom during business hours.`,
 
 • Online, on the bank's page — by card (Visa, Mastercard), in installments or with points
 • Bank transfer — for companies, against an invoice
-• Card on delivery — via POS terminal when you receive your order
+• Card on pickup — via POS terminal, only when you collect the order from our warehouse
 
 All prices include VAT.`,
     },
@@ -82,7 +82,7 @@ All prices include VAT.`,
 
 • Онлайн, на странице банка — картой (Visa, Mastercard), в рассрочку или баллами
 • Банковский перевод — для юридических лиц, на основании счёта
-• Картой при получении — через POS-терминал
+• Картой при самовывозе — через POS-терминал, только при получении заказа на складе
 
 Все цены указаны с НДС.`,
     },

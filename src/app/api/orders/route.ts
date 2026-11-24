@@ -66,6 +66,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: t("თიბისის ბარათით გადახდა დროებით მიუწვდომელია") }, { status: 400 });
   }
 
+  // ტერმინალი მხოლოდ საწყობშია — კურიერს არ მიაქვს; ფორმა ამ ვარიანტს მიტანაზე არც აჩვენებს
+  if (input.paymentMethod === "POS" && input.deliveryMethod !== "PICKUP") {
+    return NextResponse.json({ error: t("ტერმინალით (ადგილზე) გადახდა შესაძლებელია მხოლოდ საწყობიდან გატანისას.") }, { status: 400 });
+  }
+
   // ქალაქი საფასურს წყვეტს (თბილისი 15 ₾, სხვაგან 40 ₾) — ამიტომ სიიდან უნდა იყოს არჩეული
   if (input.deliveryMethod === "COURIER" && !DELIVERY_CITIES.includes(input.deliveryCity?.trim() ?? "")) {
     return NextResponse.json({ error: t("აირჩიეთ ქალაქი") }, { status: 400 });

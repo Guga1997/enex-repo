@@ -59,9 +59,11 @@ export default function CheckoutForm({
   // ამიტომ წინასწარ არაფერია მონიშნული; აურჩევლად დადასტურებისას ველი წითლდება
   const [deliveryMethod, setDeliveryMethod] = useState<"" | "COURIER" | "PICKUP">("");
   const [city, setCity] = useState("");
-  const [missing, setMissing] = useState<{ method?: boolean; city?: boolean }>({});
+  const [missing, setMissing] = useState<{ method?: boolean; city?: boolean; payment?: boolean }>({});
+  // გადახდის მეთოდიც მყიდველის არჩევანია — წინასწარ მონიშნული არ არის. ტერმინალი მხოლოდ
+  // საწყობშია: კურიერს ის არ მიაქვს, ამიტომ ვარიანტი მხოლოდ „საწყობიდან გატანაზე“ ჩნდება
   const [paymentMethod, setPaymentMethod] =
-    useState<"BOG" | "TBC" | "BANK_TRANSFER" | "POS">("BOG");
+    useState<"" | "BOG" | "TBC" | "BANK_TRANSFER" | "POS">("");
   const [isCompany, setIsCompany] = useState(user?.type === "COMPANY");
   const [organizationId, setOrganizationId] = useState(
     organizations.find((o) => o.isDefault)?.id ?? organizations[0]?.id ?? ""
@@ -112,11 +114,13 @@ export default function CheckoutForm({
     e.preventDefault();
     setError(null);
 
-    const miss = { method: !deliveryMethod, city: deliveryMethod === "COURIER" && !city };
-    if (miss.method || miss.city) {
+    const miss = { method: !deliveryMethod, city: deliveryMethod === "COURIER" && !city, payment: !paymentMethod };
+    if (miss.method || miss.city || miss.payment) {
       setMissing(miss);
-      setError(t(miss.method ? "აირჩიეთ მიწოდების მეთოდი" : "აირჩიეთ ქალაქი"));
-      document.getElementById("checkout-delivery")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      setError(t(miss.method ? "აირჩიეთ მიწოდების მეთოდი" : miss.city ? "აირჩიეთ ქალაქი" : "აირჩიეთ გადახდის მეთოდი"));
+      document
+        .getElementById(miss.method || miss.city ? "checkout-delivery" : "checkout-payment")
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
     setBusy(true);
@@ -237,7 +241,13 @@ export default function CheckoutForm({
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <Radio
               checked={deliveryMethod === "COURIER"}
-              onChange={() => { setDeliveryMethod("COURIER"); setMissing((m) => ({ ...m, method: false })); setError(null); }}
+              onChange={() => {
+                setDeliveryMethod("COURIER");
+                setMissing((m) => ({ ...m, method: false }));
+                setError(null);
+                // ტერმინალით გადახდა მიტანაზე არ არის — არჩევანი იხსნება, მყიდველი სხვას ირჩევს
+                if (paymentMethod === "POS") setPaymentMethod("");
+              }}
               invalid={missing.method}
               title={t("ადგილზე მიტანა")}
               desc={
@@ -248,7 +258,7 @@ export default function CheckoutForm({
             />
             <Radio
               checked={deliveryMethod === "PICKUP"}
-              onChange={() => { setDeliveryMethod("PICKUP"); setMissing({}); setError(null); }}
+              onChange={() => { setDeliveryMethod("PICKUP"); setMissing((m) => ({ payment: m.payment })); setError(null); }}
               invalid={missing.method}
               title={t("საწყობიდან გატანა")}
               desc={t("უფასო")}
@@ -287,14 +297,22 @@ export default function CheckoutForm({
           )}
         </fieldset>
 
-        <fieldset className="card p-5">
-          <legend className="px-1 font-semibold">{t("გადახდის მეთოდი")}</legend>
+        <fieldset id="checkout-payment" className="card p-5">
+          <legend className="px-1 font-semibold">
+            {t("გადახდის მეთოდი")} <span className="text-brand-500">*</span>
+          </legend>
           <div className="mt-4 space-y-3">
-            {(["BOG", ...(tbcEnabled ? (["TBC"] as const) : []), "BANK_TRANSFER", "POS"] as const).map((m) => (
+            {([
+              "BOG",
+              ...(tbcEnabled ? (["TBC"] as const) : []),
+              "BANK_TRANSFER",
+              ...(deliveryMethod === "PICKUP" ? (["POS"] as const) : []),
+            ] as const).map((m) => (
               <Radio
                 key={m}
                 checked={paymentMethod === m}
-                onChange={() => setPaymentMethod(m)}
+                onChange={() => { setPaymentMethod(m); setMissing((x) => ({ ...x, payment: false })); setError(null); }}
+                invalid={missing.payment}
                 // ბანკის გვერდზე ბარათიც, განვადებაც და ქულებიც არის — სათაურად ბანკი, აღწერაში ვარიანტები
                 title={m in BANK ? t(BANK[m as keyof typeof BANK].name) : t(PAYMENT_METHOD_LABELS[m])}
                 logo={m in BANK ? BANK[m as keyof typeof BANK].logo : undefined}
@@ -302,12 +320,18 @@ export default function CheckoutForm({
                   m === "BANK_TRANSFER"
                     ? t("ინვოისი მაშინვე მოვა {0}", user?.email ?? t("მითითებულ ელფოსტაზე"))
                     : m === "POS"
-                      ? t("ბარათით გადაიხდი ნივთის მიღებისას")
+                      ? t("ბარათით გადაიხდი საწყობში, ნივთის გატანისას")
                       : t("ბარათით, განვადებით ან ქულებით — უსაფრთხო გადახდა ბანკის გვერდზე")
                 }
               />
             ))}
           </div>
+          {missing.payment && (
+            <p role="alert" className="mt-2 text-sm font-medium text-rose-600">{t("აირჩიეთ გადახდის მეთოდი")}</p>
+          )}
+          {deliveryMethod !== "PICKUP" && (
+            <p className="mt-3 text-xs text-muted">{t("ტერმინალით (ადგილზე) გადახდა შესაძლებელია მხოლოდ საწყობიდან გატანისას.")}</p>
+          )}
         </fieldset>
 
         <fieldset className="card p-5">
@@ -399,7 +423,7 @@ export default function CheckoutForm({
           disabled={busy}
           // ბრაუზერის საკუთარმა შემოწმებამ (სავალდებულო ველი, თანხმობა) submit-მდე რომ გააჩეროს,
           // აურჩეველი მიწოდება მაინც მაშინვე გაწითლდეს
-          onClick={() => setMissing({ method: !deliveryMethod, city: deliveryMethod === "COURIER" && !city })}
+          onClick={() => setMissing({ method: !deliveryMethod, city: deliveryMethod === "COURIER" && !city, payment: !paymentMethod })}
           className="btn btn-primary mt-4 w-full hover:bg-brand-600 disabled:opacity-60"
         >
           {busy ? t("მუშავდება...") : paymentMethod === "BOG" || paymentMethod === "TBC" ? t("გადახდაზე გადასვლა") : t("შეკვეთის დადასტურება")}
