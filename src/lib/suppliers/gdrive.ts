@@ -18,6 +18,8 @@ import type { SupplierAdapter, SupplierConfig, SupplierItem } from "./types";
  *   • სერვისის ანგარიში — ფოლდერი მის ელფოსტასაც უზიარდება (ნახვა). გასაღები სერვერზეა:
  *     GOOGLE_SERVICE_ACCOUNT_FILE=/გზა/key.json  ან  GOOGLE_SERVICE_ACCOUNT_JSON='{"client_email":…}'
  *   • საჯარო ფოლდერი („ყველას, ვისაც ბმული აქვს“) — secret-ში Google API გასაღები.
+ *   • Apps Script — როცა ფოლდერზე მხოლოდ ნახვის უფლება გვაქვს და სხვას ვერ ვუზიარებთ: იმავე Google
+ *     ანგარიშში გაშვებული სკრიპტი (deploy/google-drive-reader.gs). baseUrl — მისი /exec ბმული, secret — გასაღები.
  *
  * ფაილის სვეტებს სათაურით ვპოულობთ და არა რიგით: სვეტი რომ გადაადგილდეს, სინქი გააგრძელებს;
  * საჭირო სვეტი რომ გაქრეს — შეცდომით გაჩერდება და ნაშთებს არ გაანულებს.
@@ -261,12 +263,9 @@ async function loadPhotos(file: string | undefined): Promise<Record<string, stri
   }
 }
 
-export async function fetchDriveItems(cfg: SupplierConfig, http: Transport = web): Promise<SupplierItem[]> {
-  const map = (cfg.fieldMap?.trim() ? JSON.parse(cfg.fieldMap) : {}) as FieldMap;
-  const wanted = (map.files ?? []).map((f) => f.trim()).filter(Boolean);
-  if (!wanted.length) throw new Error('fieldMap-ში ფაილების სახელები სჭირდება: {"files": ["….csv"]}');
+/** ფაილების ტექსტი Drive API-დან: სერვისის ანგარიშით ან (საჯარო ფოლდერზე) API გასაღებით */
+async function readViaApi(cfg: SupplierConfig, wanted: string[], http: Transport): Promise<[string, string][]> {
   const folder = folderId(cfg.baseUrl);
-
   const sa = await serviceAccount();
   const key = cfg.secret?.trim();
   if (!sa && !key) throw new Error("Drive-ის წვდომა გამართული არ არის — სერვერზე GOOGLE_SERVICE_ACCOUNT_FILE ან secret-ში API გასაღები");
@@ -287,9 +286,7 @@ export async function fetchDriveItems(cfg: SupplierConfig, http: Transport = web
     );
   const files = (JSON.parse(listBody) as { files?: { id: string; name: string; modifiedTime?: string }[] }).files ?? [];
 
-  const photos = await loadPhotos(map.photos);
-  const items: SupplierItem[] = [];
-  const seen = new Set<string>();
+  const out: [string, string][] = [];
   for (const name of wanted) {
     // ერთი სახელით რამდენიმე ფაილი (ძველი ასლი) — ყველაზე ახალი
     const file = files
@@ -300,6 +297,54 @@ export async function fetchDriveItems(cfg: SupplierConfig, http: Transport = web
     const res = await http(`${API}/${file.id}?alt=media&supportsAllDrives=true${auth}`, { headers });
     const text = await res.text();
     if (!res.ok) throw new Error(`„${name}“ ვერ ჩამოვტვირთე: HTTP ${res.status}`);
+    out.push([name, text]);
+  }
+  return out;
+}
+
+/** Apps Script-ის ვებ-აპი (deploy/google-drive-reader.gs): baseUrl — მისი /exec ბმული, secret — გასაღები */
+export const isScriptUrl = (url: string | null) => (url ?? "").trim().startsWith("https://script.google.com/macros/s/");
+
+/**
+ * ფაილების ტექსტი იმ Google ანგარიშის სკრიპტიდან, რომელსაც ფოლდერი გაზიარებული აქვს — როცა ფოლდერს
+ * სხვა ვერ ვუზიარებთ (მხოლოდ ნახვის უფლება გვაქვს). გასაღები მოთხოვნის ტანში მიდის და არა მისამართში.
+ */
+async function readViaScript(cfg: SupplierConfig, wanted: string[], http: Transport): Promise<[string, string][]> {
+  const token = cfg.secret?.trim();
+  if (!token) throw new Error("secret-ში სკრიპტის გასაღები სჭირდება");
+  const out: [string, string][] = [];
+  for (const name of wanted) {
+    const res = await http(cfg.baseUrl!.trim(), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, file: name }),
+    });
+    const body = await res.text();
+    if (!res.ok) throw new Error(`„${name}“ ვერ წამოვიღე: HTTP ${res.status}`);
+    let data: { text?: string; error?: string };
+    try {
+      data = JSON.parse(body);
+    } catch {
+      // Google-მა შესვლის ან შეცდომის გვერდი დააბრუნა — სკრიპტი „ყველასთვის“ არ არის გაშვებული ან ბმული შეიცვალა
+      throw new Error("სკრიპტმა JSON არ დააბრუნა — შეამოწმე ვებ-აპის ბმული და წვდომა (Anyone)");
+    }
+    if (data.error === "forbidden") throw new Error("სკრიპტმა გასაღები არ მიიღო — secret არ ემთხვევა");
+    if (data.error || typeof data.text !== "string") throw new Error(`„${name}“: ${data.error ?? "ტექსტი არ მოვიდა"}`);
+    out.push([name, data.text]);
+  }
+  return out;
+}
+
+export async function fetchDriveItems(cfg: SupplierConfig, http: Transport = web): Promise<SupplierItem[]> {
+  const map = (cfg.fieldMap?.trim() ? JSON.parse(cfg.fieldMap) : {}) as FieldMap;
+  const wanted = (map.files ?? []).map((f) => f.trim()).filter(Boolean);
+  if (!wanted.length) throw new Error('fieldMap-ში ფაილების სახელები სჭირდება: {"files": ["….csv"]}');
+
+  const texts = isScriptUrl(cfg.baseUrl) ? await readViaScript(cfg, wanted, http) : await readViaApi(cfg, wanted, http);
+  const photos = await loadPhotos(map.photos);
+  const items: SupplierItem[] = [];
+  const seen = new Set<string>();
+  for (const [name, text] of texts) {
     const opts: ParseOptions = {
       brands: map.brands,
       categories: map.categories,

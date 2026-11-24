@@ -122,6 +122,36 @@ test("კატეგორიის წესები: პირველი �
   assert.deepEqual(ch[2].categoryPath, ["შეზღუდული დაშვების სისტემა", "კონტროლერი"], "წესის გარეშე — მათი კატეგორია და ტიპი");
 });
 
+test("Apps Script-ის რეჟიმი: გასაღები მოთხოვნის ტანში, ფაილი სახელით; შეცდომები გასაგები ტექსტით", async () => {
+  const bodies: { token: string; file: string }[] = [];
+  const reply = (o: object) => ({ ok: true, status: 200, text: async () => JSON.stringify(o) });
+  const http: Transport = async (url, init) => {
+    assert.equal(url, "https://script.google.com/macros/s/AKfy-TEST/exec");
+    assert.ok(!url.includes("secret-1"), "გასაღები მისამართში არ იწერება");
+    const req = JSON.parse(init!.body!);
+    bodies.push(req);
+    if (req.token !== "secret-1") return reply({ error: "forbidden" });
+    if (req.file === "dahua_channel.csv") return reply({ text: CHANNEL });
+    if (req.file === "dahua_wisualarm.csv") return reply({ text: WISUAL });
+    return reply({ error: "not found" });
+  };
+  const cfg = {
+    slug: "dahua-drive", name: "Dahua (Drive)", baseUrl: "https://script.google.com/macros/s/AKfy-TEST/exec",
+    authType: "NONE", secret: "secret-1", authHeader: null,
+    fieldMap: JSON.stringify({ files: ["dahua_channel.csv", "dahua_wisualarm.csv"], brands: BRANDS, discounts: { "dahua_channel.csv": 30 } }),
+  };
+  const items = await fetchDriveItems(cfg, http);
+  assert.equal(items.length, 5);
+  assert.deepEqual(bodies.map((b) => b.file), ["dahua_channel.csv", "dahua_wisualarm.csv"]);
+  assert.equal(items[0].cost, 179.67, "ფაილის ფასდაკლება ამ რეჟიმშიც მოქმედებს");
+  assert.equal(items[3].listPrice, null, "მეორე ფაილს ფასდაკლება არ აქვს მითითებული");
+
+  await assert.rejects(() => fetchDriveItems({ ...cfg, secret: "sxva" }, http), /გასაღები არ მიიღო/);
+  await assert.rejects(() => fetchDriveItems({ ...cfg, fieldMap: JSON.stringify({ files: ["ar-aris.csv"] }) }, http), /not found/);
+  const login: Transport = async () => ({ ok: true, status: 200, text: async () => "<html>Sign in</html>" });
+  await assert.rejects(() => fetchDriveItems(cfg, login), /JSON არ დააბრუნა/);
+});
+
 test("ფოლდერის id ბმულიდან", () => {
   assert.equal(folderId("https://drive.google.com/drive/folders/1kdAtyblzisYAk03NXr_sJiMZRDMXFYBZ?usp=sharing"), "1kdAtyblzisYAk03NXr_sJiMZRDMXFYBZ");
   assert.equal(folderId("1kdAtyblzisYAk03NXr_sJiMZRDMXFYBZ"), "1kdAtyblzisYAk03NXr_sJiMZRDMXFYBZ");
