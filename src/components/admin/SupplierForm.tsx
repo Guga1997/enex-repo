@@ -114,7 +114,7 @@ export default function SupplierForm({
           >
             {adapters.map((a) => (
               <option key={a} value={a}>
-                {a === "GENERIC_REST" ? "GENERIC_REST — API კონფიგურაციით" : a === "SPREADSHEET" ? "SPREADSHEET — Excel ფასთა ნუსხა" : a}
+                {a === "GENERIC_REST" ? "GENERIC_REST — API კონფიგურაციით" : a === "SPREADSHEET" ? "SPREADSHEET — Excel ფასთა ნუსხა" : a === "GDRIVE_CSV" ? "GDRIVE_CSV — CSV ფაილები Google Drive-ის ფოლდერში" : a}
               </option>
             ))}
           </select>
@@ -258,6 +258,12 @@ export default function SupplierForm({
             <>
               ცარიელი დატოვე. მისამართი: <code>https://webapi.elvare.ge/ext/v1</code>, ავტორიზაცია „არ სჭირდება“,
               გასაღები ფორმატში <code>login:password</code>. მოთხოვნას მხოლოდ რეგისტრირებული IP-დან იღებს.
+            </>
+          ) : adapter === "GDRIVE_CSV" ? (
+            <>
+              მისამართი: Google Drive-ის ფოლდერის ბმული. აქ ფაილების სახელები:{" "}
+              <code>{'{"files": ["dahua_channel.csv", "dahua_wisualarm.csv"]}'}</code>. ფოლდერი გაზიარებული უნდა
+              იყოს სერვერის სერვისის ანგარიშზე (ნახვის უფლებით); ფასად „საცალო ფასი ლარი“ მოდის.
             </>
           ) : isSheet ? (
             <>

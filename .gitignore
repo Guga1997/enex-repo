@@ -19,3 +19,7 @@ tsconfig.tsbuildinfo
 data/pricelists/
 data/fx.json
 data/uncategorized.csv
+
+# Google service account key - secret, never in git
+.google-drive-key.json
+*-service-account*.json

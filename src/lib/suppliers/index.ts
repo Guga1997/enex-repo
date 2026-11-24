@@ -9,6 +9,7 @@ import { intelectro } from "./intelectro";
 import { elvare } from "./elvare";
 import { muk } from "./muk";
 import { spreadsheet } from "./spreadsheet";
+import { gdriveCsv } from "./gdrive";
 import { computePrices, Pricer, repriceProduct } from "./pricing";
 import type { SupplierAdapter, SupplierConfig, SupplierItem } from "./types";
 import { translateName } from "../i18n/translate-name";
@@ -24,6 +25,7 @@ const ADAPTERS: Record<string, SupplierAdapter> = {
   ELVARE: elvare,
   MUK: muk,
   SPREADSHEET: spreadsheet,
+  GDRIVE_CSV: gdriveCsv,
 };
 
 export function resolveAdapter(name: string): SupplierAdapter {
