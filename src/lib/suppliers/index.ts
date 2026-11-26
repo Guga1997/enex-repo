@@ -270,6 +270,30 @@ async function matchProductId(
   return null;
 }
 
+/**
+ * „ცალკე“ მიმწოდებლის (mergeByModel = false) ნივთი ძირითად კატალოგში უკვე არის? — ძირითადი
+ * მიმწოდებლისგან (MUK და სხვა, ვინც მოდელით ერთიანდება) მოსულ პროდუქტს იმავე მოდელით/კოდით
+ * მეორე ბარათი არ ეხსნება: არც ეკვრის და არც დუბლიკატი იქმნება, პოზიცია უბრალოდ გამოტოვებულია.
+ */
+async function duplicatesCoreProduct(item: SupplierItem): Promise<boolean> {
+  const model = item.model?.trim() ?? "";
+  if (!isSpecificModel(model)) return false;
+  const hits = await db.product.findMany({
+    where: { OR: [{ model }, { sku: model }], supplies: { some: { supplier: { mergeByModel: true } } } },
+    select: { brand: { select: { name: true } } },
+    take: 10,
+  });
+  if (!hits.length) return false;
+  // გრძელი კოდი (მწარმოებლის ნომერი, მაგ. 21SK00S9KL) თავისთავად ცალსახაა. მოკლეზე ბრენდსაც ვადარებთ,
+  // ოღონდ თავისუფლად: მიმწოდებლები ერთსა და იმავე ბრენდს სხვადასხვანაირად წერენ („Lenovo“ / „Lenovo PCG“).
+  if (model.length >= 8) return true;
+  const brand = item.brand?.trim().toLowerCase();
+  return hits.some((h) => {
+    const other = h.brand?.name.trim().toLowerCase();
+    return !brand || !other || other.includes(brand) || brand.includes(other);
+  });
+}
+
 /** მოდელი ნივთს ცალსახად ასახელებს — ციფრი აქვს და ზოგადი სიტყვა არ არის */
 export function isSpecificModel(model: string): boolean {
   return model.length >= 4 && /\d/.test(model);
@@ -359,6 +383,8 @@ export async function syncSupplier(supplierId: string): Promise<SyncResult> {
   let updated = 0;
   let failed = 0;
   const touched = new Set<string>();
+  // „ცალკე“ მიმწოდებლის პოზიციები, რომლებიც ძირითად კატალოგში უკვე არის — არ იქმნება
+  let skipped = 0;
   const created_ids: string[] = [];
   // არსებულ პროდუქტებს დამატებული ფოტოები — ისინიც ჩვენს დისკზე უნდა გადმოვიდეს
   const filledImages: string[] = [];
@@ -388,6 +414,11 @@ export async function syncSupplier(supplierId: string): Promise<SyncResult> {
     for (const item of items) {
       try {
         let productId = await matchProductId(supplier, item);
+
+        if (!productId && !supplier.mergeByModel && (await duplicatesCoreProduct(item))) {
+          skipped++;
+          continue;
+        }
 
         if (!productId) {
           const categoryId = await refineCategoryId(await resolveCategoryId(item.categoryPath), {
@@ -570,7 +601,10 @@ export async function syncSupplier(supplierId: string): Promise<SyncResult> {
     await db.$transaction([
       db.supplierSyncLog.update({
         where: { id: log.id },
-        data: { finishedAt: new Date(), ok: true, created, updated, failed },
+        data: {
+          finishedAt: new Date(), ok: true, created, updated, failed,
+          ...(skipped ? { message: `გამოტოვებულია ${skipped} — ძირითად კატალოგში უკვე არის` } : {}),
+        },
       }),
       db.supplier.update({
         where: { id: supplier.id },

@@ -103,7 +103,7 @@ export default async function SuppliersPage({
                           </div>
                         )}
                         {last?.message && (
-                          <div className="mt-1 max-w-64 text-rose-700">{last.message}</div>
+                          <div className={`mt-1 max-w-64 ${last.ok ? "text-muted" : "text-rose-700"}`}>{last.message}</div>
                         )}
                       </>
                     ) : (
