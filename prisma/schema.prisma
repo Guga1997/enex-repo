@@ -80,6 +80,9 @@ model Category {
   nameKa    String
   nameEn    String?
   nameRu    String?
+  /// მოკლე სახელი კატალოგის მენიუს ფილაზე („ენერგო“, „ქსელი“); ცარიელი — სრული სახელი
+  menuName  String?
+  /// მენიუს ფილის ფოტო; ცარიელი — ამ კატეგორიის პროდუქტის ფოტო ავტომატურად
   image     String?
   sortOrder Int     @default(0)
   isActive  Boolean @default(true)
@@ -314,6 +317,12 @@ model Order {
   reservedUntil DateTime?
   paymentMethod String    @default("BOG") // BOG | TBC | BANK_TRANSFER | INSTALLMENT | POS
 
+  /// საიდან მოვიდა: WEB — საიტი; STAFF_INVOICE — ადმინიდან გამოწერილი ინვოისი; STORE — მაღაზიის გაყიდვა
+  /// (გაყიდვები ამზადებს, ფულის მიღებისას „გაიყიდა“ — ნაშთი მაშინ ჩამოიწერება)
+  channel   String  @default("WEB")
+  /// ვინ მოამზადა — ადმინიდან შექმნილ შეკვეთაზე
+  staffName String?
+
   /// რომელი ორგანიზაციის სახელზე ფორმდება (იურიდიულ პირს რამდენიმე შეიძლება ჰქონდეს)
   organizationId String?
   organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
@@ -340,6 +349,7 @@ model Order {
   @@index([status])
   @@index([createdAt])
   @@index([userId])
+  @@index([channel])
 }
 
 model OrderItem {

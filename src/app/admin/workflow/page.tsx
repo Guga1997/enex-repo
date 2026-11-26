@@ -28,7 +28,8 @@ export default async function WorkflowPage() {
 
   const orders = await db.order.findMany({
     // DELIVERED აქვე გამოირიცხება — თორემ 200 დასრულებულის შემდეგ ახალი შეკვეთა სიაში აღარ ჩანდა
-    where: { status: { notIn: ["CANCELLED", "EXPIRED", "RETURNED", "DELIVERED"] } },
+    // მაღაზიის გაყიდვა პროცესს არ გადის — მყიდველი ნივთს იქვე იღებს; ის „მაღაზიის გაყიდვებშია“
+    where: { status: { notIn: ["CANCELLED", "EXPIRED", "RETURNED", "DELIVERED"] }, channel: { not: "STORE" } },
     include: { steps: { select: { step: true } } },
     orderBy: { createdAt: "asc" },
     take: 200,

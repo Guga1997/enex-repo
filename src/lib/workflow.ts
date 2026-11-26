@@ -174,7 +174,8 @@ export const NAV_BY_ROLE: Record<Role, string[]> = {
   ADMIN: ["*"],
   // „პროდუქტის მომწოდებელი“ — მხოლოდ სანახავი ძებნა: რომელი პროდუქტი ვისგან მოდის
   // „ინვოისის გამოწერა“ — გაყიდვები თვითონ ადგენს შეკვეთას მყიდველის სახელზე (საიტის ფასებით)
-  SALES: ["/admin/workflow", "/admin/orders", "/admin/sources", "/admin/invoices"],
+  // „მაღაზიის გაყიდვები“ — მაღაზიაში ან ტელეფონით გაყიდული ნივთის გატარება და დადასტურება
+  SALES: ["/admin/workflow", "/admin/orders", "/admin/sources", "/admin/invoices", "/admin/sales"],
   PURCHASING: ["/admin/workflow", "/admin/orders"],
   ACCOUNTING: ["/admin/workflow", "/admin/orders"],
   DELIVERY: ["/admin/workflow"],
