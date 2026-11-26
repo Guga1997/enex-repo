@@ -1,6 +1,6 @@
 import Link from "@/components/Link";
 import { Suspense } from "react";
-import BannerCarousel from "@/components/BannerCarousel";
+import BannerCarousel, { type BannerCard } from "@/components/BannerCarousel";
 import type { Metadata } from "next";
 import { db } from "@/lib/db";
 import Header from "@/components/Header";
@@ -19,8 +19,14 @@ export const dynamic = "force-dynamic";
  * ზემოთ — სარეკლამო ბანერების კარუსელი, ქვემოთ — ჩვეულებრივი ბარათები; ბანერი ჩანს მხოლოდ მაშინ, როცა მისი პროდუქტი
  * ჩართულია და ფასდაკლებაშია (თორემ ბანერის ფასი საიტისას აღარ დაემთხვევა).
  */
-const BANNERS: { slug: string; image: string; title: string }[] = [
-  { slug: "bluetti-premium-30-v2-portable-power-station-600w-320wh", image: "/brand/sale/bluetti-premium-30-v2.jpg", title: "Bluetti Premium 30 V2" },
+const BANNERS: BannerCard[] = [
+  { slug: "asus-rog-strix-g18-g815jmr-s9050", image: "/brand/sale/bf-asus-rog-strix-g18.jpg", title: "ASUS ROG Strix G18", w: 896, h: 1200 },
+  { slug: "tcl-65p7l-qled-4k-google-tv", image: "/brand/sale/bf-tcl-65p7l.jpg", title: "TCL 65P7L Smart TV", w: 1080, h: 1350 },
+  { slug: "delonghi-eletta-explore-ecam450-65-g", image: "/brand/sale/bf-delonghi-ecam450-65-g.jpg", title: "DeLonghi Eletta Explore", w: 768, h: 960 },
+  { slug: "lg-f2x5pyny6-washing-machine-8kg-black", image: "/brand/sale/bf-lg-washer-8kg.jpg", title: "LG F2X5PYNY6", w: 1126, h: 944 },
+  { slug: "bluetti-ac180p-portable-power-station-1800w-1440wh", image: "/brand/sale/bf-bluetti-ac180p.jpg", title: "Bluetti AC180P", w: 1126, h: 944 },
+  { slug: "bluetti-ac70p-portable-power-station-1000w-864wh", image: "/brand/sale/bf-bluetti-ac70p.jpg", title: "Bluetti AC70P", w: 1126, h: 944 },
+  { slug: "bluetti-premium-30-v2-portable-power-station-600w-320wh", image: "/brand/sale/bf-bluetti-premium-30-v2.jpg", title: "Bluetti Premium 30 V2", w: 1126, h: 944 },
   { slug: "infocus-interactive-display-d012-jtouch-13-75-in7513", image: "/brand/sale/infocus-jtouch-75.jpg", title: "InFocus JTouch 13 75\"" },
   { slug: "2-bay-arm-cortex-a55-quad-core-2-0-ghz-processor-2-gb-ram", image: "/brand/sale/qnap-ts-233.jpg", title: "QNAP TS-233" },
   { slug: "jabra-evolve-20-usb-c-a-ms-stereo", image: "/brand/sale/jabra-evolve-20.jpg", title: "Jabra Evolve 20" },

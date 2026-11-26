@@ -5,13 +5,15 @@ import Link from "@/components/Link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useT } from "@/components/LocaleProvider";
 
-export type BannerCard = { slug: string; image: string; title: string };
+/** w/h — ბანერის ნამდვილი ზომა (პიქსელი); თუ არ წერია, ძველი 940×788 ფორმატია */
+export type BannerCard = { slug: string; image: string; title: string; w?: number; h?: number };
 
 const INTERVAL_MS = 4000;
 
 /**
- * სარეკლამო ბანერების კარუსელი — ბანერები თითქმის კვადრატულია და ტექსტი თვითონ აწერია,
- * ამიტომ მთლიანად ჩანს (HeroSlider ფართოა და ჭრის). დესკტოპზე სამი, ტელეფონზე ერთი;
+ * სარეკლამო ბანერების კარუსელი — ტექსტი ბანერს თვითონ აწერია, ამიტომ მთლიანად ჩანს
+ * (HeroSlider ფართოა და ჭრის). ბანერები სხვადასხვა ფორმისაა (განივი და ვერტიკალური):
+ * დესკტოპზე ყველა ერთ სიმაღლეზეა და სიგანე იცვლება, ტელეფონზე — თითო მთელ სიგანეზე;
  * თვითონ გადადის, მაუსის ქვეშ ჩერდება; ისრები და თითით გადაფურცვლა (scroll-snap).
  */
 export default function BannerCarousel({ banners }: { banners: BannerCard[] }) {
@@ -48,22 +50,22 @@ export default function BannerCarousel({ banners }: { banners: BannerCard[] }) {
     >
       <div
         ref={track}
-        className="flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex snap-x snap-mandatory items-center gap-4 overflow-x-auto scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {banners.map((b, i) => (
           <Link
             key={b.slug}
             href={`/product/${b.slug}`}
-            className="block w-full shrink-0 snap-start overflow-hidden rounded-2xl border border-line bg-surface transition hover:shadow-md sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.667rem)]"
+            className="block w-full shrink-0 snap-start overflow-hidden rounded-2xl border border-line bg-surface transition hover:shadow-md sm:h-[22rem] sm:w-auto lg:h-[26rem]"
           >
             <Image
               src={b.image}
               alt={b.title}
-              width={940}
-              height={788}
+              width={b.w ?? 940}
+              height={b.h ?? 788}
               priority={i < 3}
-              sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-              className="h-auto w-full"
+              sizes="(min-width: 1024px) 500px, (min-width: 640px) 420px, 100vw"
+              className="h-auto w-full sm:h-full sm:w-auto"
             />
           </Link>
         ))}
