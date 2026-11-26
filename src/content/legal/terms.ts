@@ -45,7 +45,7 @@ export const terms: Record<Locale, { title: string; body: string }> = {
 
 - ონლაინ, ბანკის გადახდის გვერდზე: სს „საქართველოს ბანკი“ ან სს „თიბისი ბანკი“ (Flitt) — ბარათით, განვადებით ან ქულებით. ბარათის მონაცემები კომპანიას არ გადაეცემა;
 - საბანკო გადარიცხვით, ელ.ფოსტაზე გამოგზავნილი ინვოისის საფუძველზე;
-- ბარათით ადგილზე, POS ტერმინალით — მხოლოდ მაღაზიაში, ადგილზე შეძენისას (ონლაინ შეკვეთაზე არ მოქმედებს).
+- ბარათით ადგილზე, POS ტერმინალით — საწყობიდან გატანისას, მხოლოდ იმ ნივთებზე, რომლებიც ჩვენს საწყობშია მარაგში.
 
 ## 6. მიწოდება
 
@@ -107,7 +107,7 @@ Enex Solutions LLC (შპს „ინექს სოლუშენს“), I
 
 - Online, on the bank's payment page: JSC Bank of Georgia or JSC TBC Bank (Flitt) — by card, instalments or points. Card data is not passed to the Company;
 - Bank transfer, based on the invoice sent to your email;
-- Card on site, via POS terminal — only for purchases made in person at our store (not available for online orders).
+- Card on site, via POS terminal — on warehouse pickup, only for items held in stock at our own warehouse.
 
 ## 6. Delivery
 
@@ -169,7 +169,7 @@ info@enex.ge · +995 511 722 622 · Mon–Fri 10:00–18:00`,
 
 - Онлайн, на платёжной странице банка: АО «Банк Грузии» или АО «ТБС Банк» (Flitt) — картой, в рассрочку или баллами. Данные карты Компании не передаются;
 - Банковским переводом по счёту, отправленному на эл. почту;
-- Картой на месте, через POS-терминал — только при покупке лично в магазине (для онлайн-заказов недоступно).
+- Картой на месте, через POS-терминал — при самовывозе, только для товаров, которые есть на нашем складе.
 
 ## 6. Доставка
 

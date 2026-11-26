@@ -18,6 +18,20 @@ export function availableQty(p: { stockQty: number; reservedQty?: number }): num
   return Math.max(0, p.stockQty - (p.reservedQty ?? 0));
 }
 
+/**
+ * ჩვენს საწყობში ფიზიკურად მყოფი, თავისუფალი რაოდენობა. მიმწოდებლის პროდუქტზე — „ჩემი მარაგი“
+ * (stockAdjust), მიმწოდებლის გარეშეზე — მთელი ნაშთი. რეზერვაცია ჯერ ჩვენს ნაშთს ეთვლება, რადგან
+ * გაყიდვაც ჯერ მას აკლებს. ტერმინალით (ადგილზე) გადახდა მხოლოდ ასეთ ნივთზეა დაშვებული.
+ */
+export function ownAvailableQty(
+  p: { stockQty: number; stockAdjust: number; reservedQty?: number; stockStatus: string },
+  supplyCount: number
+): number {
+  if (p.stockStatus !== "IN_STOCK") return 0;
+  const own = supplyCount > 0 ? p.stockAdjust : p.stockQty;
+  return Math.max(0, own - (p.reservedQty ?? 0));
+}
+
 /** intellcom-ის სტილის ნაშთის წარწერა — "მარაგშია" / "დარჩენილია 5 ცალი" / ... */
 export function stockLabel(
   p: StockLike,

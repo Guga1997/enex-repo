@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { PENDING_CART_KEY, useCart } from "./CartProvider";
 import { gel } from "@/lib/format";
 import {
-  DELIVERY_CITIES, DELIVERY_FEE, DELIVERY_FEE_REGIONS, FREE_DELIVERY_FROM, PAYMENT_METHOD_LABELS, POS_CHECKOUT_ENABLED, deliveryFeeFor,
+  DELIVERY_CITIES, DELIVERY_FEE, DELIVERY_FEE_REGIONS, FREE_DELIVERY_FROM, PAYMENT_METHOD_LABELS, POS_CHECKOUT, deliveryFeeFor,
 } from "@/lib/constants";
 import { useLocale, useT } from "@/components/LocaleProvider";
 import { withLocale } from "@/lib/i18n/config";
@@ -38,6 +38,8 @@ type Quote = {
   subtotal: number; retailSubtotal: number; saved: number;
   deliveryFee: number; total: number;
   weightKg: number; volumeM3: number; isDealer: boolean;
+  /** ყველა ნივთი ჩვენს საწყობშია — ტერმინალით გადახდა შეიძლება */
+  posAllowed?: boolean;
 };
 
 export default function CheckoutForm({
@@ -87,6 +89,14 @@ export default function CheckoutForm({
       .catch(() => {});
     return () => { cancelled = true; };
   }, [ready, lines]);
+
+  // ტერმინალით გადახდა: მხოლოდ გატანაზე და მხოლოდ მაშინ, როცა კალათის ყველა ნივთი ჩვენს საწყობშია
+  const posInStock = POS_CHECKOUT === "OWN_STOCK" && Boolean(quote?.posAllowed);
+  const posUsable = posInStock && deliveryMethod === "PICKUP";
+  // კალათა ან მიწოდება შეიცვალა და ტერმინალი აღარ ეკუთვნის — არჩევანი იხსნება
+  useEffect(() => {
+    if (paymentMethod === "POS" && !posUsable) setPaymentMethod("");
+  }, [paymentMethod, posUsable]);
 
   if (!ready) return <div className="card h-96 animate-pulse" />;
 
@@ -306,15 +316,15 @@ export default function CheckoutForm({
               "BOG",
               ...(tbcEnabled ? (["TBC"] as const) : []),
               "BANK_TRANSFER",
-              // ტერმინალი: გამორთულზე ყოველთვის ჩანს, მაგრამ ვერ მოინიშნება; ჩართულზე — მხოლოდ გატანაზე
-              ...(!POS_CHECKOUT_ENABLED || deliveryMethod === "PICKUP" ? (["POS"] as const) : []),
+              // ტერმინალი ყოველთვის ჩანს; როცა ამ შეკვეთას არ ეკუთვნის — ვერ მოინიშნება და მიზეზი აწერია
+              "POS",
             ] as const).map((m) => (
               <Radio
                 key={m}
                 checked={paymentMethod === m}
                 onChange={() => { setPaymentMethod(m); setMissing((x) => ({ ...x, payment: false })); setError(null); }}
                 invalid={missing.payment}
-                disabled={m === "POS" && !POS_CHECKOUT_ENABLED}
+                disabled={m === "POS" && !posUsable}
                 // ბანკის გვერდზე ბარათიც, განვადებაც და ქულებიც არის — სათაურად ბანკი, აღწერაში ვარიანტები
                 title={m in BANK ? t(BANK[m as keyof typeof BANK].name) : t(PAYMENT_METHOD_LABELS[m])}
                 logo={m in BANK ? BANK[m as keyof typeof BANK].logo : undefined}
@@ -322,9 +332,13 @@ export default function CheckoutForm({
                   m === "BANK_TRANSFER"
                     ? t("ინვოისი მაშინვე მოვა {0}", user?.email ?? t("მითითებულ ელფოსტაზე"))
                     : m === "POS"
-                      ? POS_CHECKOUT_ENABLED
+                      ? posUsable
                         ? t("ბარათით გადაიხდი საწყობში, ნივთის გატანისას")
-                        : t("ონლაინ შეკვეთაზე მიუწვდომელია — აირჩიეთ ბარათით ონლაინ ან გადარიცხვა")
+                        : POS_CHECKOUT === "OFF"
+                          ? t("ონლაინ შეკვეთაზე მიუწვდომელია — აირჩიეთ ბარათით ონლაინ ან გადარიცხვა")
+                          : !posInStock
+                            ? t("მხოლოდ ჩვენს საწყობში მყოფ ნივთებზე — ამ შეკვეთაზე აირჩიეთ ბარათით ონლაინ ან გადარიცხვა")
+                            : t("მხოლოდ საწყობიდან გატანისას — ზემოთ აირჩიეთ „საწყობიდან გატანა“")
                       : t("ბარათით, განვადებით ან ქულებით — უსაფრთხო გადახდა ბანკის გვერდზე")
                 }
               />
@@ -332,9 +346,6 @@ export default function CheckoutForm({
           </div>
           {missing.payment && (
             <p role="alert" className="mt-2 text-sm font-medium text-rose-600">{t("აირჩიეთ გადახდის მეთოდი")}</p>
-          )}
-          {POS_CHECKOUT_ENABLED && deliveryMethod !== "PICKUP" && (
-            <p className="mt-3 text-xs text-muted">{t("ტერმინალით (ადგილზე) გადახდა შესაძლებელია მხოლოდ საწყობიდან გატანისას.")}</p>
           )}
         </fieldset>
 

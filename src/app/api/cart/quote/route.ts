@@ -3,8 +3,8 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/customer-auth";
 import { effectivePrice } from "@/lib/pricing";
-import { isPurchasable, availableQty } from "@/lib/stock";
-import { deliveryFeeFor } from "@/lib/constants";
+import { isPurchasable, availableQty, ownAvailableQty } from "@/lib/stock";
+import { POS_CHECKOUT, deliveryFeeFor } from "@/lib/constants";
 import { getLocale } from "@/lib/i18n/server";
 import { nameOf } from "@/lib/i18n/content";
 
@@ -46,8 +46,16 @@ export async function POST(req: Request) {
   const locale = await getLocale();
   const products = await db.product.findMany({
     where: { id: { in: items.map((i) => i.productId) }, isActive: true },
+    include: { _count: { select: { supplies: true } } },
   });
   const byId = new Map(products.map((p) => [p.id, p]));
+  // ტერმინალით გადახდა: მხოლოდ თუ ყველა ნივთი ჩვენს საწყობში დევს, მოთხოვნილი რაოდენობით
+  const posAllowed =
+    POS_CHECKOUT === "OWN_STOCK" &&
+    items.every((i) => {
+      const p = byId.get(i.productId);
+      return p !== undefined && ownAvailableQty(p, p._count.supplies) >= i.qty;
+    });
 
   const lines = items.flatMap((item) => {
     const p = byId.get(item.productId);
@@ -88,5 +96,6 @@ export async function POST(req: Request) {
     weightKg: round(lines.reduce((s, l) => s + (l.weightKg ?? 0), 0)),
     volumeM3: Math.round(lines.reduce((s, l) => s + (l.volumeM3 ?? 0), 0) * 1000) / 1000,
     isDealer: viewer?.priceTier === "DEALER",
+    posAllowed,
   });
 }

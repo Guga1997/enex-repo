@@ -1,14 +1,14 @@
 import { NextResponse, after } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { isPurchasable, availableQty, normalizeQty } from "@/lib/stock";
+import { isPurchasable, availableQty, normalizeQty, ownAvailableQty } from "@/lib/stock";
 import { reservationDeadline, reserveStock } from "@/lib/orders";
 import { orderNumber } from "@/lib/sequence";
 import { createPayment, isBogEnabled } from "@/lib/payments/bog";
 import { canPayWithTbc, createFlittPayment } from "@/lib/payments/flitt";
 import { getI18n } from "@/lib/i18n/server";
 import { nameOf } from "@/lib/i18n/content";
-import { DELIVERY_CITIES, PAYMENT_TTL_MINUTES, POS_CHECKOUT_ENABLED, deliveryFeeFor } from "@/lib/constants";
+import { DELIVERY_CITIES, PAYMENT_TTL_MINUTES, POS_CHECKOUT, deliveryFeeFor } from "@/lib/constants";
 import { getCurrentUser } from "@/lib/customer-auth";
 import { effectivePrice } from "@/lib/pricing";
 import { issueAndSendInvoice } from "@/lib/invoice";
@@ -66,8 +66,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: t("თიბისის ბარათით გადახდა დროებით მიუწვდომელია") }, { status: 400 });
   }
 
-  // საიტის შეკვეთაზე ტერმინალით გადახდა გამორთულია — ფორმაში ვარიანტი ვერ მოინიშნება
-  if (input.paymentMethod === "POS" && !POS_CHECKOUT_ENABLED) {
+  // ტერმინალით გადახდა საერთოდ გამორთულია — ფორმაში ვარიანტი ვერ მოინიშნება
+  if (input.paymentMethod === "POS" && POS_CHECKOUT === "OFF") {
     return NextResponse.json(
       { error: t("ონლაინ შეკვეთაზე ტერმინალით გადახდა მიუწვდომელია — აირჩიეთ ბარათით ონლაინ ან გადარიცხვა") },
       { status: 400 }
@@ -110,6 +110,7 @@ export async function POST(req: Request) {
   // ფასებს და ნაშთს ყოველთვის სერვერიდან ვიღებთ — კლიენტის მონაცემებს არ ვენდობით
   const products = await db.product.findMany({
     where: { id: { in: input.items.map((i) => i.productId) }, isActive: true },
+    include: { _count: { select: { supplies: true } } },
   });
   const byId = new Map(products.map((p) => [p.id, p]));
 
@@ -148,6 +149,20 @@ export async function POST(req: Request) {
       );
     }
     lines.push({ product: p, qty: item.qty });
+  }
+
+  // ტერმინალით — მხოლოდ თუ ყველა ნივთი ჩვენს საწყობში დევს: გადაუხდელი შეკვეთის გამო მომწოდებლისგან
+  // არაფერი მოგვაქვს. ერთი ნივთი ორ ხაზად რომ მოვიდეს, რაოდენობა ჯამდება.
+  if (input.paymentMethod === "POS") {
+    const need = new Map<string, number>();
+    for (const l of lines) need.set(l.product.id, (need.get(l.product.id) ?? 0) + l.qty);
+    const covered = lines.every((l) => ownAvailableQty(l.product, l.product._count.supplies) >= (need.get(l.product.id) ?? 0));
+    if (!covered) {
+      return NextResponse.json(
+        { error: t("ტერმინალით გადახდა მხოლოდ ჩვენს საწყობში მყოფ ნივთებზეა — აირჩიეთ ბარათით ონლაინ ან გადარიცხვა") },
+        { status: 400 }
+      );
+    }
   }
 
   const open = await db.order.count({
