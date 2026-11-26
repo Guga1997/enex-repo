@@ -15,9 +15,11 @@ import type { FetchContext, SupplierAdapter, SupplierConfig, SupplierItem } from
  * გვერდი ~1.6 მბ-ია (მთელი მენიუ შიგ არის), ამიტომ დეტალს მხოლოდ იმ პოზიციაზე ვითხოვთ, რომელსაც ფოტო
  * ჯერ არ აქვს (ctx.known), და ერთ სინქზე არა უმეტეს detailsPerSync-ისა — დანარჩენი მომდევნო სინქებზე ივსება.
  *
- * ფასი: პორტალზე მხოლოდ RRP-ა. ჩვენი ფასი (და ზუსტი ნაშთი) ERC-ის Excel-ებშია — თუ data/pricelists/erc/
- * საქაღალდეში დევს, იქიდან ვიღებთ (სვეტები სათაურით: Model, Quantity, PRICE GEL, PROMO PRICE GEL, RRP GEL).
- * სხვა პოზიციაზე „გამოგზავნილი ფასი“ = RRP და თვითღირებულება მიმწოდებლის ფასდაკლებით (supplierDiscount) ითვლება.
+ * ფასი: პორტალზე მხოლოდ RRP-ა. ERC-ის Excel-ებში (data/pricelists/erc/, სვეტები სათაურით: Model, Quantity,
+ * PRICE GEL, PROMO PRICE GEL, RRP GEL, Promo RRP GEL) ოთხი ფასია და მფლობელის წესი ასეთია: სტრიქონის
+ * ყველაზე მაღალი ფასი — საიტის საცალო, ყველაზე დაბალი — ჩვენი ასაღები ფასი. ფაილში ნაპოვნ მოდელზე ორივე
+ * ფაილიდან მოდის (პორტალის RRP-ს ფარავს). სხვა პოზიციაზე „გამოგზავნილი ფასი“ = პორტალის RRP და
+ * თვითღირებულება მიმწოდებლის ფასდაკლებით (supplierDiscount) ითვლება.
  * მიმწოდებლის წესი: საცალო — „მის საცალოზე“ (LIST), 0%.
  *
  * fieldMap (არასავალდებულო): { "skuPrefix": "ERC-", "detailsPerSync": 100, "inStockQty": 10,
@@ -182,7 +184,10 @@ const numCell = (v: unknown): number | null => {
   return Number.isFinite(n) && n > 0 ? Math.round(n * 100) / 100 : null;
 };
 
-/** ERC-ის ფასთა ფაილი (ნებისმიერი ფურცელი, სვეტები სათაურით) → მოდელი → ჩვენი ფასი / RRP / რაოდენობა */
+/**
+ * ERC-ის ფასთა ფაილი (ნებისმიერი ფურცელი, სვეტები სათაურით) → მოდელი → ჩვენი ფასი / საცალო / რაოდენობა.
+ * ოთხი ფასიდან (PRICE, PROMO PRICE, RRP, Promo RRP) ყველაზე დაბალი ჩვენი ასაღები ფასია, ყველაზე მაღალი — საცალო.
+ */
 export function parsePriceBook(buf: Buffer): Map<string, ErcPrice> {
   const out = new Map<string, ErcPrice>();
   const wb = XLSX.read(buf, { type: "buffer" });
@@ -201,10 +206,11 @@ export function parsePriceBook(buf: Buffer): Map<string, ErcPrice> {
       const key = String(r[model] ?? "").trim();
       if (!key) continue;
       const q = String(r[qty] ?? "").trim();
+      const nums = [price, promo, rrp, promoRrp].map((c) => (c >= 0 ? numCell(r[c]) : null)).filter((n): n is number => n !== null);
+      if (!nums.length) continue;
       out.set(key.toUpperCase(), {
-        // აქციის ფასი, თუ წერია — ამჟამად სწორედ ამ ფასად ვყიდულობთ
-        cost: (promo >= 0 ? numCell(r[promo]) : null) ?? (price >= 0 ? numCell(r[price]) : null),
-        rrp: (promoRrp >= 0 ? numCell(r[promoRrp]) : null) ?? (rrp >= 0 ? numCell(r[rrp]) : null),
+        cost: Math.min(...nums),
+        rrp: Math.max(...nums),
         qty: qty >= 0 && q ? Math.max(0, Math.floor(Number(q.replace(/[^\d]/g, "")) || 0)) : null,
       });
     }
@@ -287,9 +293,9 @@ export async function fetchErcItems(
   for (const { row, category } of seen.values()) {
     const supplierSku = prefix + row.code;
     const book = prices.get(row.code.toUpperCase());
-    const rrp = row.price ?? book?.rrp ?? null;
-    // ფაილი ხელით იცვლება და შეიძლება მოძველდეს: თუ იქ ჩვენი ფასი პორტალის საცალოს არ ჩამოუვარდება,
-    // ის აღარ გამოდგება — ვბრუნდებით RRP-ზე (თვითღირებულება მიმწოდებლის ფასდაკლებით დაითვლება)
+    // ფაილში ნაპოვნ მოდელზე საცალო ფაილის უმაღლესი ფასია, სხვაზე — პორტალის RRP
+    const rrp = book?.rrp ?? row.price ?? null;
+    // ფაილში ერთადერთი ფასი რომ ეწეროს (დაბალი = მაღალი), ის საცალოა და ჩვენი ფასი უცნობია
     const ownCost = book?.cost && (rrp === null || book.cost < rrp) ? book.cost : null;
     const item: SupplierItem = {
       supplierSku,

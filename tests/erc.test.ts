@@ -78,7 +78,7 @@ test("ბრენდი მისამართიდან — ყველ�
   assert.equal(brandOf("unknown-thing", v), null);
 });
 
-test("ფასთა ფაილი: სვეტები სათაურით, აქციის ფასი უპირატესია, „10+“ → 10", () => {
+test("ფასთა ფაილი: სვეტები სათაურით; ოთხი ფასიდან უდაბლესი — ჩვენი, უმაღლესი — საცალო; „10+“ → 10", () => {
   const ws = XLSX.utils.aoa_to_sheet([
     ["", "", "ERC price list"],
     ["Category", "", "Model", "Specification", "გარანტია", "Quantity", "PRICE GEL", " PROMO PRICE GEL", "RRP GEL", "Promo RRP GEL"],
@@ -89,7 +89,7 @@ test("ფასთა ფაილი: სვეტები სათაურ�
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Products");
   const book = parsePriceBook(XLSX.write(wb, { type: "buffer", bookType: "xlsx" }) as Buffer);
-  assert.deepEqual(book.get("DNF-M474X177"), { cost: 1270, rrp: 1699, qty: 10 });
+  assert.deepEqual(book.get("DNF-M474X177"), { cost: 1270, rrp: 1799, qty: 10 });
   assert.deepEqual(book.get("CR-21L"), { cost: 189.17, rrp: 239, qty: 3 });
   assert.equal(book.size, 2);
 });
@@ -107,7 +107,7 @@ test("სინქი: ყველა გვერდი, გამეორე
     if (u.pathname.startsWith("/ware/")) return "<html></html>";
     throw new Error("unexpected " + u.pathname);
   };
-  const prices = new Map<string, ErcPrice>([["DNF-M474X177", { cost: 1270, rrp: 1699, qty: 7 }]]);
+  const prices = new Map<string, ErcPrice>([["DNF-M474X177", { cost: 1270, rrp: 1850, qty: 7 }]]);
   const items = await fetchErcItems(cfg(), { known: new Set(["ERC-90MB1N10-M0EAY0"]) }, get, { pauseMs: 0, prices });
 
   assert.deepEqual(items.map((i) => i.supplierSku), ["ERC-90MB1N10-M0EAY0", "ERC-DNF-M474X177", "ERC-2E-V500B", "ERC-DM-1"]);
@@ -119,9 +119,9 @@ test("სინქი: ყველა გვერდი, გამეორე
   assert.equal(board.brand, "ASUS");
   assert.deepEqual(board.categoryPath, ["კომპიუტერის კომპონენტები", "დედადაფები"]);
   assert.equal(board.images, undefined, "ფოტო უკვე აქვს — დეტალს აღარ ვითხოვთ");
-  // ფაილში ნაპოვნი: ჩვენი ფასი და რაოდენობა ფაილიდან, საცალო — პორტალიდან
+  // ფაილში ნაპოვნი: ჩვენი ფასი, საცალო და რაოდენობა ფაილიდან (პორტალის 1799-ს ფარავს)
   assert.equal(fridge.cost, 1270);
-  assert.equal(fridge.listPrice, 1799);
+  assert.equal(fridge.listPrice, 1850);
   assert.equal(fridge.qty, 7);
   assert.equal(fridge.images?.length, 2);
   assert.equal(fridge.warrantyMonths, 12);
@@ -131,10 +131,10 @@ test("სინქი: ყველა გვერდი, გამეორე
   assert.equal(noPrice.cost, null);
   assert.ok(!asked.some((p) => p.startsWith("/ware/407920-")));
 
-  // მოძველებული ფაილი: ჩვენი ფასი პორტალის საცალოზე მეტია — არ ვიყენებთ
-  const stale = await fetchErcItems(cfg(), {}, get, { pauseMs: 0, prices: new Map([["DNF-M474X177", { cost: 1900, rrp: 2100, qty: 4 }]]) });
-  assert.equal(stale[1].cost, 1799);
-  assert.equal(stale[1].listPrice, 1799);
+  // ფაილში ერთადერთი ფასი: ის საცალოა, ჩვენი ფასი უცნობია — „გამოგზავნილი ფასი“ იგივე საცალოა
+  const single = await fetchErcItems(cfg(), {}, get, { pauseMs: 0, prices: new Map([["DNF-M474X177", { cost: 1900, rrp: 1900, qty: 4 }]]) });
+  assert.equal(single[1].cost, 1900);
+  assert.equal(single[1].listPrice, 1900);
 
   // ლიმიტი: ერთ სინქზე არა უმეტეს detailsPerSync დეტალისა
   asked.length = 0;
