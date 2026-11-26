@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { PENDING_CART_KEY, useCart } from "./CartProvider";
 import { gel } from "@/lib/format";
 import {
-  DELIVERY_CITIES, DELIVERY_FEE, DELIVERY_FEE_REGIONS, FREE_DELIVERY_FROM, PAYMENT_METHOD_LABELS, deliveryFeeFor,
+  DELIVERY_CITIES, DELIVERY_FEE, DELIVERY_FEE_REGIONS, FREE_DELIVERY_FROM, PAYMENT_METHOD_LABELS, POS_CHECKOUT_ENABLED, deliveryFeeFor,
 } from "@/lib/constants";
 import { useLocale, useT } from "@/components/LocaleProvider";
 import { withLocale } from "@/lib/i18n/config";
@@ -306,13 +306,15 @@ export default function CheckoutForm({
               "BOG",
               ...(tbcEnabled ? (["TBC"] as const) : []),
               "BANK_TRANSFER",
-              ...(deliveryMethod === "PICKUP" ? (["POS"] as const) : []),
+              // ტერმინალი: გამორთულზე ყოველთვის ჩანს, მაგრამ ვერ მოინიშნება; ჩართულზე — მხოლოდ გატანაზე
+              ...(!POS_CHECKOUT_ENABLED || deliveryMethod === "PICKUP" ? (["POS"] as const) : []),
             ] as const).map((m) => (
               <Radio
                 key={m}
                 checked={paymentMethod === m}
                 onChange={() => { setPaymentMethod(m); setMissing((x) => ({ ...x, payment: false })); setError(null); }}
                 invalid={missing.payment}
+                disabled={m === "POS" && !POS_CHECKOUT_ENABLED}
                 // ბანკის გვერდზე ბარათიც, განვადებაც და ქულებიც არის — სათაურად ბანკი, აღწერაში ვარიანტები
                 title={m in BANK ? t(BANK[m as keyof typeof BANK].name) : t(PAYMENT_METHOD_LABELS[m])}
                 logo={m in BANK ? BANK[m as keyof typeof BANK].logo : undefined}
@@ -320,7 +322,9 @@ export default function CheckoutForm({
                   m === "BANK_TRANSFER"
                     ? t("ინვოისი მაშინვე მოვა {0}", user?.email ?? t("მითითებულ ელფოსტაზე"))
                     : m === "POS"
-                      ? t("ბარათით გადაიხდი საწყობში, ნივთის გატანისას")
+                      ? POS_CHECKOUT_ENABLED
+                        ? t("ბარათით გადაიხდი საწყობში, ნივთის გატანისას")
+                        : t("ონლაინ შეკვეთაზე მიუწვდომელია — აირჩიეთ ბარათით ონლაინ ან გადარიცხვა")
                       : t("ბარათით, განვადებით ან ქულებით — უსაფრთხო გადახდა ბანკის გვერდზე")
                 }
               />
@@ -329,7 +333,7 @@ export default function CheckoutForm({
           {missing.payment && (
             <p role="alert" className="mt-2 text-sm font-medium text-rose-600">{t("აირჩიეთ გადახდის მეთოდი")}</p>
           )}
-          {deliveryMethod !== "PICKUP" && (
+          {POS_CHECKOUT_ENABLED && deliveryMethod !== "PICKUP" && (
             <p className="mt-3 text-xs text-muted">{t("ტერმინალით (ადგილზე) გადახდა შესაძლებელია მხოლოდ საწყობიდან გატანისას.")}</p>
           )}
         </fieldset>
@@ -475,6 +479,7 @@ function Radio({
   desc,
   logo,
   invalid,
+  disabled,
 }: {
   checked: boolean;
   onChange: () => void;
@@ -483,18 +488,23 @@ function Radio({
   logo?: string;
   /** არჩევანი სავალდებულოა და არ გაკეთებულა — წითელი ჩარჩო */
   invalid?: boolean;
+  /** ვარიანტი ჩანს, მაგრამ ვერ მოინიშნება */
+  disabled?: boolean;
 }) {
   return (
     <label
-      className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition ${
-        checked
-          ? "border-brand-500 bg-brand-50"
-          : invalid
-            ? "border-rose-500 ring-1 ring-rose-500"
-            : "border-line hover:border-brand-200"
+      aria-disabled={disabled || undefined}
+      className={`flex items-start gap-3 rounded-lg border p-4 transition ${
+        disabled
+          ? "cursor-not-allowed border-line opacity-55"
+          : checked
+            ? "cursor-pointer border-brand-500 bg-brand-50"
+            : invalid
+              ? "cursor-pointer border-rose-500 ring-1 ring-rose-500"
+              : "cursor-pointer border-line hover:border-brand-200"
       }`}
     >
-      <input type="radio" checked={checked} onChange={onChange} className="mt-0.5 size-4 accent-brand-500" />
+      <input type="radio" checked={checked && !disabled} onChange={onChange} disabled={disabled} className="mt-0.5 size-4 accent-brand-500" />
       {logo && (
         // eslint-disable-next-line @next/next/no-img-element -- პატარა SVG, ოპტიმიზატორი არ სჭირდება
         <img src={logo} alt="" width={32} height={32} className="size-8 shrink-0 rounded-md bg-white object-contain p-0.5" />

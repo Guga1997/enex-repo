@@ -8,7 +8,7 @@ import { createPayment, isBogEnabled } from "@/lib/payments/bog";
 import { canPayWithTbc, createFlittPayment } from "@/lib/payments/flitt";
 import { getI18n } from "@/lib/i18n/server";
 import { nameOf } from "@/lib/i18n/content";
-import { DELIVERY_CITIES, PAYMENT_TTL_MINUTES, deliveryFeeFor } from "@/lib/constants";
+import { DELIVERY_CITIES, PAYMENT_TTL_MINUTES, POS_CHECKOUT_ENABLED, deliveryFeeFor } from "@/lib/constants";
 import { getCurrentUser } from "@/lib/customer-auth";
 import { effectivePrice } from "@/lib/pricing";
 import { issueAndSendInvoice } from "@/lib/invoice";
@@ -66,6 +66,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: t("თიბისის ბარათით გადახდა დროებით მიუწვდომელია") }, { status: 400 });
   }
 
+  // საიტის შეკვეთაზე ტერმინალით გადახდა გამორთულია — ფორმაში ვარიანტი ვერ მოინიშნება
+  if (input.paymentMethod === "POS" && !POS_CHECKOUT_ENABLED) {
+    return NextResponse.json(
+      { error: t("ონლაინ შეკვეთაზე ტერმინალით გადახდა მიუწვდომელია — აირჩიეთ ბარათით ონლაინ ან გადარიცხვა") },
+      { status: 400 }
+    );
+  }
   // ტერმინალი მხოლოდ საწყობშია — კურიერს არ მიაქვს; ფორმა ამ ვარიანტს მიტანაზე არც აჩვენებს
   if (input.paymentMethod === "POS" && input.deliveryMethod !== "PICKUP") {
     return NextResponse.json({ error: t("ტერმინალით (ადგილზე) გადახდა შესაძლებელია მხოლოდ საწყობიდან გატანისას.") }, { status: 400 });
