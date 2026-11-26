@@ -308,6 +308,7 @@ export async function saveSupplier(formData: FormData) {
     // 0 = მხოლოდ ხელით; უარყოფითი და არარიცხვი ნულად
     syncEveryMin: Math.max(0, Math.floor(Number(formData.get("syncEveryMin")) || 0)),
     isActive: formData.get("isActive") === "on",
+    mergeByModel: formData.get("mergeByModel") === "on",
     // ცარიელი ველი არსებულ გასაღებს არ შლის
     ...(secret ? { secret } : {}),
   };

@@ -232,7 +232,10 @@ async function uniqueProductSlug(name: string, sku: string): Promise<string> {
  * პროდუქტის მიბმა მიმწოდებლის პოზიციაზე — სამი მცდელობა, სანამ ახალს შევქმნით:
  * ამავე მიმწოდებლის ძველი ჩანაწერი → ჩვენი SKU → მოდელი+ბრენდი.
  */
-async function matchProductId(supplierId: string, item: SupplierItem): Promise<string | null> {
+async function matchProductId(
+  { id: supplierId, mergeByModel }: { id: string; mergeByModel: boolean },
+  item: SupplierItem
+): Promise<string | null> {
   const supply = await db.productSupply.findUnique({
     where: { supplierId_supplierSku: { supplierId, supplierSku: item.supplierSku } },
     select: { productId: true },
@@ -249,14 +252,16 @@ async function matchProductId(supplierId: string, item: SupplierItem): Promise<s
   // გასაერთიანებლადაა. ორი პირობა:
   //  • ზოგადი „მოდელი“ არ ითვლება — MUK Dell-ის ყველა ჩანთას „bag“-ს უწერს და 14
   //    სხვადასხვა ჩანთა ერთ ბარათზე ჯდებოდა, ყველაზე იაფის ფასით;
-  //  • იმავე მიმწოდებლის სხვა კოდი სხვა ნივთია — მას უკვე თავისი მიწოდება აქვს.
+  //  • იმავე მიმწოდებლის სხვა კოდი სხვა ნივთია — მას უკვე თავისი მიწოდება აქვს;
+  //  • „ცალკე“ მიმწოდებელი (mergeByModel = false, მაგ. ალტა) არავის ეკვრის და არც მას ეკვრის
+  //    ვინმე — თორემ მისი ფასი და ნაშთი სხვისგან მოსულ პროდუქტს ჩაენაცვლებოდა.
   const model = item.model?.trim() ?? "";
-  if (isSpecificModel(model)) {
+  if (mergeByModel && isSpecificModel(model)) {
     const byModel = await db.product.findFirst({
       where: {
         model,
         ...(item.brand ? { brand: { name: item.brand.trim() } } : {}),
-        supplies: { none: { supplierId } },
+        supplies: { none: { OR: [{ supplierId }, { supplier: { mergeByModel: false } }] } },
       },
       select: { id: true },
     });
@@ -382,7 +387,7 @@ export async function syncSupplier(supplierId: string): Promise<SyncResult> {
 
     for (const item of items) {
       try {
-        let productId = await matchProductId(supplier.id, item);
+        let productId = await matchProductId(supplier, item);
 
         if (!productId) {
           const categoryId = await refineCategoryId(await resolveCategoryId(item.categoryPath), {

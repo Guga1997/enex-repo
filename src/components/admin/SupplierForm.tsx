@@ -15,6 +15,7 @@ export type SupplierDraft = {
   fieldMap: string | null;
   syncEveryMin: number;
   isActive: boolean;
+  mergeByModel: boolean;
   hasSecret: boolean;
 };
 
@@ -294,6 +295,22 @@ export default function SupplierForm({
           className="size-4 accent-brand-500"
         />
         აქტიურია
+      </label>
+
+      <label className="flex items-start gap-2 text-sm">
+        <input
+          type="checkbox"
+          name="mergeByModel"
+          defaultChecked={supplier?.mergeByModel ?? true}
+          className="mt-0.5 size-4 accent-brand-500"
+        />
+        <span>
+          მოდელით გაერთიანება სხვა მიმწოდებლის პროდუქტთან
+          <span className="block text-xs text-muted">
+            გამორთულზე ეს მიმწოდებელი ყოველთვის თავის ცალკე პროდუქტს ქმნის — სხვისგან მოსული პროდუქტის
+            ფასსა და ნაშთს არ ეხება (ასეა ალტაზე).
+          </span>
+        </span>
       </label>
 
       <p className="rounded-lg bg-canvas p-3 text-xs text-muted">

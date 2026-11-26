@@ -166,6 +166,7 @@ export default async function SuppliersPage({
                 fieldMap: editing.fieldMap,
                 syncEveryMin: editing.syncEveryMin,
                 isActive: editing.isActive,
+                mergeByModel: editing.mergeByModel,
                 hasSecret: Boolean(editing.secret),
               }
             : null

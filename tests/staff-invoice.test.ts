@@ -26,6 +26,9 @@ const inStock = () =>
   db.product.findFirst({
     where: { isActive: true, price: { gt: 0 }, stockStatus: "IN_STOCK", stockQty: { gte: 3 }, reservedQty: 0, minQty: 1, qtyStep: 1, oldPrice: null },
     select: { id: true, sku: true, price: true, reservedQty: true },
+    // ბოლოდან — store-sale.test.ts პარალელურად გადის და პირველივე ასეთ პროდუქტს იღებს;
+    // ერთსა და იმავეზე ორივე 2-ს იკავებდა და „დაკავებულია 2“ 4-ად გამოდიოდა
+    orderBy: { id: "desc" },
   });
 
 test("ინვოისის გამოწერა: საიტის ფასი, გადარიცხვა, ნომერი, ნაშთი დაკავებულია", async () => {
