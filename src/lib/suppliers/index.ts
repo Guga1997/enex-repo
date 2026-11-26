@@ -11,6 +11,7 @@ import { muk } from "./muk";
 import { spreadsheet } from "./spreadsheet";
 import { gdriveCsv } from "./gdrive";
 import { alta } from "./alta";
+import { erc } from "./erc";
 import { computePrices, Pricer, repriceProduct } from "./pricing";
 import type { SupplierAdapter, SupplierConfig, SupplierItem } from "./types";
 import { translateName } from "../i18n/translate-name";
@@ -28,6 +29,7 @@ const ADAPTERS: Record<string, SupplierAdapter> = {
   SPREADSHEET: spreadsheet,
   GDRIVE_CSV: gdriveCsv,
   ALTA: alta,
+  ERC: erc,
 };
 
 export function resolveAdapter(name: string): SupplierAdapter {

@@ -260,6 +260,13 @@ export default function SupplierForm({
               ცარიელი დატოვე. მისამართი: <code>https://webapi.elvare.ge/ext/v1</code>, ავტორიზაცია „არ სჭირდება“,
               გასაღები ფორმატში <code>login:password</code>. მოთხოვნას მხოლოდ რეგისტრირებული IP-დან იღებს.
             </>
+          ) : adapter === "ERC" ? (
+            <>
+              ყველაფერი ცარიელი დატოვე, ავტორიზაცია „არ სჭირდება“. მონაცემი მოდის ERC-ის პორტალიდან
+              (<code>erc-distribution.ge</code>): PC კომპონენტები, Xerox-ის პრინტერები, Ardesto-ს მაცივრები და
+              სარეცხი/ჭურჭლის სარეცხი მანქანები. პორტალზე მხოლოდ საცალო ფასია (RRP) — ჩვენი ფასი ERC-ის
+              Excel-ებიდან აიღება, თუ სერვერზე <code>data/pricelists/erc/</code>-ში დევს. სინქი — არა უხშირეს 3 საათში ერთხელ.
+            </>
           ) : adapter === "ALTA" ? (
             <>
               ცარიელი დატოვე. მისამართი: <code>http://extra.alta.com.ge/b2b/b2bEWS</code>, ავტორიზაცია „არ სჭირდება“,
