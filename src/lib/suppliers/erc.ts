@@ -4,10 +4,15 @@ import * as XLSX from "xlsx";
 import type { FetchContext, SupplierAdapter, SupplierConfig, SupplierItem } from "./types";
 
 /**
- * ERC საქართველო — API არ აქვს; პარტნიორებისთვის ღია პორტალია (erc-distribution.ge), სადაც კატეგორიების
- * გვერდებზე დევს კოდი, დასახელება, რეკომენდებული საცალო ფასი (RRP, ლარი) და „in stock / out of stock“.
- * აქედან მოგვაქვს მხოლოდ მფლობელის ჩამოთვლილი: PC კომპონენტები, Xerox-ის საბეჭდი ტექნიკა და Ardesto-ს
- * მაცივრები / სარეცხი / ჭურჭლის სარეცხი მანქანები (DEFAULT_SOURCES; fieldMap.sources ცვლის).
+ * ERC საქართველო — API არ აქვს. ორი წყაროა:
+ *   1) პარტნიორის ფასთა ფაილები (SharePoint „ERC GE STOCK“, Excel) — რომელი მოდელები გვინდა, ოთხი ფასი
+ *      და რაოდენობა. საქაღალდე მხოლოდ მფლობელის Microsoft-ანგარიშით იხსნება, სერვერი მას ვერ კითხულობს,
+ *      ამიტომ ფაილები ხელით იდება data/pricelists/erc/-ში (მფლობელის ჩამოთვლილი: PC Components, Xerox,
+ *      Ardesto მაცივრები, Ardesto სარეცხი მანქანები).
+ *   2) ღია საიტი (erc-distribution.ge) — კატეგორიების გვერდებზე კოდი, დასახელება, RRP (ლარი) და
+ *      „in stock / out of stock“; პროდუქტის გვერდზე ფოტოები და მახასიათებლები. ეს ყოველ სინქზე ახალია.
+ * შემოდის მხოლოდ ის პოზიცია, რომელიც ფაილებშიც წერია და საიტზეც არის (fieldMap.onlyListed = false — საიტის
+ * ყველა პოზიცია DEFAULT_SOURCES-იდან; fieldMap.sources ცვლის კატეგორიებს).
  *
  *   სია:     GET /cat/<id>-<slug>[--v<ბრენდის id>]/[page-N/]?_locale=en     — 24 პოზიცია გვერდზე
  *   დეტალი:  GET /ware/<id>-<slug>/?_locale=en                              — ფოტოები და მახასიათებლები
@@ -17,14 +22,14 @@ import type { FetchContext, SupplierAdapter, SupplierConfig, SupplierItem } from
  *
  * ფასი: პორტალზე მხოლოდ RRP-ა. ERC-ის Excel-ებში (data/pricelists/erc/, სვეტები სათაურით: Model, Quantity,
  * PRICE GEL, PROMO PRICE GEL, RRP GEL, Promo RRP GEL) ოთხი ფასია და მფლობელის წესი ასეთია: სტრიქონის
- * ყველაზე მაღალი ფასი — საცალო, ყველაზე დაბალი — ჩვენი ასაღები ფასი. ფაილი ხელით იდება და თავისით არ
- * ახლდება, პორტალის ფასი (ისიც „მაღალი“, RRP) კი ყოველ სინქზე ახალია — ამიტომ საიტის საცალო ფაილის
- * მოდელებზეც პორტალიდან გადაიწერება. გამონაკლისი: პორტალის ფასი ჩვენს ასაღებ ფასს რომ არ აღემატებოდეს
- * (ზარალში გაყიდვა გამოვიდოდა) — მაშინ ფაილის მაღალი ფასი რჩება. ფაილის გარეშე პოზიციაზე „გამოგზავნილი
- * ფასი“ = პორტალის RRP და თვითღირებულება მიმწოდებლის ფასდაკლებით (supplierDiscount) ითვლება.
+ * ყველაზე მაღალი ფასი — საიტის საცალო, ყველაზე დაბალი — ჩვენი ასაღები ფასი. ორივე ფაილიდან მოდის:
+ * ღია საიტი აქციის დროს აქციის საცალოს (Promo RRP) აჩვენებს და არა უმაღლესს, ამიტომ ფასის წყაროდ არ
+ * გამოდგება — მისგან მხოლოდ ნაშთის ნიშანი, ფოტოები და მახასიათებლები მოდის. ფაილში არარსებულ პოზიციაზე
+ * (onlyListed = false) „გამოგზავნილი ფასი“ = საიტის ფასი და თვითღირებულება მიმწოდებლის ფასდაკლებით
+ * (supplierDiscount) ითვლება.
  * მიმწოდებლის წესი: საცალო — „მის საცალოზე“ (LIST), 0%.
  *
- * fieldMap (არასავალდებულო): { "skuPrefix": "ERC-", "detailsPerSync": 100, "inStockQty": 10,
+ * fieldMap (არასავალდებულო): { "skuPrefix": "ERC-", "detailsPerSync": 100, "inStockQty": 10, "onlyListed": true,
  *                              "sources": [{ "path": "/cat/1527-materynski-platy", "category": ["…", "…"] }] }
  */
 export const ERC_URL = "https://erc-distribution.ge";
@@ -195,10 +200,11 @@ export function parsePriceBook(buf: Buffer): Map<string, ErcPrice> {
   const wb = XLSX.read(buf, { type: "buffer" });
   for (const sheet of wb.SheetNames) {
     const rows = XLSX.utils.sheet_to_json<unknown[]>(wb.Sheets[sheet], { header: 1, defval: "" });
-    const head = rows.findIndex((r) => r.some((c) => /^model$/i.test(String(c).trim())));
+    const MODEL = /^(model|part\s*no\.?)$/i; // „PC Components“-ში სვეტს „Part No.“ ჰქვია
+    const head = rows.findIndex((r) => r.some((c) => MODEL.test(String(c).trim())));
     if (head < 0) continue;
     const col = (re: RegExp) => rows[head].findIndex((c) => re.test(String(c).trim()));
-    const model = col(/^model$/i);
+    const model = col(MODEL);
     const price = col(/^price\s*gel$/i);
     const promo = col(/^promo\s*price\s*gel$/i);
     const rrp = col(/^rrp\s*gel$/i);
@@ -240,7 +246,7 @@ async function loadPriceBooks(dir = ERC_PRICE_DIR): Promise<Map<string, ErcPrice
 
 /* ------------------------------------ სინქი ------------------------------------ */
 
-type FieldMap = { skuPrefix?: string; detailsPerSync?: number; inStockQty?: number; sources?: ErcSource[] };
+type FieldMap = { skuPrefix?: string; detailsPerSync?: number; inStockQty?: number; onlyListed?: boolean; sources?: ErcSource[] };
 export type Get = (url: string) => Promise<string>;
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -271,6 +277,10 @@ export async function fetchErcItems(
   const nominalQty = map.inStockQty ?? 10;
   const pause = opts.pauseMs ?? 250;
   const prices = opts.prices ?? (await loadPriceBooks());
+  // მხოლოდ ფაილებში ჩამოთვლილი მოდელები: ფაილების გარეშე საიტის მთელი კატალოგი (~950) შემოვიდოდა
+  const onlyListed = map.onlyListed ?? true;
+  if (onlyListed && !prices.size)
+    throw new Error("ERC: ფასთა ფაილები არ არის (data/pricelists/erc/) — სინქი ჩერდება, ნაშთები არ ნულდება");
 
   const seen = new Map<string, { row: ErcRow; category: string[] }>();
   let vendors: string[] = [];
@@ -285,20 +295,22 @@ export async function fetchErcItems(
       await sleep(pause);
       all.push(...parseListing(await get(url(p))).rows);
     }
-    for (const row of all) if (row.code && !seen.has(row.code)) seen.set(row.code, { row, category: src.category });
+    for (const row of all) {
+      if (!row.code || seen.has(row.code)) continue;
+      if (onlyListed && !prices.has(row.code.toUpperCase())) continue;
+      seen.set(row.code, { row, category: src.category });
+    }
     await sleep(pause);
   }
-  if (!seen.size) throw new Error("ERC: პორტალიდან ერთი პოზიციაც არ მოვიდა — სინქი ჩერდება, ნაშთები არ ნულდება");
+  if (!seen.size) throw new Error("ERC: საიტიდან ერთი პოზიციაც არ მოვიდა — სინქი ჩერდება, ნაშთები არ ნულდება");
 
   const items: SupplierItem[] = [];
   let details = 0;
   for (const { row, category } of seen.values()) {
     const supplierSku = prefix + row.code;
     const book = prices.get(row.code.toUpperCase());
-    // საცალო — პორტალის (ყოველ სინქზე ახალი) ფასი; ფაილის მაღალი ფასი მხოლოდ მაშინ, როცა პორტალზე ფასი
-    // არ არის ან ჩვენს ასაღებ ფასს არ აღემატება
-    const portalOk = row.price !== null && (!book?.cost || row.price > book.cost);
-    const rrp = portalOk ? row.price : (book?.rrp ?? row.price ?? null);
+    // საცალო — ფაილის უმაღლესი ფასი (საიტი აქციისას აქციის ფასს აჩვენებს); ფაილის გარეშე — საიტის ფასი
+    const rrp = book?.rrp ?? row.price ?? null;
     // ფაილში ერთადერთი ფასი რომ ეწეროს (დაბალი = მაღალი), ის საცალოა და ჩვენი ფასი უცნობია
     const ownCost = book?.cost && (rrp === null || book.cost < rrp) ? book.cost : null;
     const item: SupplierItem = {

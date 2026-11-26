@@ -34,7 +34,7 @@ const DETAIL = `
 
 const cfg = (fieldMap: object = {}) => ({
   slug: "erc", name: "ERC", baseUrl: null, authType: "NONE", secret: null, authHeader: null,
-  fieldMap: JSON.stringify({ sources: [{ path: "/cat/1527-materynski-platy", category: ["კომპიუტერის კომპონენტები", "დედადაფები"] }], ...fieldMap }),
+  fieldMap: JSON.stringify({ onlyListed: false, sources: [{ path: "/cat/1527-materynski-platy", category: ["კომპიუტერის კომპონენტები", "დედადაფები"] }], ...fieldMap }),
 });
 
 test("სია: კოდი, სახელი, ფასი, ნაშთის ნიშანი და გვერდების რაოდენობა", () => {
@@ -86,12 +86,23 @@ test("ფასთა ფაილი: სვეტები სათაურ�
     ["მაცივარი", "", "CR-21L", "…", "2წელი", "3", 189.166, "", 239, " "],
     ["", "", "", "", "", "", "", "", "", ""],
   ]);
+  // „PC Components“: მოდელის სვეტი „Part No.“; აქციის საცალო 0 — არ ითვლება; „#N/A“ — ფასი არ არის
+  const pc = XLSX.utils.aoa_to_sheet([
+    ["Brand", "Product", "Photo", "Part No.", "Item Name", "Quantity", "PRICE GEL ", " PROMO PRICE GEL", "RRP GEL", "Promo RRP GEL"],
+    ["Kingston", "SSD", "", "SA400S37/240G", "Kingston 240GB SSD", "10+", "202.92", "", "229", "0"],
+    ["2E", "Computer Case", "", "2E-G338", "2E GAMING case", "2", "130.5096", "108.817", "155", "125"],
+    ["AFOX", "VGA", "", "AF730-2048D3L6", "AFOX GT730", "10+", "#N/A", "#N/A", "#N/A", "#N/A"],
+  ]);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Products");
+  XLSX.utils.book_append_sheet(wb, pc, "pc components");
   const book = parsePriceBook(XLSX.write(wb, { type: "buffer", bookType: "xlsx" }) as Buffer);
   assert.deepEqual(book.get("DNF-M474X177"), { cost: 1270, rrp: 1799, qty: 10 });
   assert.deepEqual(book.get("CR-21L"), { cost: 189.17, rrp: 239, qty: 3 });
-  assert.equal(book.size, 2);
+  assert.deepEqual(book.get("SA400S37/240G"), { cost: 202.92, rrp: 229, qty: 10 });
+  assert.deepEqual(book.get("2E-G338"), { cost: 108.82, rrp: 155, qty: 2 });
+  assert.equal(book.has("AF730-2048D3L6"), false, "ფასის გარეშე პოზიცია სიაში არ შედის");
+  assert.equal(book.size, 4);
 });
 
 test("სინქი: ყველა გვერდი, გამეორება ერთხელ, ფასი RRP-დან ან ფაილიდან, დეტალი მხოლოდ უცნობზე", async () => {
@@ -119,9 +130,9 @@ test("სინქი: ყველა გვერდი, გამეორე
   assert.equal(board.brand, "ASUS");
   assert.deepEqual(board.categoryPath, ["კომპიუტერის კომპონენტები", "დედადაფები"]);
   assert.equal(board.images, undefined, "ფოტო უკვე აქვს — დეტალს აღარ ვითხოვთ");
-  // ფაილში ნაპოვნი: ჩვენი ასაღები ფასი და რაოდენობა ფაილიდან, საცალო — პორტალის ახალი ფასი (ფაილის 1850 არა)
+  // ფაილში ნაპოვნი: ასაღები ფასი, საცალო (უმაღლესი) და რაოდენობა ფაილიდან — საიტის 1799 ფასს ფარავს
   assert.equal(fridge.cost, 1270);
-  assert.equal(fridge.listPrice, 1799);
+  assert.equal(fridge.listPrice, 1850);
   assert.equal(fridge.qty, 7);
   assert.equal(fridge.images?.length, 2);
   assert.equal(fridge.warrantyMonths, 12);
@@ -131,10 +142,6 @@ test("სინქი: ყველა გვერდი, გამეორე
   assert.equal(noPrice.cost, null);
   assert.ok(!asked.some((p) => p.startsWith("/ware/407920-")));
 
-  // პორტალის ფასი (1799) ჩვენს ასაღებ ფასს (1900) არ აღემატება — ზარალში არ ვყიდით, ფაილის მაღალი ფასი რჩება
-  const dear = await fetchErcItems(cfg(), {}, get, { pauseMs: 0, prices: new Map([["DNF-M474X177", { cost: 1900, rrp: 2100, qty: 4 }]]) });
-  assert.equal(dear[1].cost, 1900);
-  assert.equal(dear[1].listPrice, 2100);
   // ფაილში ერთადერთი ფასი: ის საცალოა, ჩვენი ფასი უცნობია — „გამოგზავნილი ფასი“ იგივე საცალოა
   const single = await fetchErcItems(cfg(), {}, get, { pauseMs: 0, prices: new Map([["DNF-M474X177", { cost: 1900, rrp: 1900, qty: 4 }]]) });
   assert.equal(single[1].cost, 1900);
@@ -144,6 +151,14 @@ test("სინქი: ყველა გვერდი, გამეორე
   asked.length = 0;
   await fetchErcItems(cfg({ detailsPerSync: 1 }), {}, get, { pauseMs: 0, prices });
   assert.equal(asked.filter((p) => p.startsWith("/ware/")).length, 1);
+});
+
+test("მხოლოდ ფაილებში ჩამოთვლილი მოდელები; ფაილების გარეშე — შეცდომა და არა მთელი კატალოგი", async () => {
+  const get = async (url: string) => (new URL(url).pathname.includes("/page-") ? "<html></html>" : PAGE1);
+  const prices = new Map<string, ErcPrice>([["DNF-M474X177", { cost: 1270, rrp: 1799, qty: 7 }], ["NOT-ON-SITE", { cost: 1, rrp: 2, qty: 1 }]]);
+  const listed = await fetchErcItems(cfg({ onlyListed: true, detailsPerSync: 0 }), {}, get, { pauseMs: 0, prices });
+  assert.deepEqual(listed.map((i) => i.supplierSku), ["ERC-DNF-M474X177"]);
+  await assert.rejects(() => fetchErcItems(cfg({ onlyListed: true }), {}, get, { pauseMs: 0, prices: new Map() }), /ფასთა ფაილები არ არის/);
 });
 
 test("ცარიელი პორტალი — შეცდომა (ნაშთები არ უნდა განულდეს)", async () => {
