@@ -129,11 +129,12 @@ test("სინქი: ყველა გვერდი, გამეორე
   assert.equal(pcCase.status, "OUT_OF_STOCK");
   assert.equal(pcCase.brand, "2E Gaming");
   assert.equal(noPrice.cost, null);
+  assert.ok(!asked.some((p) => p.startsWith("/ware/407920-")));
+
   // მოძველებული ფაილი: ჩვენი ფასი პორტალის საცალოზე მეტია — არ ვიყენებთ
   const stale = await fetchErcItems(cfg(), {}, get, { pauseMs: 0, prices: new Map([["DNF-M474X177", { cost: 1900, rrp: 2100, qty: 4 }]]) });
   assert.equal(stale[1].cost, 1799);
   assert.equal(stale[1].listPrice, 1799);
-  assert.ok(!asked.some((p) => p.startsWith("/ware/407920-")));
 
   // ლიმიტი: ერთ სინქზე არა უმეტეს detailsPerSync დეტალისა
   asked.length = 0;
