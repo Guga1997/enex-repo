@@ -119,9 +119,9 @@ test("სინქი: ყველა გვერდი, გამეორე
   assert.equal(board.brand, "ASUS");
   assert.deepEqual(board.categoryPath, ["კომპიუტერის კომპონენტები", "დედადაფები"]);
   assert.equal(board.images, undefined, "ფოტო უკვე აქვს — დეტალს აღარ ვითხოვთ");
-  // ფაილში ნაპოვნი: ჩვენი ფასი, საცალო და რაოდენობა ფაილიდან (პორტალის 1799-ს ფარავს)
+  // ფაილში ნაპოვნი: ჩვენი ასაღები ფასი და რაოდენობა ფაილიდან, საცალო — პორტალის ახალი ფასი (ფაილის 1850 არა)
   assert.equal(fridge.cost, 1270);
-  assert.equal(fridge.listPrice, 1850);
+  assert.equal(fridge.listPrice, 1799);
   assert.equal(fridge.qty, 7);
   assert.equal(fridge.images?.length, 2);
   assert.equal(fridge.warrantyMonths, 12);
@@ -131,6 +131,10 @@ test("სინქი: ყველა გვერდი, გამეორე
   assert.equal(noPrice.cost, null);
   assert.ok(!asked.some((p) => p.startsWith("/ware/407920-")));
 
+  // პორტალის ფასი (1799) ჩვენს ასაღებ ფასს (1900) არ აღემატება — ზარალში არ ვყიდით, ფაილის მაღალი ფასი რჩება
+  const dear = await fetchErcItems(cfg(), {}, get, { pauseMs: 0, prices: new Map([["DNF-M474X177", { cost: 1900, rrp: 2100, qty: 4 }]]) });
+  assert.equal(dear[1].cost, 1900);
+  assert.equal(dear[1].listPrice, 2100);
   // ფაილში ერთადერთი ფასი: ის საცალოა, ჩვენი ფასი უცნობია — „გამოგზავნილი ფასი“ იგივე საცალოა
   const single = await fetchErcItems(cfg(), {}, get, { pauseMs: 0, prices: new Map([["DNF-M474X177", { cost: 1900, rrp: 1900, qty: 4 }]]) });
   assert.equal(single[1].cost, 1900);

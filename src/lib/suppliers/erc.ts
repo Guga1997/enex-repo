@@ -17,9 +17,11 @@ import type { FetchContext, SupplierAdapter, SupplierConfig, SupplierItem } from
  *
  * ფასი: პორტალზე მხოლოდ RRP-ა. ERC-ის Excel-ებში (data/pricelists/erc/, სვეტები სათაურით: Model, Quantity,
  * PRICE GEL, PROMO PRICE GEL, RRP GEL, Promo RRP GEL) ოთხი ფასია და მფლობელის წესი ასეთია: სტრიქონის
- * ყველაზე მაღალი ფასი — საიტის საცალო, ყველაზე დაბალი — ჩვენი ასაღები ფასი. ფაილში ნაპოვნ მოდელზე ორივე
- * ფაილიდან მოდის (პორტალის RRP-ს ფარავს). სხვა პოზიციაზე „გამოგზავნილი ფასი“ = პორტალის RRP და
- * თვითღირებულება მიმწოდებლის ფასდაკლებით (supplierDiscount) ითვლება.
+ * ყველაზე მაღალი ფასი — საცალო, ყველაზე დაბალი — ჩვენი ასაღები ფასი. ფაილი ხელით იდება და თავისით არ
+ * ახლდება, პორტალის ფასი (ისიც „მაღალი“, RRP) კი ყოველ სინქზე ახალია — ამიტომ საიტის საცალო ფაილის
+ * მოდელებზეც პორტალიდან გადაიწერება. გამონაკლისი: პორტალის ფასი ჩვენს ასაღებ ფასს რომ არ აღემატებოდეს
+ * (ზარალში გაყიდვა გამოვიდოდა) — მაშინ ფაილის მაღალი ფასი რჩება. ფაილის გარეშე პოზიციაზე „გამოგზავნილი
+ * ფასი“ = პორტალის RRP და თვითღირებულება მიმწოდებლის ფასდაკლებით (supplierDiscount) ითვლება.
  * მიმწოდებლის წესი: საცალო — „მის საცალოზე“ (LIST), 0%.
  *
  * fieldMap (არასავალდებულო): { "skuPrefix": "ERC-", "detailsPerSync": 100, "inStockQty": 10,
@@ -293,8 +295,10 @@ export async function fetchErcItems(
   for (const { row, category } of seen.values()) {
     const supplierSku = prefix + row.code;
     const book = prices.get(row.code.toUpperCase());
-    // ფაილში ნაპოვნ მოდელზე საცალო ფაილის უმაღლესი ფასია, სხვაზე — პორტალის RRP
-    const rrp = book?.rrp ?? row.price ?? null;
+    // საცალო — პორტალის (ყოველ სინქზე ახალი) ფასი; ფაილის მაღალი ფასი მხოლოდ მაშინ, როცა პორტალზე ფასი
+    // არ არის ან ჩვენს ასაღებ ფასს არ აღემატება
+    const portalOk = row.price !== null && (!book?.cost || row.price > book.cost);
+    const rrp = portalOk ? row.price : (book?.rrp ?? row.price ?? null);
     // ფაილში ერთადერთი ფასი რომ ეწეროს (დაბალი = მაღალი), ის საცალოა და ჩვენი ფასი უცნობია
     const ownCost = book?.cost && (rrp === null || book.cost < rrp) ? book.cost : null;
     const item: SupplierItem = {
