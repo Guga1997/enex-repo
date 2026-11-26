@@ -43,6 +43,8 @@ type FieldMap = {
   discountRules?: DiscountRule[];
   categories?: CategoryRule[];
   photos?: string;
+  /** მომწოდებლის კოდის წინსართი (მაგ. „DH-“) — რიცხვითი კოდები მიმწოდებლებს შორის ემთხვევა */
+  skuPrefix?: string;
 };
 export type ParseOptions = {
   brands?: Record<string, string>;
@@ -52,6 +54,7 @@ export type ParseOptions = {
   rules?: DiscountRule[];
   /** მოდელი (ობიექტივის გარეშეც) → ფოტოები */
   photos?: Record<string, string[]>;
+  skuPrefix?: string;
 };
 
 type Init = { method?: string; headers?: Record<string, string>; body?: string };
@@ -160,7 +163,8 @@ export function parseDriveCsv(text: string, file: string, opts: ParseOptions = {
       (c) => same(c.file, file) && same(c.category, theirCategory) && same(c.type, theirType) && (!c.word || rawName.toLowerCase().includes(c.word.toLowerCase()))
     );
     items.push({
-      supplierSku: sku,
+      // რიცხვითი შტრიხკოდი სხვა მიმწოდებლის კოდს რომ არ დაემთხვეს (პროდუქტები აირეოდა) — პრეფიქსით
+      supplierSku: (opts.skuPrefix ?? "") + sku,
       // საიტის სტილით: „Dahua HY-1301 — სამისამართო კვამლის დეტექტორი, …“
       name: [brand, model].filter(Boolean).join(" ") + (rest ? ` — ${rest}` : ""),
       model,
@@ -351,6 +355,7 @@ export async function fetchDriveItems(cfg: SupplierConfig, http: Transport = web
       discount: discountFor(map.discounts, name),
       rules: map.discountRules,
       photos,
+      skuPrefix: map.skuPrefix,
     };
     for (const item of parseDriveCsv(text, name, opts)) {
       if (seen.has(item.supplierSku)) continue; // ერთი კოდი ორ ფაილში — პირველი რჩება
