@@ -3,7 +3,7 @@ import { translate } from "./i18n/dict";
 import { descriptionOf, nameOf } from "./i18n/content";
 import { translateAttr } from "./i18n/attributes";
 import { isPurchasable } from "./stock";
-import { DELIVERY_FEE_REGIONS, FREE_DELIVERY_FROM } from "./constants";
+import { DELIVERY_FEE_BULKY_REGIONS, DELIVERY_FEE_REGIONS, FREE_DELIVERY_FROM } from "./constants";
 import type { ReturnNote } from "./return-terms";
 /**
  * SEO-ს საერთო ნაწილი: საიტის მისამართი, სტრუქტურირებული მონაცემები (JSON-LD),
@@ -93,13 +93,13 @@ const AVAILABILITY: Record<string, string> = {
  * მარაგში მყოფ ნივთზე ვწერთ; დიდი გაბარიტის ნივთის მიწოდება ცალკე თანხმდება — საერთოდ არ იწერება.
  */
 function shippingJsonLd(p: ProductForSeo, note?: ReturnNote) {
-  if (note?.bulky) return {};
+  if (note?.bulky && !note.bulkyDelivery) return {};
   return {
     shippingDetails: {
       "@type": "OfferShippingDetails",
       shippingRate: {
         "@type": "MonetaryAmount",
-        value: (p.price >= FREE_DELIVERY_FROM ? 0 : DELIVERY_FEE_REGIONS).toFixed(2),
+        value: (note?.bulkyDelivery ? DELIVERY_FEE_BULKY_REGIONS : p.price >= FREE_DELIVERY_FROM ? 0 : DELIVERY_FEE_REGIONS).toFixed(2),
         currency: "GEL",
       },
       shippingDestination: { "@type": "DefinedRegion", addressCountry: "GE" },

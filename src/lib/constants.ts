@@ -100,12 +100,30 @@ export const DELIVERY_TBILISI = "თბილისი";
 export const DELIVERY_CITIES = [DELIVERY_TBILISI, "ბათუმი", "ქუთაისი", "რუსთავი", "გორი", "ზუგდიდი", "თელავი", "სხვა"];
 
 /**
- * მიწოდების საფასური — ერთი წესი ფორმისთვის, გადათვლისთვის და შეკვეთისთვის:
- * გატანა და FREE_DELIVERY_FROM-დან — უფასო; თბილისი — 15 ₾; ნებისმიერი სხვა ქალაქი — 40 ₾.
+ * მსხვილი ტექნიკა (სარეცხი მანქანა, ჭურჭლის სარეცხი მანქანა, მაცივარი, ტელევიზორი): მიწოდება ყოველთვის
+ * ფასიანია, შეკვეთის თანხის მიუხედავად — თბილისში 40 ₾, თბილისის გარეთ 80 ₾. კატეგორიის slug-ით
+ * (თვითონ ან მშობელი). ახალი ასეთი კატეგორია აქ ემატება.
  */
-export function deliveryFeeFor(method: string, city: string | null | undefined, subtotal: number): number {
-  if (method === "PICKUP" || subtotal >= FREE_DELIVERY_FROM) return 0;
-  return city?.trim() === DELIVERY_TBILISI ? DELIVERY_FEE : DELIVERY_FEE_REGIONS;
+export const BULKY_DELIVERY_CATEGORIES = ["sareckhi-manqanebi", "churchlis-sareckhi-manqanebi", "macivrebi", "televizorebi"];
+export const DELIVERY_FEE_BULKY = 40;
+export const DELIVERY_FEE_BULKY_REGIONS = 80;
+type CategoryRef = { slug: string; parent?: { slug: string } | null };
+export const isBulkyDelivery = (p: { category?: CategoryRef | null }): boolean =>
+  [p.category?.slug, p.category?.parent?.slug].some((slug) => !!slug && BULKY_DELIVERY_CATEGORIES.includes(slug));
+/** Prisma select/include-ში ჩასასმელი — isBulkyDelivery-ს ეს ველები სჭირდება */
+export const BULKY_CATEGORY_SELECT = { select: { slug: true, parent: { select: { slug: true } } } } as const;
+
+/**
+ * მიწოდების საფასური — ერთი წესი ფორმისთვის, გადათვლისთვის და შეკვეთისთვის:
+ * გატანა — უფასო; კალათაში მსხვილი ტექნიკაა (bulky) — თბილისი 40 ₾, სხვა ქალაქი 80 ₾, ერთხელ შეკვეთაზე;
+ * სხვა შემთხვევაში FREE_DELIVERY_FROM-დან უფასო, თბილისი — 15 ₾, ნებისმიერი სხვა ქალაქი — 40 ₾.
+ */
+export function deliveryFeeFor(method: string, city: string | null | undefined, subtotal: number, bulky = false): number {
+  if (method === "PICKUP") return 0;
+  const tbilisi = city?.trim() === DELIVERY_TBILISI;
+  if (bulky) return tbilisi ? DELIVERY_FEE_BULKY : DELIVERY_FEE_BULKY_REGIONS;
+  if (subtotal >= FREE_DELIVERY_FROM) return 0;
+  return tbilisi ? DELIVERY_FEE : DELIVERY_FEE_REGIONS;
 }
 
 /**

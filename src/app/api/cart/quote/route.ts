@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/customer-auth";
 import { effectivePrice } from "@/lib/pricing";
 import { isPurchasable, availableQty, ownAvailableQty } from "@/lib/stock";
-import { POS_CHECKOUT, deliveryFeeFor } from "@/lib/constants";
+import { BULKY_CATEGORY_SELECT, POS_CHECKOUT, deliveryFeeFor, isBulkyDelivery } from "@/lib/constants";
 import { getLocale } from "@/lib/i18n/server";
 import { nameOf } from "@/lib/i18n/content";
 
@@ -46,9 +46,11 @@ export async function POST(req: Request) {
   const locale = await getLocale();
   const products = await db.product.findMany({
     where: { id: { in: items.map((i) => i.productId) }, isActive: true },
-    include: { _count: { select: { supplies: true } } },
+    include: { _count: { select: { supplies: true } }, category: BULKY_CATEGORY_SELECT },
   });
   const byId = new Map(products.map((p) => [p.id, p]));
+  // კალათაში მსხვილი ტექნიკაა — მიწოდება ფასიანია თანხის მიუხედავად (40 / 80 ₾)
+  const bulkyDelivery = products.some(isBulkyDelivery);
   // ტერმინალით გადახდა: მხოლოდ თუ ყველა ნივთი ჩვენს საწყობში დევს, მოთხოვნილი რაოდენობით
   const posAllowed =
     POS_CHECKOUT === "OWN_STOCK" &&
@@ -83,7 +85,7 @@ export async function POST(req: Request) {
   const retailSubtotal = round(lines.reduce((s, l) => s + l.retailPrice * l.qty, 0));
   // საფასური მეთოდსა და ქალაქზეა დამოკიდებული — სანამ არჩეული არ არის, ჯამში არ შედის
   const deliveryFee = deliveryMethod && (deliveryMethod === "PICKUP" || deliveryCity?.trim())
-    ? deliveryFeeFor(deliveryMethod, deliveryCity, subtotal)
+    ? deliveryFeeFor(deliveryMethod, deliveryCity, subtotal, bulkyDelivery)
     : 0;
 
   return NextResponse.json({
@@ -97,5 +99,6 @@ export async function POST(req: Request) {
     volumeM3: Math.round(lines.reduce((s, l) => s + (l.volumeM3 ?? 0), 0) * 1000) / 1000,
     isDealer: viewer?.priceTier === "DEALER",
     posAllowed,
+    bulkyDelivery,
   });
 }

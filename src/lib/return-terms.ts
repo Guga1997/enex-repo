@@ -5,7 +5,8 @@
 const HOTEL_ROOT = "სასტუმროს სისტემები";
 const GENERATORS_ROOT = "დიზელის გენერატორები";
 
-export type ReturnNote = { restricted?: string; bulky?: boolean };
+/** bulkyDelivery — მსხვილი ტექნიკა ფიქსირებული მიწოდების ტარიფით (constants: BULKY_DELIVERY_CATEGORIES); გვერდი ავსებს */
+export type ReturnNote = { restricted?: string; bulky?: boolean; bulkyDelivery?: boolean };
 
 export function returnNote(p: {
   nameKa: string;

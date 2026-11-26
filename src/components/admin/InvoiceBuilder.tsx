@@ -4,7 +4,9 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createInvoice, searchForInvoice, type InvoiceProduct } from "@/app/admin/invoices/actions";
 import { createSale } from "@/app/admin/sales/actions";
-import { DELIVERY_CITIES, DELIVERY_FEE, DELIVERY_FEE_REGIONS, FREE_DELIVERY_FROM, deliveryFeeFor } from "@/lib/constants";
+import {
+  DELIVERY_CITIES, DELIVERY_FEE, DELIVERY_FEE_BULKY, DELIVERY_FEE_BULKY_REGIONS, DELIVERY_FEE_REGIONS, FREE_DELIVERY_FROM, deliveryFeeFor,
+} from "@/lib/constants";
 import { gel } from "@/lib/format";
 
 type Line = { product: InvoiceProduct; qty: number };
@@ -95,8 +97,11 @@ export default function InvoiceBuilder({ mode = "invoice" }: { mode?: "invoice" 
       (lines.reduce((s, l) => s + l.product.price * l.qty, 0) + customs.reduce((s, c) => s + money(c.price) * customQty(c), 0)) * 100
     ) / 100;
   // მაღაზიის გაყიდვაში მიწოდება არ ითვლება — მისამართი მხოლოდ ჩანაწერისთვისაა
-  const feeKnown = store || delivery === "PICKUP" || city !== "" || subtotal >= FREE_DELIVERY_FROM;
-  const fee = store ? 0 : feeKnown ? deliveryFeeFor(delivery, city, subtotal) : null;
+  // მსხვილ ტექნიკაზე მიწოდება თანხის მიუხედავად ფასიანია (40 / 80 ₾)
+  const bulky = lines.some((l) => l.product.bulkyDelivery);
+  const freeDelivery = !bulky && subtotal >= FREE_DELIVERY_FROM;
+  const feeKnown = store || delivery === "PICKUP" || city !== "" || freeDelivery;
+  const fee = store ? 0 : feeKnown ? deliveryFeeFor(delivery, city, subtotal, bulky) : null;
   const total = Math.round((subtotal + (fee ?? 0)) * 100) / 100;
   const count = lines.reduce((s, l) => s + l.qty, 0) + customs.reduce((s, c) => s + customQty(c), 0);
 
@@ -409,9 +414,11 @@ export default function InvoiceBuilder({ mode = "invoice" }: { mode?: "invoice" 
                     <span className="block text-xs text-muted">
                       {m === "PICKUP"
                         ? "უფასო"
-                        : subtotal >= FREE_DELIVERY_FROM
+                        : freeDelivery
                           ? "უფასო"
-                          : `თბილისი — ${DELIVERY_FEE}₾, სხვა ქალაქები — ${DELIVERY_FEE_REGIONS}₾`}
+                          : bulky
+                            ? `მსხვილი ტექნიკა: თბილისი — ${DELIVERY_FEE_BULKY}₾, სხვა ქალაქები — ${DELIVERY_FEE_BULKY_REGIONS}₾`
+                            : `თბილისი — ${DELIVERY_FEE}₾, სხვა ქალაქები — ${DELIVERY_FEE_REGIONS}₾`}
                     </span>
                   </span>
                 </label>

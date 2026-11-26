@@ -6,7 +6,8 @@ import { useEffect, useState } from "react";
 import { PENDING_CART_KEY, useCart } from "./CartProvider";
 import { gel } from "@/lib/format";
 import {
-  DELIVERY_CITIES, DELIVERY_FEE, DELIVERY_FEE_REGIONS, FREE_DELIVERY_FROM, PAYMENT_METHOD_LABELS, POS_CHECKOUT, deliveryFeeFor,
+  DELIVERY_CITIES, DELIVERY_FEE, DELIVERY_FEE_BULKY, DELIVERY_FEE_BULKY_REGIONS, DELIVERY_FEE_REGIONS, FREE_DELIVERY_FROM,
+  PAYMENT_METHOD_LABELS, POS_CHECKOUT, deliveryFeeFor,
 } from "@/lib/constants";
 import { useLocale, useT } from "@/components/LocaleProvider";
 import { withLocale } from "@/lib/i18n/config";
@@ -38,6 +39,7 @@ type Quote = {
   subtotal: number; retailSubtotal: number; saved: number;
   deliveryFee: number; total: number;
   weightKg: number; volumeM3: number; isDealer: boolean;
+  bulkyDelivery?: boolean;
   /** ყველა ნივთი ჩვენს საწყობშია — ტერმინალით გადახდა შეიძლება */
   posAllowed?: boolean;
 };
@@ -112,11 +114,13 @@ export default function CheckoutForm({
   }
 
   const shownSubtotal = quote?.subtotal ?? subtotal;
-  const freeDelivery = shownSubtotal >= FREE_DELIVERY_FROM;
+  // კალათაში მსხვილი ტექნიკაა — მიწოდება თანხის მიუხედავად ფასიანია (40 / 80 ₾)
+  const bulkyDelivery = quote?.bulkyDelivery ?? false;
+  const freeDelivery = !bulkyDelivery && shownSubtotal >= FREE_DELIVERY_FROM;
   // საფასური იმავე წესით, რითაც სერვერი შეკვეთას ითვლის; სანამ არჩევანი არ არის — უცნობია („—“)
   const deliveryFee =
     deliveryMethod === "PICKUP" || (deliveryMethod === "COURIER" && (city || freeDelivery))
-      ? deliveryFeeFor(deliveryMethod, city, shownSubtotal)
+      ? deliveryFeeFor(deliveryMethod, city, shownSubtotal, bulkyDelivery)
       : null;
   const total = Math.round((shownSubtotal + (deliveryFee ?? 0)) * 100) / 100;
 
@@ -263,7 +267,9 @@ export default function CheckoutForm({
               desc={
                 freeDelivery
                   ? t("უფასო")
-                  : t("თბილისი — {0}, სხვა ქალაქები — {1}", `${DELIVERY_FEE}₾`, `${DELIVERY_FEE_REGIONS}₾`)
+                  : bulkyDelivery
+                    ? t("მსხვილი ტექნიკა: თბილისი — {0}, სხვა ქალაქები — {1}", `${DELIVERY_FEE_BULKY}₾`, `${DELIVERY_FEE_BULKY_REGIONS}₾`)
+                    : t("თბილისი — {0}, სხვა ქალაქები — {1}", `${DELIVERY_FEE}₾`, `${DELIVERY_FEE_REGIONS}₾`)
               }
             />
             <Radio

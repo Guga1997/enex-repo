@@ -8,7 +8,7 @@ import { createPayment, isBogEnabled } from "@/lib/payments/bog";
 import { canPayWithTbc, createFlittPayment } from "@/lib/payments/flitt";
 import { getI18n } from "@/lib/i18n/server";
 import { nameOf } from "@/lib/i18n/content";
-import { DELIVERY_CITIES, PAYMENT_TTL_MINUTES, POS_CHECKOUT, deliveryFeeFor } from "@/lib/constants";
+import { BULKY_CATEGORY_SELECT, DELIVERY_CITIES, PAYMENT_TTL_MINUTES, POS_CHECKOUT, deliveryFeeFor, isBulkyDelivery } from "@/lib/constants";
 import { getCurrentUser } from "@/lib/customer-auth";
 import { effectivePrice } from "@/lib/pricing";
 import { issueAndSendInvoice } from "@/lib/invoice";
@@ -110,7 +110,7 @@ export async function POST(req: Request) {
   // ფასებს და ნაშთს ყოველთვის სერვერიდან ვიღებთ — კლიენტის მონაცემებს არ ვენდობით
   const products = await db.product.findMany({
     where: { id: { in: input.items.map((i) => i.productId) }, isActive: true },
-    include: { _count: { select: { supplies: true } } },
+    include: { _count: { select: { supplies: true } }, category: BULKY_CATEGORY_SELECT },
   });
   const byId = new Map(products.map((p) => [p.id, p]));
 
@@ -197,7 +197,7 @@ export async function POST(req: Request) {
   const subtotal = Number(
     priced.reduce((s, l) => s + l.unitPrice * l.qty, 0).toFixed(2)
   );
-  const deliveryFee = deliveryFeeFor(input.deliveryMethod, input.deliveryCity, subtotal);
+  const deliveryFee = deliveryFeeFor(input.deliveryMethod, input.deliveryCity, subtotal, lines.some((l) => isBulkyDelivery(l.product)));
   const total = Number((subtotal + deliveryFee).toFixed(2));
 
   const order = await db.$transaction(async (tx) => {

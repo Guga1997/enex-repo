@@ -5,12 +5,12 @@ import Link from "@/components/Link";
 import { useCart } from "./CartProvider";
 import { gel } from "@/lib/format";
 import { normalizeQty } from "@/lib/stock";
-import { DELIVERY_FEE, DELIVERY_FEE_REGIONS, FREE_DELIVERY_FROM } from "@/lib/constants";
+import { DELIVERY_FEE, DELIVERY_FEE_BULKY, DELIVERY_FEE_BULKY_REGIONS, DELIVERY_FEE_REGIONS, FREE_DELIVERY_FROM } from "@/lib/constants";
 import { useT } from "@/components/LocaleProvider";
 import { useEffect, useState } from "react";
 
 type QuoteLine = { productId: string; name: string; unitPrice: number; purchasable: boolean; overStock: number | null };
-type Quote = { lines: QuoteLine[]; subtotal: number };
+type Quote = { lines: QuoteLine[]; subtotal: number; bulkyDelivery?: boolean };
 
 export default function CartView() {
   const t = useT();
@@ -49,7 +49,9 @@ export default function CartView() {
   }
 
   // საფასური ქალაქზეა დამოკიდებული (თბილისი / სხვა) — კალათაში ჯამს არ ემატება, გაფორმებისას ითვლება
-  const freeDelivery = subtotal >= FREE_DELIVERY_FROM;
+  // მსხვილ ტექნიკაზე (მაცივარი, სარეცხი მანქანა, ტელევიზორი…) მიწოდება ყოველთვის ფასიანია
+  const bulkyDelivery = quote?.bulkyDelivery ?? false;
+  const freeDelivery = !bulkyDelivery && subtotal >= FREE_DELIVERY_FROM;
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_20rem]">
@@ -167,7 +169,11 @@ export default function CartView() {
             <dd>{freeDelivery ? t("უფასო") : t("გაფორმებისას")}</dd>
           </div>
         </dl>
-        {!freeDelivery && (
+        {bulkyDelivery ? (
+          <p className="mt-2 text-xs text-muted">
+            {t("მსხვილი ტექნიკის მიწოდება: თბილისში {0}, სხვა ქალაქებში {1}.", `${DELIVERY_FEE_BULKY}₾`, `${DELIVERY_FEE_BULKY_REGIONS}₾`)}
+          </p>
+        ) : !freeDelivery && (
           <p className="mt-2 text-xs text-muted">
             {t("თბილისში {0}, სხვა ქალაქებში {1}.", `${DELIVERY_FEE}₾`, `${DELIVERY_FEE_REGIONS}₾`)}{" "}
             {t("{0}-ით მეტი შეძენისას მიწოდება უფასოა.", gel(FREE_DELIVERY_FROM - subtotal))}

@@ -34,6 +34,8 @@ We work with both corporate and private customers. Every product is officially s
 
 200₾-ზე მეტი შეკვეთისას მიწოდება უფასოა. ამ თანხაზე ნაკლები შეკვეთის მიწოდების ღირებულებაა: თბილისში — 15₾, თბილისის გარეთ — 40₾.
 
+მსხვილი ტექნიკის (სარეცხი მანქანა, ჭურჭლის სარეცხი მანქანა, მაცივარი, ტელევიზორი) მიწოდება ფასიანია შეკვეთის თანხის მიუხედავად: თბილისში — 40₾, თბილისის გარეთ — 80₾.
+
 შესაძლებელია თვითგატანა ჩვენი შოურუმიდან სამუშაო საათებში.`,
     },
     en: {
@@ -43,6 +45,8 @@ To the regions — 2–4 business days.
 
 Delivery is free for orders over 200₾. For smaller orders the delivery fee is 15₾ in Tbilisi and 40₾ outside Tbilisi.
 
+Large appliances (washing machines, dishwashers, refrigerators, TVs) are delivered for a fee regardless of the order amount: 40₾ in Tbilisi and 80₾ outside Tbilisi.
+
 You can also pick up your order from our showroom during business hours.`,
     },
     ru: {
@@ -51,6 +55,8 @@ You can also pick up your order from our showroom during business hours.`,
 В регионы — 2–4 рабочих дня.
 
 При заказе от 200₾ доставка бесплатная. Для заказов на меньшую сумму стоимость доставки: по Тбилиси — 15₾, за пределами Тбилиси — 40₾.
+
+Крупная техника (стиральные и посудомоечные машины, холодильники, телевизоры) доставляется платно независимо от суммы заказа: по Тбилиси — 40₾, за пределами Тбилиси — 80₾.
 
 Также возможен самовывоз из нашего шоурума в рабочее время.`,
     },

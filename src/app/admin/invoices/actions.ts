@@ -4,7 +4,7 @@ import { requireStaff } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { productFilter } from "@/lib/admin-filters";
 import { availableQty, isPurchasable } from "@/lib/stock";
-import { STOCK_LABELS } from "@/lib/constants";
+import { BULKY_CATEGORY_SELECT, STOCK_LABELS, isBulkyDelivery } from "@/lib/constants";
 import { effectivePrice } from "@/lib/pricing";
 import { createStaffInvoice, type StaffInvoiceResult } from "@/lib/staff-order";
 
@@ -12,6 +12,8 @@ export type InvoiceProduct = {
   id: string; sku: string; name: string; model: string | null; image: string | null;
   price: number; available: number; inStock: boolean; stockLabel: string;
   minQty: number; qtyStep: number; unit: string | null;
+  /** მსხვილი ტექნიკა — მიწოდება 40 / 80 ₾ თანხის მიუხედავად */
+  bulkyDelivery: boolean;
   /** რატომ ვერ ჩაჯდება ინვოისში (ფასი არ აწერია / მარაგში არ არის) */
   blocked: string | null;
 };
@@ -25,7 +27,7 @@ export async function searchForInvoice(q: string): Promise<InvoiceProduct[]> {
     where: productFilter({ q: query, status: "active" }),
     orderBy: [{ stockQty: "desc" }, { nameKa: "asc" }],
     take: 20,
-    include: { images: { orderBy: { sortOrder: "asc" }, take: 1, select: { url: true } } },
+    include: { images: { orderBy: { sortOrder: "asc" }, take: 1, select: { url: true } }, category: BULKY_CATEGORY_SELECT },
   });
   return rows.map((p) => ({
     id: p.id, sku: p.sku, name: p.nameKa, model: p.model, image: p.images[0]?.url ?? null,
@@ -34,6 +36,7 @@ export async function searchForInvoice(q: string): Promise<InvoiceProduct[]> {
     inStock: p.stockStatus === "IN_STOCK",
     stockLabel: STOCK_LABELS[p.stockStatus] ?? p.stockStatus,
     minQty: p.minQty, qtyStep: p.qtyStep, unit: p.unit,
+    bulkyDelivery: isBulkyDelivery(p),
     blocked: !(p.price > 0) ? "ფასი არ აწერია" : !isPurchasable(p) ? "მარაგში არ არის" : null,
   }));
 }

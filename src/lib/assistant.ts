@@ -13,7 +13,7 @@ import { translate } from "./i18n/dict";
 import { translateAttr } from "./i18n/attributes";
 import { isLocale, withLocale, type Locale } from "./i18n/config";
 import { rateLimit } from "./rate-limit";
-import { DELIVERY_FEE, DELIVERY_FEE_REGIONS, FREE_DELIVERY_FROM } from "./constants";
+import { DELIVERY_FEE, DELIVERY_FEE_BULKY, DELIVERY_FEE_BULKY_REGIONS, DELIVERY_FEE_REGIONS, FREE_DELIVERY_FROM } from "./constants";
 import { PAGES } from "@/content/pages";
 
 /**
@@ -393,6 +393,10 @@ export function storeInfo(locale: Locale) {
     feeTbilisi: DELIVERY_FEE,
     feeRegions: DELIVERY_FEE_REGIONS,
     freeFrom: FREE_DELIVERY_FROM,
+    // მსხვილი ტექნიკა (სარეცხი მანქანა, ჭურჭლის სარეცხი მანქანა, მაცივარი, ტელევიზორი): ყოველთვის ფასიანი,
+    // freeFrom არ მოქმედებს
+    feeBulkyTbilisi: DELIVERY_FEE_BULKY,
+    feeBulkyRegions: DELIVERY_FEE_BULKY_REGIONS,
     currency: "GEL",
     daysTbilisi: "1-2",
     daysRegions: "2-4",

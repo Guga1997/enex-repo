@@ -17,7 +17,7 @@ import Gallery from "@/components/Gallery";
 import { gel } from "@/lib/format";
 import { availableQty, isPurchasable, stockLabel } from "@/lib/stock";
 import { HAS_PRICE, productCardSelect } from "@/lib/catalog";
-import { StockStatus } from "@/lib/constants";
+import { DELIVERY_FEE_BULKY, DELIVERY_FEE_BULKY_REGIONS, StockStatus, isBulkyDelivery } from "@/lib/constants";
 import { getI18n } from "@/lib/i18n/server";
 import { nameOf, descriptionOf } from "@/lib/i18n/content";
 import { getLocale } from "@/lib/i18n/server";
@@ -93,6 +93,7 @@ export default async function ProductPage({ params }: Props) {
       (n): n is string => Boolean(n)
     ),
   });
+  returns.bulkyDelivery = isBulkyDelivery(p);
   const name = nameOf(p, locale);
   const description = descriptionOf(p, locale);
 
@@ -294,7 +295,11 @@ export default async function ProductPage({ params }: Props) {
 
               <ul className="mt-5 space-y-2 border-t border-line pt-4 text-sm text-muted">
                 <li>{t("✓ ოფიციალური გარანტია")}</li>
-                <li>{t("✓ მიწოდება საქართველოს მასშტაბით")}</li>
+                <li>
+                  {returns.bulkyDelivery
+                    ? t("✓ მიწოდება: თბილისში {0}, თბილისის გარეთ {1}", `${DELIVERY_FEE_BULKY}₾`, `${DELIVERY_FEE_BULKY_REGIONS}₾`)
+                    : t("✓ მიწოდება საქართველოს მასშტაბით")}
+                </li>
                 <li>{t("✓ გადახდა ბარათით ან განვადებით")}</li>
               </ul>
               {(returns.restricted || returns.bulky) && (

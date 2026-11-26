@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { db } from "./db";
-import { DELIVERY_CITIES, deliveryFeeFor } from "./constants";
+import { BULKY_CATEGORY_SELECT, DELIVERY_CITIES, deliveryFeeFor, isBulkyDelivery } from "./constants";
 import { availableQty, isPurchasable, normalizeQty } from "./stock";
 import { markOrderPaid, cancelOrder, reservationDeadline, reserveStock } from "./orders";
 import { orderNumber } from "./sequence";
@@ -79,7 +79,10 @@ export async function createStaffOrder(raw: unknown, staff: { name: string }): P
   const wanted = new Map<string, number>();
   for (const i of input.items) wanted.set(i.productId, (wanted.get(i.productId) ?? 0) + i.qty);
 
-  const products = await db.product.findMany({ where: { id: { in: [...wanted.keys()] }, isActive: true } });
+  const products = await db.product.findMany({
+    where: { id: { in: [...wanted.keys()] }, isActive: true },
+    include: { category: BULKY_CATEGORY_SELECT },
+  });
   const byId = new Map(products.map((p) => [p.id, p]));
 
   const lines: { product: (typeof products)[number]; qty: number; unitPrice: number }[] = [];
@@ -105,7 +108,7 @@ export async function createStaffOrder(raw: unknown, staff: { name: string }): P
   const subtotal = Number(
     (lines.reduce((s, l) => s + l.unitPrice * l.qty, 0) + custom.reduce((s, c) => s + c.price * c.qty, 0)).toFixed(2)
   );
-  const deliveryFee = deliveryFeeFor(input.deliveryMethod, input.deliveryCity, subtotal);
+  const deliveryFee = deliveryFeeFor(input.deliveryMethod, input.deliveryCity, subtotal, lines.some((l) => isBulkyDelivery(l.product)));
   const total = Number((subtotal + deliveryFee).toFixed(2));
   const courier = input.deliveryMethod === "COURIER";
   // მაღაზიაში — ტერმინალით ადგილზე; ინვოისი — გადარიცხვით. ორივეზე ჯავშანი 3 დღეა
