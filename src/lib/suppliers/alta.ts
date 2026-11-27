@@ -1,6 +1,7 @@
 import { request } from "node:http";
 import { request as requestTls } from "node:https";
 import { getRate } from "../fx";
+import { ALTA_CATEGORIES, altaBrand, altaName } from "./alta-catalog";
 import type { SupplierAdapter, SupplierConfig, SupplierItem } from "./types";
 
 /**
@@ -148,8 +149,10 @@ export async function fetchAltaItems(cfg: SupplierConfig, http: Transport = ipv4
   const items: SupplierItem[] = [];
   const seen = new Set<string>();
   for (const r of list.rows) {
-    const name = r.item_full_name || r.item_model;
-    if (!name || seen.has(r.item)) continue;
+    const raw = r.item_full_name || r.item_model;
+    if (!raw || seen.has(r.item)) continue;
+    // B2B-ის სახელი მათი შიდა ხის გზაა, კატეგორია — ინგლისური იარლიყი: ორივე ჩვენს სახეზე გადაგვყავს
+    const name = altaName({ name: raw, brand: r.brand, model: r.item_model, category: r.category }).ka;
     seen.add(r.item);
     const cost = gel(price(r.price_unit));
     const listPrice = map.listField ? gel(price(r[map.listField])) : null;
@@ -159,8 +162,8 @@ export async function fetchAltaItems(cfg: SupplierConfig, http: Transport = ipv4
       supplierSku: prefix + r.item,
       name,
       model: r.item_model || null,
-      brand: r.brand || null,
-      categoryPath: r.category ? [r.category] : [],
+      brand: altaBrand(r.brand),
+      categoryPath: ALTA_CATEGORIES[r.category]?.path ?? (r.category ? [r.category] : []),
       cost,
       // მათი საცალო მხოლოდ მაშინ, როცა ჩვენს ფასზე მაღალია — სხვაგვარად ერთფასიანი პოზიციაა
       listPrice: listPrice !== null && cost !== null && listPrice > cost ? listPrice : null,
