@@ -40,7 +40,7 @@ test("ალტა: სახელი — მხოლოდ მოდელს
 });
 
 test("ალტა: კატეგორიების რუკა — ყველა ახალ სახელს აქვს თარგმანი, სეგმენტები მფლობელის არჩეულია", () => {
-  assert.deepEqual(ALTA_CATEGORIES["Smartphone"].path, ["მობილური ტელეფონები და აქსესუარები", "სმარტფონები"]);
+  assert.deepEqual(ALTA_CATEGORIES["Smartphone"].path, ["მობილურები", "სმარტფონები"]);
   assert.deepEqual(ALTA_CATEGORIES["TV"].path, ["აუდიო-ვიდეო", "ტელევიზორები"]);
   assert.equal(ALTA_CATEGORIES["Wall Bracket"], undefined, "ტელევიზორებიდან მხოლოდ ტელევიზორი");
   assert.equal(ALTA_CATEGORIES["Vacuum Cleaner"], undefined);

@@ -18,7 +18,7 @@ export type AltaCategory = {
   type?: { ka: string; en: string };
 };
 
-const MOBILE = "მობილური ტელეფონები და აქსესუარები";
+const MOBILE = "მობილურები";
 const IT = "კომპიუტერული ტექნიკა";
 const PCS = [IT, "კომპიუტერები და ლეპტოპები"];
 const PERIPH = [IT, "პერიფერია"];
@@ -155,7 +155,7 @@ export const ALTA_CATEGORIES: Record<string, AltaCategory> = {
 
 /** ახალი კატეგორიების თარგმანი (nameKa → [en, ru]) — შექმნისას გამოიყენება */
 export const ALTA_CATEGORY_NAMES: Record<string, [string, string]> = {
-  "მობილური ტელეფონები და აქსესუარები": ["Mobile Phones & Accessories", "Мобильные телефоны и аксессуары"],
+  "მობილურები": ["Mobile phones", "Мобильные телефоны"],
   "სმარტფონები": ["Smartphones", "Смартфоны"],
   "სმარტ საათები": ["Smart Watches", "Смарт-часы"],
   "სმარტ საათის აქსესუარები": ["Smart Watch Accessories", "Аксессуары для смарт-часов"],
