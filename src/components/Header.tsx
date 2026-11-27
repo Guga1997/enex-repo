@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import Link from "@/components/Link";
 import { getCategoryTree } from "@/lib/category-tree";
 import { cablesSegment } from "@/lib/cables";
@@ -25,6 +26,8 @@ export default async function Header({ compact = false }: { compact?: boolean } 
   // „კაბელები“ ენერგოს მერე — ვირტუალური სეგმენტი, კაბელები თავიანთ ადგილასაც რჩება
   const cables = cablesSegment(roots);
   const categories = cables ? [...roots.slice(0, 1), cables, ...roots.slice(1)] : roots;
+  // დიდ ეკრანზე ზოლი ორ რიგად იშლება, როცა სეგმენტი ბევრია — ერთ რიგში წარწერები ერთმანეთს ეფარებოდა
+  const navCols = categories.length > 8 ? Math.ceil(categories.length / 2) : categories.length;
 
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-surface">
@@ -63,7 +66,10 @@ export default async function Header({ compact = false }: { compact?: boolean } 
 
       {/* სეგმენტების ზოლი — hover-ზე იშლება ქვეჯგუფები და მათი ქვეჯგუფები */}
       <div className="border-t border-line bg-surface">
-        <div className="container-x flex items-stretch gap-1 overflow-x-auto [scrollbar-width:none] lg:gap-0 xl:gap-1 [&::-webkit-scrollbar]:hidden">
+        <div
+          className="container-x flex items-stretch gap-1 overflow-x-auto [scrollbar-width:none] lg:grid lg:grid-cols-[repeat(var(--nav-cols),minmax(0,1fr))] lg:gap-x-0.5 lg:gap-y-0 lg:overflow-visible xl:gap-x-1 [&::-webkit-scrollbar]:hidden"
+          style={{ "--nav-cols": navCols } as CSSProperties}
+        >
           {/* ფასდაკლებები — ზედა ნავიგაციაში ადგილი მხოლოდ დიდ ეკრანზეა, პატარაზე ზოლის თავშია */}
           <Link
             href="/sale"
@@ -80,17 +86,17 @@ export default async function Header({ compact = false }: { compact?: boolean } 
           {categories.map((segment) => {
             const theme = segmentTheme(segment.nameKa, segment.slug);
             return (
-            /* სიგანე შიგთავსით: უჯრა თავის ყველაზე გრძელ სიტყვაზე ვიწრო არ ხდება, ამიტომ წარწერები
-                ერთმანეთს არ ეფარება, რამდენი სეგმენტიც არ უნდა იყოს; თუ არ ეტევა — ზოლი გადაიხვევა */
-            <div key={segment.id} className="group static lg:flex-auto">
+            <div key={segment.id} className="group static lg:min-w-0">
               <NavSegment name={nameOf(segment, locale)} slug={segment.slug} />
 
               {!compact && segment.children.length > 0 && (
-                /* ზოლს სქროლბარი აქვს და ჩამონათვალამდე 15px მკვდარი ზოლი რჩება.
+                /* ორ რიგად: ზედა რიგიდან მენიუსკენ მაუსი ქვედა რიგს კვეთს — ამიტომ გახსნა 150 მწმ-ით
+                   ყოვნდება (გავლით სხვა მენიუ არ იხსნება), დახურვა კი 300 მწმ-ით.
+                   ზოლს სქროლბარი აქვს და ჩამონათვალამდე 15px მკვდარი ზოლი რჩება.
                    მაუსი რომ მას გადაკვეთს, hover წყდება და მენიუ ქრება — ამიტომ
                    ორი რამ: დახურვა ოდნავ ყოვნდება და ზემოთ უხილავი „ხიდია“,
                    რომელიც სწორედ ამ ზოლს ფარავს. */
-                <div className="invisible absolute left-0 right-0 top-full z-50 border-b border-line bg-surface opacity-0 shadow-xl transition-[opacity,visibility] delay-200 duration-150 before:absolute before:inset-x-0 before:-top-5 before:h-5 before:content-[''] group-hover:visible group-hover:opacity-100 group-hover:delay-0">
+                <div className="invisible absolute left-0 right-0 top-full z-50 border-b border-line bg-surface opacity-0 shadow-xl transition-[opacity,visibility] delay-300 duration-150 before:absolute before:inset-x-0 before:-top-5 before:h-5 before:content-[''] group-hover:visible group-hover:opacity-100 group-hover:delay-150">
                   {/* სვეტებად (და არა რიგებად), რომ გრძელმა სიამ დანარჩენები არ ჩამოწიოს;
                       ჰედერი ფიქსირებულია — რაც ეკრანს სცდება, მენიუს შიგნით გადაიხვევა */}
                   <div className="max-h-[calc(100dvh-10rem)] overflow-y-auto">
