@@ -63,7 +63,7 @@ export default async function Header({ compact = false }: { compact?: boolean } 
 
       {/* სეგმენტების ზოლი — hover-ზე იშლება ქვეჯგუფები და მათი ქვეჯგუფები */}
       <div className="border-t border-line bg-surface">
-        <div className="container-x flex items-stretch gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="container-x flex items-stretch gap-1 overflow-x-auto [scrollbar-width:none] lg:gap-0 xl:gap-1 [&::-webkit-scrollbar]:hidden">
           {/* ფასდაკლებები — ზედა ნავიგაციაში ადგილი მხოლოდ დიდ ეკრანზეა, პატარაზე ზოლის თავშია */}
           <Link
             href="/sale"
@@ -80,7 +80,9 @@ export default async function Header({ compact = false }: { compact?: boolean } 
           {categories.map((segment) => {
             const theme = segmentTheme(segment.nameKa, segment.slug);
             return (
-            <div key={segment.id} className="group static lg:min-w-0 lg:flex-1">
+            /* სიგანე შიგთავსით: უჯრა თავის ყველაზე გრძელ სიტყვაზე ვიწრო არ ხდება, ამიტომ წარწერები
+                ერთმანეთს არ ეფარება, რამდენი სეგმენტიც არ უნდა იყოს; თუ არ ეტევა — ზოლი გადაიხვევა */
+            <div key={segment.id} className="group static lg:flex-auto">
               <NavSegment name={nameOf(segment, locale)} slug={segment.slug} />
 
               {!compact && segment.children.length > 0 && (
